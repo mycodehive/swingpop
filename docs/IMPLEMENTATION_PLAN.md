@@ -140,7 +140,7 @@ M1 수동 입력 검증을 완료한 뒤에만 `prompts/milestones/03-M2-aim-pow
 - 최종 Play run 구간에서 kinematic velocity warning, C# error, `NullReferenceException`, `MissingReferenceException` 없음
 - 자동 검증은 `GolfBallController.Launch()`를 직접 호출했으므로 실제 Space/R Input System command는 아래 수동 절차로 확인해야 한다.
 
-## M1 Manual Play Validation — Pending
+## M1 Manual Play Validation — Complete
 
 1. Unity 상단 메뉴에서 `Window > General > Console`을 클릭해 Console 창을 연다.
 2. Console 왼쪽 위의 `Clear`를 클릭한다.
@@ -156,3 +156,24 @@ M1 수동 입력 검증을 완료한 뒤에만 `prompts/milestones/03-M2-aim-pow
 12. Console의 빨간 Error 카운트가 0인지 확인한다.
 
 튜닝 값을 확인하려면 Project 창에서 `Assets > _Game > ScriptableObjects > M1BallTuning`을 클릭한다. 값을 바꿀 필요는 없으며, 변경했다면 Play Mode를 종료한 상태에서 수정한다.
+
+## M2 Aim / Power / Impact Implementation (2026-08-10)
+
+- `ShotFlowController`가 `Aiming → PowerSelecting → ImpactSelecting → ShotCommitted` 전이를 단일 소유한다.
+- A/D 또는 좌우 방향키로 ±30도 yaw 조준, Space로 각 단계를 확정하고 Escape로 선택 중 취소한다.
+- `ShotCalculator`가 power 정규화, impact grade, power loss, deterministic dispersion을 순수 계산한다.
+- 직렬화 가능한 `ShotCommand`가 aim, power, impact, 최종 방향과 launch 기준값을 캡처한다.
+- `GolfBallController`는 `ShotCommand`의 최종 방향과 유효 power를 기존 M1 Rigidbody launch에 전달한다.
+- `M2ShotTuning.asset`에서 aim 속도/범위, gauge 속도, grade 구간, power multiplier, dispersion을 조정한다.
+- Debug overlay와 aim line은 현재 shot state, aim, power, impact cursor/grade, ball state/speed, 마지막 command를 표시한다. 최종 HUD가 아니다.
+- Impact 단계에서 P를 누르면 검증용 PERFECT shot을 즉시 확정한다.
+- M1의 bounce, roll, stable stop, reset, follow camera를 그대로 유지한다.
+- 구현하지 않은 항목: wind, spin, terrain 차이, club system, putter, hole/scoring, character, Cinemachine, 최종 HUD/VFX/audio.
+
+## M2 Validation (2026-08-10)
+
+- Unity Test Framework EditMode: 총 16 passed, 0 failed (`ShotCalculatorTests` 포함).
+- 자동 Play Mode 통합 검증 최종 통과: shot flow 확정, `Ready → Airborne → Bouncing → Rolling → Stopped`, reset 후 `Aiming/Ready` 복구.
+- 동일 aim의 35% shot은 9.74m, 90% shot은 52.94m로 power 차이가 실제 정지 거리에 반영되었다.
+- 반대 aim의 lateral 위치와 MISS의 power loss/9도 dispersion이 적용되었다.
+- 실제 키보드 A/D/방향키/Space/Escape/R 입력 체감은 아래 최종 보고의 수동 절차로 사용자 확인이 필요하다.

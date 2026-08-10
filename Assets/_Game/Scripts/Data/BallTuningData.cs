@@ -45,15 +45,21 @@ namespace SwingPop.Data
 
         public Vector3 CalculateLaunchVelocity(Vector3 forward)
         {
+            return CalculateLaunchVelocity(forward, 1f);
+        }
+
+        public Vector3 CalculateLaunchVelocity(Vector3 forward, float powerScale)
+        {
             Vector3 planarForward = Vector3.ProjectOnPlane(forward, Vector3.up).normalized;
             if (planarForward.sqrMagnitude <= Mathf.Epsilon)
             {
                 planarForward = Vector3.forward;
             }
 
+            float scaledLaunchSpeed = launchSpeed * Mathf.Clamp01(powerScale);
             float angleRadians = launchAngleDegrees * Mathf.Deg2Rad;
-            Vector3 horizontalVelocity = planarForward * (launchSpeed * Mathf.Cos(angleRadians));
-            Vector3 verticalVelocity = Vector3.up * (launchSpeed * Mathf.Sin(angleRadians));
+            Vector3 horizontalVelocity = planarForward * (scaledLaunchSpeed * Mathf.Cos(angleRadians));
+            Vector3 verticalVelocity = Vector3.up * (scaledLaunchSpeed * Mathf.Sin(angleRadians));
             return horizontalVelocity + verticalVelocity;
         }
     }

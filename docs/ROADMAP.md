@@ -5,11 +5,11 @@
 ### M0 Project Foundation — Complete (2026-08-10)
 Unity 6000.5.7f1 project, URP 17.5.0, Input System 1.20.0, `_Game` folders, Foundation scene/prefab, PC 1080p defaults, Unity `.gitignore`.
 
-### M1 Ball Launch
-Implementation complete; manual Space/R input validation pending. Rigidbody launch, bounce, roll, stable stop, reset, telemetry, and minimal camera follow are scene-connected.
+### M1 Ball Launch — Complete (2026-08-10)
+Rigidbody launch, bounce, roll, stable stop, reset, telemetry, and minimal camera follow are scene-connected and treated as the completed M2 baseline.
 
-### M2 Aim / Power / Impact
-Core shot input loop.
+### M2 Aim / Power / Impact — Implementation Complete (2026-08-10)
+Yaw aim, three-step Space flow, power/impact gauges, grade-based power loss and dispersion, serializable `ShotCommand`, debug telemetry, and M1 physics integration are scene-connected. Automated tests pass; manual keyboard feel validation remains.
 
 ### M3 Ball Flight
 Arcade flight, bounce, roll, spin hooks.

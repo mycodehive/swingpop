@@ -70,3 +70,8 @@ Codex는 Placeholder를 만들거나 발견할 때 이 문서를 갱신한다.
 - [ ] HOLE_IN_SFX
 - [ ] RESULT_STINGER
 - [ ] COURSE_AMBIENCE
+
+## M2 Debug Placeholder
+
+- [ ] `M2AimLine` 단색 debug line을 이후 trajectory/aim presentation asset으로 교체
+- [ ] IMGUI `ShotDebugOverlay`를 M8 최종 HUD 구현 시 정식 power/impact gauge skin으로 교체

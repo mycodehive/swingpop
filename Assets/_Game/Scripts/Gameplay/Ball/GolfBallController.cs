@@ -1,5 +1,6 @@
 using System;
 using SwingPop.Data;
+using SwingPop.Gameplay.Shot;
 using UnityEngine;
 
 namespace SwingPop.Gameplay.Ball
@@ -97,15 +98,20 @@ namespace SwingPop.Gameplay.Ball
                 ? launchDirectionReference.forward
                 : Vector3.forward;
 
-            isGrounded = false;
-            stopDetector.Reset();
-            ballBody.isKinematic = false;
-            ballBody.useGravity = true;
-            ballBody.WakeUp();
-            ballBody.linearVelocity = tuning.CalculateLaunchVelocity(forward);
-            ChangeState(BallState.Airborne);
-            Launched?.Invoke();
-            return true;
+            return LaunchVelocity(tuning.CalculateLaunchVelocity(forward));
+        }
+
+        public bool Launch(ShotCommand command)
+        {
+            if (state != BallState.Ready || tuning == null)
+            {
+                return false;
+            }
+
+            Vector3 velocity = tuning.CalculateLaunchVelocity(
+                command.FinalDirection,
+                command.EffectivePower01);
+            return LaunchVelocity(velocity);
         }
 
         public void ResetBall()
@@ -246,6 +252,19 @@ namespace SwingPop.Gameplay.Ball
             ballBody.angularVelocity = Vector3.zero;
             ballBody.Sleep();
             ChangeState(BallState.Stopped);
+        }
+
+        private bool LaunchVelocity(Vector3 velocity)
+        {
+            isGrounded = false;
+            stopDetector.Reset();
+            ballBody.isKinematic = false;
+            ballBody.useGravity = true;
+            ballBody.WakeUp();
+            ballBody.linearVelocity = velocity;
+            ChangeState(BallState.Airborne);
+            Launched?.Invoke();
+            return true;
         }
 
         private void ChangeState(BallState nextState)

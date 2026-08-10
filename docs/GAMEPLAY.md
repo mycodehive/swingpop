@@ -167,3 +167,26 @@ Water/OOB는 공이 무한히 떨어지거나 게임이 멈추지 않도록 명�
 7. VFX
 
 실제 물리 정확성보다 체감 튜닝을 우선한다.
+
+## 14. M2 Playable Shot Flow
+
+```text
+Aiming
+  → Space: PowerSelecting
+  → Space: ImpactSelecting
+  → Space: ShotCommitted
+  → Ball Airborne → Bouncing → Rolling → Stopped
+  → R: Aiming + Ball Ready
+```
+
+- A/D, 좌우 방향키: yaw aim. 기본 범위는 -30도에서 +30도다.
+- Space: 현재 단계 확정.
+- Escape: Power 또는 Impact 선택을 취소하고 Aiming으로 돌아간다.
+- P: ImpactSelecting에서 검증용 PERFECT를 즉시 확정한다.
+- R: 언제든 공을 시작 위치로 reset하고 Aiming으로 돌아간다.
+- power는 0~1 왕복 gauge이며 실제 launch speed scale로 전달된다.
+- impact cursor의 중앙 오차 절댓값으로 Perfect/Great/Good/Miss를 결정한다.
+- 낮은 grade는 power multiplier와 deterministic horizontal dispersion을 적용한다.
+- 현재 M2에는 wind, spin, surface modifier, club/putter, hole 판정이 없다.
+
+기본 데이터는 `M2ShotTuning.asset`에 있으며 Debug overlay는 최종 HUD가 아니라 상태 확인 도구다.

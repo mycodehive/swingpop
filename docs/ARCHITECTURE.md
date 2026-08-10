@@ -207,3 +207,28 @@ Unity Component 통합:
 M1 EditMode test:
 
 - `BallStopDetectorTests`: stable duration 누적, airborne reset, speed threshold 거부
+
+## M2 Implemented Shot Boundary
+
+```text
+Input System
+  → ShotInputController
+  → ShotFlowController (single state owner)
+  → ShotCalculator (pure calculation)
+  → ShotCommand (serializable value)
+  → GolfBallController / M1 Rigidbody physics
+
+ShotDebugOverlay ← reads ShotFlowController + GolfBallController
+```
+
+- `ShotFlowController`만 M2 shot state를 전이한다. Ball state는 계속 `GolfBallController`가 소유한다.
+- `ShotCommand`에는 scene object, UI, camera reference가 없으며 향후 기록/네트워크 경계로 사용할 수 있다.
+- `ShotTuningData`와 `BallTuningData`를 분리해 shot 입력 감각과 ball physics를 독립 조정한다.
+- Debug overlay와 aim line은 presentation/debug 계층이며 gameplay 계산을 변경하지 않는다.
+- M1 `TemporaryBallInput` asset은 기록상 남아 있지만 Foundation scene에서는 `ShotInputController`로 교체되어 중복 입력하지 않는다.
+
+M2 EditMode test:
+
+- aim clamp, power normalization, impact grade 경계
+- deterministic dispersion
+- `ShotCommand` 값 캡처 및 MISS power/direction 반영

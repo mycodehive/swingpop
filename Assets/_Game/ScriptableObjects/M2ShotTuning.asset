@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 87af58b8a1ce5cf45af636dba3c82d7e, type: 3}
+  m_Name: M2ShotTuning
+  m_EditorClassIdentifier: SwingPop.Runtime::SwingPop.Data.ShotTuningData
+  minimumAimAngle: -30
+  maximumAimAngle: 30
+  aimRotationSpeed: 45
+  powerSweepSpeed: 0.8
+  impactSweepSpeed: 1.1
+  perfectMaximumOffset: 0.15
+  greatMaximumOffset: 0.35
+  goodMaximumOffset: 0.65
+  perfectPowerMultiplier: 1
+  greatPowerMultiplier: 0.98
+  goodPowerMultiplier: 0.9
+  missPowerMultiplier: 0.72
+  greatDispersionDegrees: 1.5
+  goodDispersionDegrees: 4
+  missDispersionDegrees: 9
