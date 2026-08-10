@@ -116,4 +116,43 @@ Package 추가는 실제 버전 확인 후 수행한다.
 
 ## Next Action
 
-M0 검증이 완료되었다. 다음 작업은 `prompts/milestones/02-M1-ball-launch.md`의 M1 Ball Launch다.
+M1 수동 입력 검증을 완료한 뒤에만 `prompts/milestones/03-M2-aim-power-impact.md`를 진행한다.
+
+## M1 Ball Launch Implementation (2026-08-10)
+
+- `GolfBall.prefab`: 0.3m placeholder sphere, `Rigidbody`, `SphereCollider`, `GolfBallController` 연결
+- `M1BallTuning.asset`: launch speed/angle, mass, damping, gravity scale, rolling deceleration, bounce-to-roll threshold, stop thresholds/duration
+- `GolfBallPhysics.asset`: bounce와 static/dynamic friction data
+- `TemporaryBallInput`: Space/gamepad south launch, R/gamepad north reset
+- `BallFollowCamera`: Cinemachine package 추가 없이 최소 smooth follow
+- `BallDebugTelemetry`: current state, speed, velocity, grounded, control hint 표시 및 launch vector debug ray
+- `BallStopDetector`: grounded 상태에서 linear/angular threshold를 일정 시간 만족해야만 Stop 처리
+- Foundation scene의 M0 probe instance를 제거하고 M1 ball, launch direction, input/debug system, follow camera를 실제 연결
+- Aim, Power Gauge, Impact Timing, Wind, Character, HUD는 구현하지 않음
+
+## M1 Automated Validation (2026-08-10)
+
+- Unity runtime/editor/test assemblies compile 성공
+- Unity Test Framework EditMode: `BallStopDetectorTests` 3 passed, 0 failed
+- Foundation scene Play Mode physics validation:
+  `Ready → Airborne → Bouncing → Rolling → Stopped → Reset/Ready`
+- 최종 자동 Play run: 9.63초, stop position `(0.00, 0.15, 64.73)`
+- 최종 Play run 구간에서 kinematic velocity warning, C# error, `NullReferenceException`, `MissingReferenceException` 없음
+- 자동 검증은 `GolfBallController.Launch()`를 직접 호출했으므로 실제 Space/R Input System command는 아래 수동 절차로 확인해야 한다.
+
+## M1 Manual Play Validation — Pending
+
+1. Unity 상단 메뉴에서 `Window > General > Console`을 클릭해 Console 창을 연다.
+2. Console 왼쪽 위의 `Clear`를 클릭한다.
+3. Project 창에서 `Assets > _Game > Scenes`를 차례로 열고 `Foundation` scene을 더블클릭한다.
+4. Unity 화면 상단 중앙의 삼각형 `Play` 버튼을 클릭한다.
+5. `Game` 탭 왼쪽 위 telemetry가 `State: Ready`, `Speed: 0.00 m/s`인지 확인한다.
+6. Game 탭 안쪽을 한 번 클릭해 키보드 포커스를 준 뒤 Space를 한 번 누른다.
+7. 공이 앞으로 포물선 비행하고 ground에서 bounce한 뒤 roll하는지 확인한다. 카메라가 공을 놓치지 않고 따라가야 한다.
+8. telemetry가 최종적으로 `State: Stopped`, `Speed: 0.00 m/s` 근처가 되는지 확인한다.
+9. R을 누르고 공과 카메라가 시작 위치로 돌아오며 `State: Ready`가 되는지 확인한다.
+10. Space를 다시 눌러 두 번째 launch가 가능한지 확인한다.
+11. 상단 중앙의 파란색 Play 버튼을 다시 클릭해 Play Mode를 종료한다.
+12. Console의 빨간 Error 카운트가 0인지 확인한다.
+
+튜닝 값을 확인하려면 Project 창에서 `Assets > _Game > ScriptableObjects > M1BallTuning`을 클릭한다. 값을 바꿀 필요는 없으며, 변경했다면 Play Mode를 종료한 상태에서 수정한다.

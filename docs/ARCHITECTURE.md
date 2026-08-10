@@ -62,6 +62,14 @@ Ball Events
 
 물리 계산과 MonoBehaviour presentation은 가능한 한 분리한다.
 
+M1 구현:
+
+- `GolfBallController`: Rigidbody 설정, launch/reset command, collision 기반 상태 전이의 단일 소유자
+- `BallState`: `Ready`, `Airborne`, `Bouncing`, `Rolling`, `Stopped`
+- `BallStopDetector`: Unity lifecycle과 분리된 누적 시간 기반 순수 정지 판정
+- `BallTuningData`: launch/Rigidbody/roll/stop tuning의 ScriptableObject source of truth
+- `TemporaryBallInput`: M1 전용 Space/R command adapter. Aim/Power/Impact는 포함하지 않음
+
 ### Gameplay/Club
 
 ScriptableObject 중심.
@@ -80,6 +88,9 @@ Terrain surface query 및 Hole 관련 정보 제공.
 CameraDirector가 현재 게임 상태에 맞는 카메라 모드를 선택한다.
 
 Gameplay Controller가 개별 Cinemachine Camera 세부 설정을 직접 만지지 않는다.
+
+M1의 `BallFollowCamera`는 Cinemachine 없이 동작하는 최소 presentation component다.
+Ball physics나 game flow를 소유하지 않고 target position만 `LateUpdate`에서 부드럽게 추적한다.
 
 ### UI
 
@@ -124,10 +135,12 @@ Client Input
 
 ## Scene Strategy
 
-현재 M0:
+현재 M1:
 
-- `Assets/_Game/Scenes/Foundation.unity`: M1 이전 프로젝트/URP/Input 연결 검증용 scene
-- `FoundationInputProbe.prefab`: Debug presentation 전용이며 gameplay 책임을 갖지 않음
+- `Assets/_Game/Scenes/Foundation.unity`: M1 Ball Launch 검증 scene
+- `GolfBall.prefab`: Rigidbody, SphereCollider, `GolfBallController`가 연결된 교체 가능한 placeholder
+- `M1 Systems`: 임시 입력과 debug telemetry 연결
+- M0 `FoundationInputProbe` instance는 scene에서 제거했고 prefab asset만 보존한다.
 
 향후 권장:
 
@@ -190,3 +203,7 @@ Unity Component 통합:
 - Camera
 - Animator
 - HUD
+
+M1 EditMode test:
+
+- `BallStopDetectorTests`: stable duration 누적, airborne reset, speed threshold 거부

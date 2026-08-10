@@ -35,6 +35,26 @@ BallRolling / BallStopped
 → HoleComplete
 ```
 
+### M1 Ball Launch State
+
+M1에서는 이후 shot flow를 구현하지 않고 ball simulation 상태만 다음처럼 명시적으로 관리한다.
+
+```text
+Ready
+→ Airborne
+→ Bouncing
+→ Rolling
+→ Stopped
+→ Reset
+→ Ready
+```
+
+- Space / gamepad south button: 고정된 launch velocity로 발사
+- R / gamepad north button: 초기 위치와 `Ready` 상태로 reset
+- launch speed와 angle은 `M1BallTuning.asset`에서 조정한다.
+- bounce/friction은 `GolfBallPhysics.asset`, Rigidbody/roll/stop 값은 `M1BallTuning.asset`에서 조정한다.
+- Aim, Power, Impact, Wind, Spin은 M1에 포함하지 않는다.
+
 ## 3. Power
 
 Normalized 0–1 또는 percentage 0–100.

@@ -5,7 +5,12 @@ Codex는 Placeholder를 만들거나 발견할 때 이 문서를 갱신한다.
 ## M0 Foundation Placeholder
 
 - [ ] `FoundationGround` primitive를 실제 Hole 1 course blockout 또는 최종 course asset으로 교체
-- [ ] `FoundationInputProbe` capsule/sphere는 입력 연결 검증 전용이며 M1 gameplay prefab이 연결되면 제거
+- [x] `FoundationInputProbe` instance를 M1 scene에서 제거함 (prefab asset은 M0 기록용으로 보존)
+
+## M1 Ball Placeholder
+
+- [ ] `GolfBall` primitive sphere mesh를 최종 golf ball mesh로 교체
+- [ ] `GolfBallPlaceholder` 단색 URP material을 최종 golf ball material/texture로 교체
 
 ## Character
 

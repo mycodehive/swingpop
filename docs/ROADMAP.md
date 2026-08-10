@@ -6,7 +6,7 @@
 Unity 6000.5.7f1 project, URP 17.5.0, Input System 1.20.0, `_Game` folders, Foundation scene/prefab, PC 1080p defaults, Unity `.gitignore`.
 
 ### M1 Ball Launch
-Ball launch + camera follow + ground stop.
+Implementation complete; manual Space/R input validation pending. Rigidbody launch, bounce, roll, stable stop, reset, telemetry, and minimal camera follow are scene-connected.
 
 ### M2 Aim / Power / Impact
 Core shot input loop.

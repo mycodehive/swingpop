@@ -1,0 +1,21 @@
+{
+  "name": "SwingPop.Tests.EditMode",
+  "rootNamespace": "SwingPop.Tests",
+  "references": [
+    "SwingPop.Runtime"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false,
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ]
+}
