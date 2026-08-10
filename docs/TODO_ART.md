@@ -75,3 +75,8 @@ Codex는 Placeholder를 만들거나 발견할 때 이 문서를 갱신한다.
 
 - [ ] `M2AimLine` 단색 debug line을 이후 trajectory/aim presentation asset으로 교체
 - [ ] IMGUI `ShotDebugOverlay`를 M8 최종 HUD 구현 시 정식 power/impact gauge skin으로 교체
+
+## M3 Flight Debug Placeholder
+
+- [ ] `M3TrajectoryLine` 단색 actual-trace material을 이후 정식 ball trail/VFX로 교체
+- [ ] 숫자키 spin preset 안내를 M8 이후 정식 spin presentation으로 교체

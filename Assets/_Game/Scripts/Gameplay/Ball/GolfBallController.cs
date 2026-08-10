@@ -19,10 +19,14 @@ namespace SwingPop.Gameplay.Ball
         [SerializeField] private LayerMask groundLayers = 1;
 
         private readonly BallStopDetector stopDetector = new();
+        private readonly BallSpinState spinState = new();
         private Vector3 resetPosition;
         private Quaternion resetRotation;
         private bool isGrounded;
         private BallState state = BallState.Ready;
+        private Vector3 launchForward = Vector3.forward;
+        private bool firstLandingResponseApplied;
+        private bool backSpinRollbackApplied;
 
         public event Action<BallState, BallState> StateChanged;
         public event Action Launched;
@@ -33,8 +37,11 @@ namespace SwingPop.Gameplay.Ball
         public float Speed => ballBody != null ? ballBody.linearVelocity.magnitude : 0f;
         public float AngularSpeed => ballBody != null ? ballBody.angularVelocity.magnitude : 0f;
         public Vector3 Velocity => ballBody != null ? ballBody.linearVelocity : Vector3.zero;
+        public Vector3 PhysicsPosition => ballBody != null ? ballBody.position : transform.position;
         public Vector3 ResetPosition => resetPosition;
         public BallTuningData Tuning => tuning;
+        public ShotSpin CurrentSpin => spinState.Current;
+        public Vector3 LaunchForward => launchForward;
 
         private void Awake()
         {
@@ -63,9 +70,26 @@ namespace SwingPop.Gameplay.Ball
 
             ApplyGravityScale();
 
+            if (!isGrounded && state is BallState.Airborne or BallState.Bouncing)
+            {
+                ApplyAirbornePhysics();
+                spinState.Decay(
+                    tuning.AirVerticalSpinDecay,
+                    tuning.AirSideSpinDecay,
+                    Time.fixedDeltaTime);
+            }
+            else if (isGrounded)
+            {
+                spinState.Decay(
+                    tuning.GroundVerticalSpinDecay,
+                    tuning.GroundSideSpinDecay,
+                    Time.fixedDeltaTime);
+            }
+
             if (isGrounded && state == BallState.Bouncing
                 && Mathf.Abs(ballBody.linearVelocity.y) <= tuning.BounceToRollVerticalSpeed)
             {
+                ApplyBackSpinRollback();
                 ChangeState(BallState.Rolling);
             }
 
@@ -98,7 +122,7 @@ namespace SwingPop.Gameplay.Ball
                 ? launchDirectionReference.forward
                 : Vector3.forward;
 
-            return LaunchVelocity(tuning.CalculateLaunchVelocity(forward));
+            return LaunchVelocity(tuning.CalculateLaunchVelocity(forward), ShotSpin.None);
         }
 
         public bool Launch(ShotCommand command)
@@ -111,13 +135,16 @@ namespace SwingPop.Gameplay.Ball
             Vector3 velocity = tuning.CalculateLaunchVelocity(
                 command.FinalDirection,
                 command.EffectivePower01);
-            return LaunchVelocity(velocity);
+            return LaunchVelocity(velocity, command.Spin);
         }
 
         public void ResetBall()
         {
             stopDetector.Reset();
+            spinState.Reset();
             isGrounded = false;
+            firstLandingResponseApplied = false;
+            backSpinRollbackApplied = false;
 
             ballBody.useGravity = false;
             if (!ballBody.isKinematic)
@@ -155,8 +182,21 @@ namespace SwingPop.Gameplay.Ball
                 return;
             }
 
+            if (state == BallState.Airborne
+                && ballBody.linearVelocity.y > tuning.MaximumUpwardLandingSpeed)
+            {
+                isGrounded = false;
+                return;
+            }
+
             isGrounded = true;
             stopDetector.Reset();
+
+            if (!firstLandingResponseApplied && state == BallState.Airborne)
+            {
+                ApplyFirstLandingResponse();
+                firstLandingResponseApplied = true;
+            }
 
             if (state == BallState.Airborne)
             {
@@ -168,7 +208,8 @@ namespace SwingPop.Gameplay.Ball
         {
             if (TryReadGroundContact(collision, out _))
             {
-                isGrounded = true;
+                isGrounded = state != BallState.Airborne
+                             || ballBody.linearVelocity.y <= tuning.MaximumUpwardLandingSpeed;
             }
         }
 
@@ -220,6 +261,10 @@ namespace SwingPop.Gameplay.Ball
             ballBody.maxAngularVelocity = tuning.MaximumAngularVelocity;
             ballBody.interpolation = RigidbodyInterpolation.Interpolate;
             ballBody.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+            if (ballCollider.sharedMaterial != null)
+            {
+                ballCollider.material.bounciness = tuning.BounceRetention;
+            }
         }
 
         private void ApplyGravityScale()
@@ -241,7 +286,11 @@ namespace SwingPop.Gameplay.Ball
             Vector3 slowedPlanarVelocity = Vector3.MoveTowards(
                 planarVelocity,
                 Vector3.zero,
-                tuning.RollingDeceleration * Time.fixedDeltaTime);
+                BallGroundResponse.CalculateRollingDeceleration(
+                    tuning.RollingDeceleration,
+                    spinState.VerticalSpin,
+                    tuning.TopSpinRollingDecelerationMultiplier,
+                    tuning.BackSpinRollingDecelerationMultiplier) * Time.fixedDeltaTime);
 
             ballBody.linearVelocity = slowedPlanarVelocity + Vector3.up * velocity.y;
         }
@@ -251,13 +300,20 @@ namespace SwingPop.Gameplay.Ball
             ballBody.linearVelocity = Vector3.zero;
             ballBody.angularVelocity = Vector3.zero;
             ballBody.Sleep();
+            spinState.Reset();
             ChangeState(BallState.Stopped);
         }
 
-        private bool LaunchVelocity(Vector3 velocity)
+        private bool LaunchVelocity(Vector3 velocity, ShotSpin spin)
         {
             isGrounded = false;
+            firstLandingResponseApplied = false;
             stopDetector.Reset();
+            spinState.Set(spin);
+            Vector3 planarVelocity = Vector3.ProjectOnPlane(velocity, Vector3.up);
+            launchForward = planarVelocity.sqrMagnitude > Mathf.Epsilon
+                ? planarVelocity.normalized
+                : Vector3.forward;
             ballBody.isKinematic = false;
             ballBody.useGravity = true;
             ballBody.WakeUp();
@@ -265,6 +321,53 @@ namespace SwingPop.Gameplay.Ball
             ChangeState(BallState.Airborne);
             Launched?.Invoke();
             return true;
+        }
+
+        private void ApplyAirbornePhysics()
+        {
+            Vector3 acceleration = BallFlightModel.CalculateAirAcceleration(
+                ballBody.linearVelocity,
+                spinState.Current,
+                tuning.AirDragStrength,
+                tuning.SpinLiftStrength,
+                tuning.SideSpinCurveStrength,
+                tuning.AirForceReferenceSpeed,
+                Vector3.zero);
+            ballBody.AddForce(acceleration, ForceMode.Acceleration);
+        }
+
+        private void ApplyFirstLandingResponse()
+        {
+            Vector3 velocity = ballBody.linearVelocity;
+            Vector3 planarVelocity = Vector3.ProjectOnPlane(velocity, Vector3.up);
+            Vector3 adjustedPlanarVelocity = BallGroundResponse.CalculateFirstLandingPlanarVelocity(
+                planarVelocity,
+                launchForward,
+                spinState.Current,
+                tuning.TopSpinLandingBoost,
+                tuning.BackSpinLandingBrake,
+                0f,
+                tuning.SideSpinLandingResponse);
+            ballBody.linearVelocity = adjustedPlanarVelocity + Vector3.up * velocity.y;
+        }
+
+        private void ApplyBackSpinRollback()
+        {
+            if (backSpinRollbackApplied || spinState.VerticalSpin >= 0f)
+            {
+                return;
+            }
+
+            backSpinRollbackApplied = true;
+            Vector3 velocity = ballBody.linearVelocity;
+            Vector3 planarVelocity = Vector3.ProjectOnPlane(velocity, Vector3.up);
+            float forwardSpeed = Vector3.Dot(planarVelocity, launchForward);
+            Vector3 lateralVelocity = planarVelocity - launchForward * forwardSpeed;
+            float rollbackSpeed = -spinState.VerticalSpin * tuning.BackSpinRollbackSpeed;
+            ballBody.angularVelocity = Vector3.zero;
+            ballBody.linearVelocity = lateralVelocity
+                                      - launchForward * rollbackSpeed
+                                      + Vector3.up * velocity.y;
         }
 
         private void ChangeState(BallState nextState)

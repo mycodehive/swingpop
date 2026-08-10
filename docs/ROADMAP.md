@@ -11,8 +11,8 @@ Rigidbody launch, bounce, roll, stable stop, reset, telemetry, and minimal camer
 ### M2 Aim / Power / Impact — Implementation Complete (2026-08-10)
 Yaw aim, three-step Space flow, power/impact gauges, grade-based power loss and dispersion, serializable `ShotCommand`, debug telemetry, and M1 physics integration are scene-connected. Automated tests pass; manual keyboard feel validation remains.
 
-### M3 Ball Flight
-Arcade flight, bounce, roll, spin hooks.
+### M3 Ball Flight — Implementation Complete (2026-08-10)
+Tuneable arcade drag/lift/side curve, Top/Back/Side spin, spin-aware landing/roll, decay, stable stop, actual trajectory trace, tests and automated Rigidbody comparison are complete. Manual input/visual feel validation remains.
 
 ### M4 Wind / Terrain
 Wind and surface-specific responses.

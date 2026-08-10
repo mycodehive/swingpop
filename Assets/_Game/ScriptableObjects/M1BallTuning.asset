@@ -19,9 +19,25 @@ MonoBehaviour:
   angularDamping: 0.35
   maximumAngularVelocity: 60
   gravityScale: 1
+  airDragStrength: 0.035
+  spinLiftStrength: 0.65
+  sideSpinCurveStrength: 2.8
+  airForceReferenceSpeed: 18
+  airVerticalSpinDecay: 0.05
+  airSideSpinDecay: 0.08
   rollingDeceleration: 1.4
   bounceToRollVerticalSpeed: 0.8
   minimumGroundNormalY: 0.55
+  maximumUpwardLandingSpeed: 0.1
+  bounceRetention: 0.48
+  topSpinLandingBoost: 2.8
+  backSpinLandingBrake: 0.65
+  backSpinRollbackSpeed: 1.8
+  sideSpinLandingResponse: 0.35
+  topSpinRollingDecelerationMultiplier: 0.42
+  backSpinRollingDecelerationMultiplier: 3.2
+  groundVerticalSpinDecay: 0.38
+  groundSideSpinDecay: 0.8
   stopLinearSpeed: 0.12
   stopAngularSpeed: 0.8
   stopStableDuration: 0.6

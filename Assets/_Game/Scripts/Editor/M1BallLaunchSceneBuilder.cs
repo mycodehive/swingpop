@@ -53,7 +53,7 @@ namespace SwingPop.Editor
             BallDebugTelemetry telemetry = systems.AddComponent<BallDebugTelemetry>();
             SetObjectReference(telemetry, "ball", ball);
 
-            Camera mainCamera = Object.FindFirstObjectByType<Camera>();
+            Camera mainCamera = Object.FindAnyObjectByType<Camera>();
             if (mainCamera == null)
             {
                 GameObject cameraObject = new("Main Camera", typeof(Camera), typeof(AudioListener));
@@ -178,7 +178,7 @@ namespace SwingPop.Editor
 
         private static void RemoveExistingM1Objects(Scene scene)
         {
-            FoundationInputProbe foundationProbe = Object.FindFirstObjectByType<FoundationInputProbe>();
+            FoundationInputProbe foundationProbe = Object.FindAnyObjectByType<FoundationInputProbe>();
             if (foundationProbe != null)
             {
                 Object.DestroyImmediate(foundationProbe.gameObject);

@@ -109,6 +109,45 @@ namespace SwingPop.Gameplay.Shot
             float baseLaunchSpeed,
             float loftDegrees)
         {
+            return CreateCommand(
+                baseForward,
+                aimAngleDegrees,
+                power01,
+                impactOffset,
+                perfectMaximumOffset,
+                greatMaximumOffset,
+                goodMaximumOffset,
+                perfectPowerMultiplier,
+                greatPowerMultiplier,
+                goodPowerMultiplier,
+                missPowerMultiplier,
+                greatDispersionDegrees,
+                goodDispersionDegrees,
+                missDispersionDegrees,
+                baseLaunchSpeed,
+                loftDegrees,
+                ShotSpin.None);
+        }
+
+        public static ShotCommand CreateCommand(
+            Vector3 baseForward,
+            float aimAngleDegrees,
+            float power01,
+            float impactOffset,
+            float perfectMaximumOffset,
+            float greatMaximumOffset,
+            float goodMaximumOffset,
+            float perfectPowerMultiplier,
+            float greatPowerMultiplier,
+            float goodPowerMultiplier,
+            float missPowerMultiplier,
+            float greatDispersionDegrees,
+            float goodDispersionDegrees,
+            float missDispersionDegrees,
+            float baseLaunchSpeed,
+            float loftDegrees,
+            ShotSpin spin)
+        {
             Vector3 planarForward = Vector3.ProjectOnPlane(baseForward, Vector3.up).normalized;
             if (planarForward.sqrMagnitude <= Mathf.Epsilon)
             {
@@ -149,7 +188,8 @@ namespace SwingPop.Gameplay.Shot
                 Mathf.Clamp01(normalizedPower * powerMultiplier),
                 dispersionDegrees,
                 baseLaunchSpeed,
-                loftDegrees);
+                loftDegrees,
+                spin);
         }
     }
 }

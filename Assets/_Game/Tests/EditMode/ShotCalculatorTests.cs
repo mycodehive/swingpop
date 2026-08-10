@@ -64,6 +64,32 @@ namespace SwingPop.Tests.EditMode
             Assert.That(Vector3.Angle(perfect.FinalDirection, miss.FinalDirection), Is.EqualTo(9f).Within(0.01f));
         }
 
+        [Test]
+        public void CreateCommand_CapturesNormalizedSpinData()
+        {
+            ShotCommand command = ShotCalculator.CreateCommand(
+                Vector3.forward,
+                0f,
+                1f,
+                0f,
+                0.15f,
+                0.35f,
+                0.65f,
+                1f,
+                0.98f,
+                0.9f,
+                0.72f,
+                1.5f,
+                4f,
+                9f,
+                18f,
+                35f,
+                new ShotSpin(2f, -2f));
+
+            Assert.That(command.Spin.VerticalSpin, Is.EqualTo(1f));
+            Assert.That(command.Spin.SideSpin, Is.EqualTo(-1f));
+        }
+
         private static ShotCommand CreateCommand(float aimAngle, float power, float impactOffset)
         {
             return ShotCalculator.CreateCommand(

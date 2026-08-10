@@ -35,13 +35,13 @@ namespace SwingPop.Editor
                 return;
             }
 
-            if (Object.FindFirstObjectByType<M1PlayModeValidationDriver>() != null)
+            if (Object.FindAnyObjectByType<M1PlayModeValidationDriver>() != null)
             {
                 Debug.LogWarning("M1 physics validation is already running.");
                 return;
             }
 
-            GolfBallController ball = Object.FindFirstObjectByType<GolfBallController>();
+            GolfBallController ball = Object.FindAnyObjectByType<GolfBallController>();
             if (ball == null)
             {
                 Debug.LogError("SWINGPOP_M1_PLAYMODE_VALIDATION_FAIL: GolfBallController was not found.");
@@ -64,14 +64,14 @@ namespace SwingPop.Editor
                 return;
             }
 
-            if (Object.FindFirstObjectByType<M2PlayModeValidationDriver>() != null)
+            if (Object.FindAnyObjectByType<M2PlayModeValidationDriver>() != null)
             {
                 Debug.LogWarning("M2 shot integration validation is already running.");
                 return;
             }
 
-            GolfBallController ball = Object.FindFirstObjectByType<GolfBallController>();
-            ShotFlowController shotFlow = Object.FindFirstObjectByType<ShotFlowController>();
+            GolfBallController ball = Object.FindAnyObjectByType<GolfBallController>();
+            ShotFlowController shotFlow = Object.FindAnyObjectByType<ShotFlowController>();
             if (ball == null || shotFlow == null || ball.Tuning == null)
             {
                 Debug.LogError("SWINGPOP_M2_PLAYMODE_VALIDATION_FAIL: M2 scene dependencies were not found.");

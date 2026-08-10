@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.Controls;
 
 namespace SwingPop.Gameplay.Shot
 {
@@ -12,6 +13,7 @@ namespace SwingPop.Gameplay.Shot
         private InputAction resetAction;
         private InputAction cancelAction;
         private InputAction forcePerfectAction;
+        private InputAction spinPresetAction;
 
         private void Awake()
         {
@@ -31,6 +33,12 @@ namespace SwingPop.Gameplay.Shot
             cancelAction = new InputAction("M2 Cancel", InputActionType.Button, "<Keyboard>/escape");
             cancelAction.AddBinding("<Gamepad>/buttonEast");
             forcePerfectAction = new InputAction("M2 Force Perfect", InputActionType.Button, "<Keyboard>/p");
+            spinPresetAction = new InputAction("M3 Spin Preset", InputActionType.Button);
+            spinPresetAction.AddBinding("<Keyboard>/digit1");
+            spinPresetAction.AddBinding("<Keyboard>/digit2");
+            spinPresetAction.AddBinding("<Keyboard>/digit3");
+            spinPresetAction.AddBinding("<Keyboard>/digit4");
+            spinPresetAction.AddBinding("<Keyboard>/digit5");
         }
 
         private void OnEnable()
@@ -39,11 +47,13 @@ namespace SwingPop.Gameplay.Shot
             resetAction.performed += OnResetPerformed;
             cancelAction.performed += OnCancelPerformed;
             forcePerfectAction.performed += OnForcePerfectPerformed;
+            spinPresetAction.performed += OnSpinPresetPerformed;
             aimAction.Enable();
             confirmAction.Enable();
             resetAction.Enable();
             cancelAction.Enable();
             forcePerfectAction.Enable();
+            spinPresetAction.Enable();
         }
 
         private void Update()
@@ -60,11 +70,13 @@ namespace SwingPop.Gameplay.Shot
             resetAction.performed -= OnResetPerformed;
             cancelAction.performed -= OnCancelPerformed;
             forcePerfectAction.performed -= OnForcePerfectPerformed;
+            spinPresetAction.performed -= OnSpinPresetPerformed;
             aimAction.Disable();
             confirmAction.Disable();
             resetAction.Disable();
             cancelAction.Disable();
             forcePerfectAction.Disable();
+            spinPresetAction.Disable();
             shotFlow?.SetAimInput(0f);
         }
 
@@ -75,6 +87,7 @@ namespace SwingPop.Gameplay.Shot
             resetAction?.Dispose();
             cancelAction?.Dispose();
             forcePerfectAction?.Dispose();
+            spinPresetAction?.Dispose();
         }
 
         private void OnConfirmPerformed(InputAction.CallbackContext context)
@@ -95,6 +108,24 @@ namespace SwingPop.Gameplay.Shot
         private void OnForcePerfectPerformed(InputAction.CallbackContext context)
         {
             shotFlow?.ForcePerfectImpactAndCommit();
+        }
+
+        private void OnSpinPresetPerformed(InputAction.CallbackContext context)
+        {
+            if (shotFlow == null || Keyboard.current == null)
+            {
+                return;
+            }
+
+            SpinPreset preset = context.control switch
+            {
+                KeyControl key when key == Keyboard.current.digit2Key => SpinPreset.TopSpin,
+                KeyControl key when key == Keyboard.current.digit3Key => SpinPreset.BackSpin,
+                KeyControl key when key == Keyboard.current.digit4Key => SpinPreset.LeftSideSpin,
+                KeyControl key when key == Keyboard.current.digit5Key => SpinPreset.RightSideSpin,
+                _ => SpinPreset.NoSpin
+            };
+            shotFlow.SetSpinPreset(preset);
         }
     }
 }

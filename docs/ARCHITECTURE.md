@@ -232,3 +232,22 @@ M2 EditMode test:
 - aim clamp, power normalization, impact grade 경계
 - deterministic dispersion
 - `ShotCommand` 값 캡처 및 MISS power/direction 반영
+
+## M3 Arcade Flight Boundary
+
+```text
+ShotCommand + ShotSpin
+  → GolfBallController (Rigidbody/state owner)
+      → BallFlightModel (air force + decay, pure)
+      → BallSpinState (current decaying spin)
+      → BallGroundResponse (landing/roll modifier, pure)
+
+BallTrajectoryDebug + ShotDebugOverlay ← read-only presentation/debug
+```
+
+- `ShotSpin.VerticalSpin`: `-1=Back`, `0=None`, `+1=Top`; `SideSpin`: `-1=Left`, `+1=Right`.
+- `GolfBallController`는 lifecycle, collision, Rigidbody 적용과 기존 BallState만 소유한다.
+- 공중/착지/rolling 계산은 별도 순수 모델로 분리되어 EditMode test가 가능하다.
+- Physics Material은 vertical bounce, custom landing response는 planar spin 효과만 담당한다.
+- Wind는 `BallFlightModel.CalculateAirAcceleration`의 `externalAcceleration` seam만 있고 실제 provider는 M4까지 없다.
+- trajectory와 overlay는 gameplay 결과를 변경하지 않는다.

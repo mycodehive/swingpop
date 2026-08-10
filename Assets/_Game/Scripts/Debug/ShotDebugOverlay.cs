@@ -16,7 +16,7 @@ namespace SwingPop.Debugging
         [SerializeField] private bool showAimLine = true;
         [SerializeField, Min(1f)] private float aimLineLength = 24f;
         [SerializeField] private Vector2 overlayPosition = new(16f, 16f);
-        [SerializeField] private Vector2 overlaySize = new(460f, 300f);
+        [SerializeField] private Vector2 overlaySize = new(500f, 360f);
 
         private GUIStyle headingStyle;
         private GUIStyle labelStyle;
@@ -35,7 +35,7 @@ namespace SwingPop.Debugging
 
             EnsureStyles();
             GUILayout.BeginArea(new Rect(overlayPosition, overlaySize), GUI.skin.box);
-            GUILayout.Label("M2 SHOT DEBUG", headingStyle);
+            GUILayout.Label("M3 SHOT / FLIGHT DEBUG", headingStyle);
             GUILayout.Label($"Shot State: {shotFlow.State}    Ball: {ball.State}", labelStyle);
             GUILayout.Label($"Aim: {shotFlow.AimAngleDegrees:+0.0;-0.0;0.0}°", labelStyle);
             DrawMeter("Power", shotFlow.Power01, new Color(0.2f, 0.9f, 0.45f));
@@ -45,8 +45,12 @@ namespace SwingPop.Debugging
                 $"Impact: {shotFlow.PreviewImpactGrade}  Cursor {shotFlow.ImpactCursor:+0.00;-0.00;0.00}",
                 labelStyle);
             GUILayout.Label($"Ball Speed: {ball.Speed:F2} m/s", labelStyle);
+            GUILayout.Label($"Velocity: {ball.Velocity.x:+0.0;-0.0;0.0}, {ball.Velocity.y:+0.0;-0.0;0.0}, {ball.Velocity.z:+0.0;-0.0;0.0}", labelStyle);
+            GUILayout.Label($"Selected Spin: {shotFlow.SelectedSpinPreset} [{shotFlow.SelectedSpin}]", labelStyle);
+            GUILayout.Label($"Active Spin: [{ball.CurrentSpin}]", labelStyle);
             GUILayout.Label("A/D or ←/→: Aim   Space: Confirm   R: Reset   Esc: Cancel", labelStyle);
             GUILayout.Label("P during Impact: Force PERFECT (Debug)", labelStyle);
+            GUILayout.Label("Spin: 1 None  2 Top  3 Back  4 Left  5 Right", labelStyle);
             GUILayout.Label(
                 shotFlow.HasLastShotCommand
                     ? $"Last: {shotFlow.LastShotCommand}"

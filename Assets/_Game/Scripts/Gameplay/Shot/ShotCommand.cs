@@ -20,6 +20,7 @@ namespace SwingPop.Gameplay.Shot
         [SerializeField] private float dispersionDegrees;
         [SerializeField] private float baseLaunchSpeed;
         [SerializeField] private float loftDegrees;
+        [SerializeField] private ShotSpin spin;
 
         public ShotCommand(
             Vector3 aimDirection,
@@ -33,6 +34,35 @@ namespace SwingPop.Gameplay.Shot
             float dispersionDegrees,
             float baseLaunchSpeed,
             float loftDegrees)
+            : this(
+                aimDirection,
+                finalDirection,
+                aimAngleDegrees,
+                power01,
+                impactAccuracy01,
+                impactOffset,
+                impactGrade,
+                effectivePower01,
+                dispersionDegrees,
+                baseLaunchSpeed,
+                loftDegrees,
+                ShotSpin.None)
+        {
+        }
+
+        public ShotCommand(
+            Vector3 aimDirection,
+            Vector3 finalDirection,
+            float aimAngleDegrees,
+            float power01,
+            float impactAccuracy01,
+            float impactOffset,
+            ImpactGrade impactGrade,
+            float effectivePower01,
+            float dispersionDegrees,
+            float baseLaunchSpeed,
+            float loftDegrees,
+            ShotSpin spin)
         {
             this.aimDirection = aimDirection;
             this.finalDirection = finalDirection;
@@ -45,6 +75,7 @@ namespace SwingPop.Gameplay.Shot
             this.dispersionDegrees = dispersionDegrees;
             this.baseLaunchSpeed = baseLaunchSpeed;
             this.loftDegrees = loftDegrees;
+            this.spin = spin;
         }
 
         public Vector3 AimDirection => aimDirection;
@@ -58,12 +89,13 @@ namespace SwingPop.Gameplay.Shot
         public float DispersionDegrees => dispersionDegrees;
         public float BaseLaunchSpeed => baseLaunchSpeed;
         public float LoftDegrees => loftDegrees;
+        public ShotSpin Spin => spin;
 
         public override string ToString()
         {
             return $"Aim {aimAngleDegrees:+0.0;-0.0;0.0}°, Power {power01 * 100f:0}% " +
                    $"Impact {impactGrade} ({impactAccuracy01 * 100f:0}%), " +
-                   $"Dispersion {dispersionDegrees:+0.0;-0.0;0.0}°";
+                   $"Dispersion {dispersionDegrees:+0.0;-0.0;0.0}°, Spin [{spin}]";
         }
     }
 }

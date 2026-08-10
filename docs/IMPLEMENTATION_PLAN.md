@@ -177,3 +177,24 @@ M1 수동 입력 검증을 완료한 뒤에만 `prompts/milestones/03-M2-aim-pow
 - 동일 aim의 35% shot은 9.74m, 90% shot은 52.94m로 power 차이가 실제 정지 거리에 반영되었다.
 - 반대 aim의 lateral 위치와 MISS의 power loss/9도 dispersion이 적용되었다.
 - 실제 키보드 A/D/방향키/Space/Escape/R 입력 체감은 아래 최종 보고의 수동 절차로 사용자 확인이 필요하다.
+
+## M3 Arcade Ball Flight Implementation (2026-08-10)
+
+- `ShotSpin`은 `VerticalSpin -1..+1`과 `SideSpin -1..+1`을 직렬화한다. Vertical 음수는 BackSpin, 양수는 TopSpin이다.
+- 숫자 1~5로 No/Top/Back/Left/Right spin preset을 선택하고 현재 선택/활성 spin을 Debug overlay에서 확인한다.
+- `BallFlightModel`은 velocity-relative drag, lift/downforce, side curve, spin decay를 순수 계산한다. 외부 가속도 인자는 향후 Wind hook이며 M3에서는 항상 zero다.
+- `BallGroundResponse`는 첫 landing 감속/boost와 rolling deceleration modifier를 계산한다.
+- Physics Material이 vertical bounce retention을 단독 소유하고 custom spin response는 planar velocity만 조정해 에너지 충돌을 피한다.
+- 상승 중 출발 지면 접촉을 landing으로 오인하지 않도록 `Maximum Upward Landing Speed` 판정을 추가했다.
+- BackSpin rollback은 `Rolling` 전환 때 한 번만 적용하고 angular velocity를 정리해 무한 역회전을 방지한다.
+- `BallTrajectoryDebug`가 최근 실제 궤적을 LineRenderer로 기록한다.
+- 기존 M1/M2 state, reset, stable stop, shot flow, input, camera follow는 유지한다.
+- Wind 실제 시스템, terrain 차이, club/putter, hole/scoring, character, final HUD/VFX/audio는 구현하지 않았다.
+
+## M3 Automated Validation (2026-08-10)
+
+- Unity Test Framework EditMode: 총 27 passed, 0 failed. 기존 16개와 spin clamp/preset/decay/side direction/landing/rollout 테스트를 포함한다.
+- 최종 동일 Aim/Power Rigidbody 비교: NoSpin 44.26m, TopSpin 49.04m, BackSpin 30.88m, BackSpin rollback 0.20m, Left X -12.28m, Right X +12.28m.
+- 다섯 preset 모두 `Ready → Airborne → Bouncing → Rolling → Stopped → Reset/Aiming`을 통과했다.
+- M2 회귀 검증도 통과했다: low power 9.39m, high power 46.48m, MISS 27.66m/X 13.41m, Reset/Aiming 복구.
+- 실제 숫자키 및 trajectory 육안 체감은 사용자 수동 검증이 필요하다.

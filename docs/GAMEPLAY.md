@@ -190,3 +190,19 @@ Aiming
 - 현재 M2에는 wind, spin, surface modifier, club/putter, hole 판정이 없다.
 
 기본 데이터는 `M2ShotTuning.asset`에 있으며 Debug overlay는 최종 HUD가 아니라 상태 확인 도구다.
+
+## 15. M3 Arcade Spin / Flight
+
+Spin preset:
+
+- `1`: No Spin
+- `2`: Top Spin — landing boost와 낮은 rolling 감속으로 rollout 증가
+- `3`: Back Spin — landing brake, 높은 rolling 감속, 짧은 rollback
+- `4`: Left Side Spin — 현재 이동 방향 기준 왼쪽으로 공중 curve
+- `5`: Right Side Spin — 현재 이동 방향 기준 오른쪽으로 공중 curve
+
+Aim은 초기 launch direction이고 SideSpin은 비행 중 방향을 계속 휘게 하므로 서로 다른 값이다.
+
+공중에서는 gravity, launch velocity, tunable drag, 작은 vertical-spin lift/downforce, velocity-relative side curve가 적용된다. Spin은 공중과 지면에서 서로 다른 속도로 감소한다. 첫 bounce 이후 TopSpin은 전진을 보강하고 BackSpin은 rollout을 줄인다. Stop 시 spin과 velocity를 zero로 만들어 미세 움직임이 지속되지 않게 한다.
+
+최근 실제 trajectory는 Game View의 line으로 남으며 Reset 또는 다음 launch 때 초기화된다. M3에는 predicted trajectory, Wind force, terrain modifier가 없다.

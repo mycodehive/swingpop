@@ -24,6 +24,7 @@ namespace SwingPop.Gameplay.Shot
         private float gaugeElapsedSeconds;
         private ShotCommand lastShotCommand;
         private bool hasLastShotCommand;
+        private SpinPreset selectedSpinPreset;
 
         public event Action<ShotFlowState, ShotFlowState> StateChanged;
         public event Action<ShotCommand> ShotCommitted;
@@ -36,6 +37,8 @@ namespace SwingPop.Gameplay.Shot
         public bool HasLastShotCommand => hasLastShotCommand;
         public ShotCommand LastShotCommand => lastShotCommand;
         public Vector3 AimDirection => Quaternion.AngleAxis(aimAngleDegrees, Vector3.up) * baseAimForward;
+        public SpinPreset SelectedSpinPreset => selectedSpinPreset;
+        public ShotSpin SelectedSpin => ShotSpin.FromPreset(selectedSpinPreset);
 
         private void Awake()
         {
@@ -139,6 +142,16 @@ namespace SwingPop.Gameplay.Shot
             CommitShot();
         }
 
+        public void SetSpinPreset(SpinPreset preset)
+        {
+            if (ball == null || ball.State != BallState.Ready)
+            {
+                return;
+            }
+
+            selectedSpinPreset = preset;
+        }
+
         public void ResetShot()
         {
             if (ball != null)
@@ -183,7 +196,8 @@ namespace SwingPop.Gameplay.Shot
                 shotTuning.GoodDispersionDegrees,
                 shotTuning.MissDispersionDegrees,
                 ballTuning.LaunchSpeed,
-                ballTuning.LaunchAngleDegrees);
+                ballTuning.LaunchAngleDegrees,
+                SelectedSpin);
 
             if (!ball.Launch(command))
             {

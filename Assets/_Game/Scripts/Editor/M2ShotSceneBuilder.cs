@@ -24,7 +24,7 @@ namespace SwingPop.Editor
             ShotTuningData shotTuning = LoadOrCreateShotTuning();
             Material aimLineMaterial = LoadOrCreateAimLineMaterial();
 
-            GolfBallController ball = Object.FindFirstObjectByType<GolfBallController>();
+            GolfBallController ball = Object.FindAnyObjectByType<GolfBallController>();
             if (ball == null || ballTuning == null)
             {
                 Debug.LogError("M2 scene builder requires the completed M1 GolfBall and M1BallTuning assets.");
