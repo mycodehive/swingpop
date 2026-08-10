@@ -2,7 +2,8 @@
   "name": "SwingPop.Tests.EditMode",
   "rootNamespace": "SwingPop.Tests",
   "references": [
-    "SwingPop.Runtime"
+    "SwingPop.Runtime",
+    "Unity.InputSystem"
   ],
   "includePlatforms": [
     "Editor"
