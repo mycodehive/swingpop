@@ -1,5 +1,6 @@
 using SwingPop.Gameplay.Ball;
 using SwingPop.Gameplay.Shot;
+using SwingPop.Gameplay.Wind;
 using UnityEngine;
 
 namespace SwingPop.Debugging
@@ -10,13 +11,14 @@ namespace SwingPop.Debugging
         [SerializeField] private ShotFlowController shotFlow;
         [SerializeField] private GolfBallController ball;
         [SerializeField] private LineRenderer aimLine;
+        [SerializeField] private WindController wind;
 
         [Header("Presentation")]
         [SerializeField] private bool showOverlay = true;
         [SerializeField] private bool showAimLine = true;
         [SerializeField, Min(1f)] private float aimLineLength = 24f;
         [SerializeField] private Vector2 overlayPosition = new(16f, 16f);
-        [SerializeField] private Vector2 overlaySize = new(500f, 360f);
+        [SerializeField] private Vector2 overlaySize = new(520f, 500f);
 
         private GUIStyle headingStyle;
         private GUIStyle labelStyle;
@@ -35,7 +37,7 @@ namespace SwingPop.Debugging
 
             EnsureStyles();
             GUILayout.BeginArea(new Rect(overlayPosition, overlaySize), GUI.skin.box);
-            GUILayout.Label("M3 SHOT / FLIGHT DEBUG", headingStyle);
+            GUILayout.Label("M4 SHOT / WIND / TERRAIN DEBUG", headingStyle);
             GUILayout.Label($"Shot State: {shotFlow.State}    Ball: {ball.State}", labelStyle);
             GUILayout.Label($"Aim: {shotFlow.AimAngleDegrees:+0.0;-0.0;0.0}°", labelStyle);
             DrawMeter("Power", shotFlow.Power01, new Color(0.2f, 0.9f, 0.45f));
@@ -48,9 +50,24 @@ namespace SwingPop.Debugging
             GUILayout.Label($"Velocity: {ball.Velocity.x:+0.0;-0.0;0.0}, {ball.Velocity.y:+0.0;-0.0;0.0}, {ball.Velocity.z:+0.0;-0.0;0.0}", labelStyle);
             GUILayout.Label($"Selected Spin: {shotFlow.SelectedSpinPreset} [{shotFlow.SelectedSpin}]", labelStyle);
             GUILayout.Label($"Active Spin: [{ball.CurrentSpin}]", labelStyle);
+            GUILayout.Label(
+                wind != null
+                    ? $"Wind: {wind.CurrentPreset}  {wind.Strength:F1} m/s  Dir ({wind.Direction.x:+0.0;-0.0;0.0}, {wind.Direction.z:+0.0;-0.0;0.0})"
+                    : "Wind: Not connected",
+                labelStyle);
+            GUILayout.Label($"Surface / Lie: {ball.CurrentLie}", labelStyle);
+            GUILayout.Label(
+                ball.CurrentSurfaceData != null
+                    ? $"Surface: Power x{ball.CurrentSurfaceData.PowerModifier:F2}  Friction {ball.CurrentSurfaceData.Friction:F2}  Bounce x{ball.CurrentSurfaceData.BounceModifier:F2}  Spin x{ball.CurrentSurfaceData.SpinResponse:F2}  Roll x{ball.CurrentSurfaceData.RollingResistance:F2}"
+                    : "Surface modifiers: default neutral",
+                labelStyle);
+            GUILayout.Label(
+                ball.HasLastHazard ? $"Last Hazard: {ball.LastHazard} (R to recover)" : "Last Hazard: None",
+                labelStyle);
             GUILayout.Label("A/D or ←/→: Aim   Space: Confirm   R: Reset   Esc: Cancel", labelStyle);
             GUILayout.Label("P during Impact: Force PERFECT (Debug)", labelStyle);
             GUILayout.Label("Spin: 1 None  2 Top  3 Back  4 Left  5 Right", labelStyle);
+            GUILayout.Label("Wind: 6 Calm  7 Tail  8 Head  9 Left  0 Right", labelStyle);
             GUILayout.Label(
                 shotFlow.HasLastShotCommand
                     ? $"Last: {shotFlow.LastShotCommand}"

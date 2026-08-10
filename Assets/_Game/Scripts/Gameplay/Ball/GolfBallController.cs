@@ -1,6 +1,8 @@
 using System;
 using SwingPop.Data;
+using SwingPop.Gameplay.Course;
 using SwingPop.Gameplay.Shot;
+using SwingPop.Gameplay.Wind;
 using UnityEngine;
 
 namespace SwingPop.Gameplay.Ball
@@ -13,6 +15,8 @@ namespace SwingPop.Gameplay.Ball
         [SerializeField] private SphereCollider ballCollider;
         [SerializeField] private BallTuningData tuning;
         [SerializeField] private Transform launchDirectionReference;
+        [SerializeField] private WindController wind;
+        [SerializeField] private TerrainSurfaceData defaultSurface;
 
         [Header("Collision")]
         [Tooltip("Layers treated as a surface that can bounce, roll, and stop the ball.")]
@@ -27,10 +31,15 @@ namespace SwingPop.Gameplay.Ball
         private Vector3 launchForward = Vector3.forward;
         private bool firstLandingResponseApplied;
         private bool backSpinRollbackApplied;
+        private TerrainSurfaceData currentSurface;
+        private TerrainSurfaceType lastHazard;
+        private bool hasLastHazard;
+        private float lastFixedVerticalVelocity;
 
         public event Action<BallState, BallState> StateChanged;
         public event Action Launched;
         public event Action ResetPerformed;
+        public event Action<TerrainSurfaceType> HazardEntered;
 
         public BallState State => state;
         public bool IsGrounded => isGrounded;
@@ -42,6 +51,12 @@ namespace SwingPop.Gameplay.Ball
         public BallTuningData Tuning => tuning;
         public ShotSpin CurrentSpin => spinState.Current;
         public Vector3 LaunchForward => launchForward;
+        public TerrainSurfaceData CurrentSurfaceData => currentSurface;
+        public TerrainSurfaceType CurrentLie => currentSurface != null
+            ? currentSurface.SurfaceType
+            : TerrainSurfaceType.Fairway;
+        public bool HasLastHazard => hasLastHazard;
+        public TerrainSurfaceType LastHazard => lastHazard;
 
         private void Awake()
         {
@@ -68,6 +83,13 @@ namespace SwingPop.Gameplay.Ball
                 return;
             }
 
+            if (PhysicsPosition.y <= tuning.OutOfBoundsHeight)
+            {
+                HandleHazard(TerrainSurfaceType.OutOfBounds, null);
+                return;
+            }
+
+            lastFixedVerticalVelocity = ballBody.linearVelocity.y;
             ApplyGravityScale();
 
             if (!isGrounded && state is BallState.Airborne or BallState.Bouncing)
@@ -145,6 +167,8 @@ namespace SwingPop.Gameplay.Ball
             isGrounded = false;
             firstLandingResponseApplied = false;
             backSpinRollbackApplied = false;
+            lastFixedVerticalVelocity = 0f;
+            currentSurface = defaultSurface;
 
             ballBody.useGravity = false;
             if (!ballBody.isKinematic)
@@ -177,10 +201,12 @@ namespace SwingPop.Gameplay.Ball
 
         private void OnCollisionEnter(Collision collision)
         {
-            if (!TryReadGroundContact(collision, out _))
+            if (!TryReadGroundContact(collision, out _, out TerrainSurfaceData surface))
             {
                 return;
             }
+
+            currentSurface = surface ?? currentSurface ?? defaultSurface;
 
             if (state == BallState.Airborne
                 && ballBody.linearVelocity.y > tuning.MaximumUpwardLandingSpeed)
@@ -198,6 +224,8 @@ namespace SwingPop.Gameplay.Ball
                 firstLandingResponseApplied = true;
             }
 
+            ApplySurfaceBounceFromIncomingVelocity();
+
             if (state == BallState.Airborne)
             {
                 ChangeState(BallState.Bouncing);
@@ -206,10 +234,20 @@ namespace SwingPop.Gameplay.Ball
 
         private void OnCollisionStay(Collision collision)
         {
-            if (TryReadGroundContact(collision, out _))
+            if (TryReadGroundContact(collision, out _, out TerrainSurfaceData surface))
             {
+                currentSurface = surface ?? currentSurface ?? defaultSurface;
                 isGrounded = state != BallState.Airborne
                              || ballBody.linearVelocity.y <= tuning.MaximumUpwardLandingSpeed;
+            }
+        }
+
+        private void OnTriggerEnter(Collider other)
+        {
+            TerrainSurface surface = other.GetComponentInParent<TerrainSurface>();
+            if (surface != null && surface.IsHazard)
+            {
+                HandleHazard(surface.SurfaceType, surface.Data);
             }
         }
 
@@ -222,9 +260,14 @@ namespace SwingPop.Gameplay.Ball
             }
         }
 
-        private bool TryReadGroundContact(Collision collision, out ContactPoint groundContact)
+        private bool TryReadGroundContact(
+            Collision collision,
+            out ContactPoint groundContact,
+            out TerrainSurfaceData surfaceData)
         {
             groundContact = default;
+            TerrainSurface surface = collision.collider.GetComponentInParent<TerrainSurface>();
+            surfaceData = surface != null ? surface.Data : defaultSurface;
             if (tuning == null || !IsGroundLayer(collision.gameObject.layer))
             {
                 return false;
@@ -283,12 +326,18 @@ namespace SwingPop.Gameplay.Ball
         {
             Vector3 velocity = ballBody.linearVelocity;
             Vector3 planarVelocity = Vector3.ProjectOnPlane(velocity, Vector3.up);
+            float surfaceDeceleration = TerrainResponse.CalculateRollingDeceleration(
+                tuning.RollingDeceleration,
+                currentSurface);
+            float surfaceSpin = TerrainResponse.ApplySpinResponse(
+                spinState.VerticalSpin,
+                currentSurface);
             Vector3 slowedPlanarVelocity = Vector3.MoveTowards(
                 planarVelocity,
                 Vector3.zero,
                 BallGroundResponse.CalculateRollingDeceleration(
-                    tuning.RollingDeceleration,
-                    spinState.VerticalSpin,
+                    surfaceDeceleration,
+                    surfaceSpin,
                     tuning.TopSpinRollingDecelerationMultiplier,
                     tuning.BackSpinRollingDecelerationMultiplier) * Time.fixedDeltaTime);
 
@@ -309,6 +358,8 @@ namespace SwingPop.Gameplay.Ball
             isGrounded = false;
             firstLandingResponseApplied = false;
             stopDetector.Reset();
+            lastFixedVerticalVelocity = velocity.y;
+            hasLastHazard = false;
             spinState.Set(spin);
             Vector3 planarVelocity = Vector3.ProjectOnPlane(velocity, Vector3.up);
             launchForward = planarVelocity.sqrMagnitude > Mathf.Epsilon
@@ -332,7 +383,7 @@ namespace SwingPop.Gameplay.Ball
                 tuning.SpinLiftStrength,
                 tuning.SideSpinCurveStrength,
                 tuning.AirForceReferenceSpeed,
-                Vector3.zero);
+                wind != null ? wind.CalculateBallAcceleration(ballBody.linearVelocity) : Vector3.zero);
             ballBody.AddForce(acceleration, ForceMode.Acceleration);
         }
 
@@ -343,7 +394,9 @@ namespace SwingPop.Gameplay.Ball
             Vector3 adjustedPlanarVelocity = BallGroundResponse.CalculateFirstLandingPlanarVelocity(
                 planarVelocity,
                 launchForward,
-                spinState.Current,
+                new ShotSpin(
+                    TerrainResponse.ApplySpinResponse(spinState.VerticalSpin, currentSurface),
+                    TerrainResponse.ApplySpinResponse(spinState.SideSpin, currentSurface)),
                 tuning.TopSpinLandingBoost,
                 tuning.BackSpinLandingBrake,
                 0f,
@@ -364,10 +417,41 @@ namespace SwingPop.Gameplay.Ball
             float forwardSpeed = Vector3.Dot(planarVelocity, launchForward);
             Vector3 lateralVelocity = planarVelocity - launchForward * forwardSpeed;
             float rollbackSpeed = -spinState.VerticalSpin * tuning.BackSpinRollbackSpeed;
+            rollbackSpeed *= currentSurface != null ? currentSurface.SpinResponse : 1f;
             ballBody.angularVelocity = Vector3.zero;
             ballBody.linearVelocity = lateralVelocity
                                       - launchForward * rollbackSpeed
                                       + Vector3.up * velocity.y;
+        }
+
+        private void ApplySurfaceBounceFromIncomingVelocity()
+        {
+            Vector3 velocity = ballBody.linearVelocity;
+            float incomingDownwardSpeed = Mathf.Max(0f, -lastFixedVerticalVelocity);
+            float baseReboundSpeed = incomingDownwardSpeed * tuning.BounceRetention;
+            velocity.y = TerrainResponse.ApplyBounceModifier(baseReboundSpeed, currentSurface);
+            ballBody.linearVelocity = velocity;
+        }
+
+        private void HandleHazard(TerrainSurfaceType hazard, TerrainSurfaceData surface)
+        {
+            if (state is BallState.Ready or BallState.Stopped)
+            {
+                return;
+            }
+
+            currentSurface = surface ?? currentSurface;
+            lastHazard = hazard;
+            hasLastHazard = true;
+            stopDetector.Reset();
+            spinState.Reset();
+            isGrounded = false;
+            ballBody.linearVelocity = Vector3.zero;
+            ballBody.angularVelocity = Vector3.zero;
+            ballBody.useGravity = false;
+            ballBody.isKinematic = true;
+            ChangeState(BallState.Stopped);
+            HazardEntered?.Invoke(hazard);
         }
 
         private void ChangeState(BallState nextState)

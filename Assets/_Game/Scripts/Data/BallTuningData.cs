@@ -54,6 +54,10 @@ namespace SwingPop.Data
         [SerializeField, Min(0.001f)] private float stopAngularSpeed = 0.8f;
         [SerializeField, Min(0f)] private float stopStableDuration = 0.6f;
 
+        [Header("Hazard Recovery")]
+        [Tooltip("A moving ball below this world-space height is treated as Out Of Bounds and safely stopped.")]
+        [SerializeField] private float outOfBoundsHeight = -8f;
+
         public float LaunchSpeed => launchSpeed;
         public float LaunchAngleDegrees => launchAngleDegrees;
         public float Mass => mass;
@@ -83,6 +87,7 @@ namespace SwingPop.Data
         public float StopLinearSpeed => stopLinearSpeed;
         public float StopAngularSpeed => stopAngularSpeed;
         public float StopStableDuration => stopStableDuration;
+        public float OutOfBoundsHeight => outOfBoundsHeight;
 
         public Vector3 CalculateLaunchVelocity(Vector3 forward)
         {

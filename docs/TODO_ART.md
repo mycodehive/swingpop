@@ -80,3 +80,9 @@ Codex는 Placeholder를 만들거나 발견할 때 이 문서를 갱신한다.
 
 - [ ] `M3TrajectoryLine` 단색 actual-trace material을 이후 정식 ball trail/VFX로 교체
 - [ ] 숫자키 spin preset 안내를 M8 이후 정식 spin presentation으로 교체
+
+## M4 Wind / Terrain Placeholder
+
+- [ ] `M4Tee/Fairway/Rough/Bunker/Green/Water/OutOfBounds` 단색 material을 Hole 1 stylized course material로 교체
+- [ ] `M4WindVector` debug line을 M8 정식 wind widget 및 M9 environment wind presentation으로 교체
+- [ ] Foundation의 직사각형 surface strip/trigger layout을 Hole 1 최종 terrain mesh와 collider로 교체

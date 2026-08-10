@@ -14,6 +14,11 @@ namespace SwingPop.Gameplay.Shot
             return Mathf.Clamp01(powerPercent / 100f);
         }
 
+        public static ShotCommand ApplySurfacePowerModifier(ShotCommand command, float modifier)
+        {
+            return command.WithSurfacePowerModifier(Mathf.Max(0f, modifier));
+        }
+
         public static float EvaluatePingPong01(float elapsedSeconds, float sweepSpeed)
         {
             return Mathf.PingPong(Mathf.Max(0f, elapsedSeconds) * Mathf.Max(0f, sweepSpeed), 1f);

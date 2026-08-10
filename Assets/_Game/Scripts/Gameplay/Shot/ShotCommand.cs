@@ -21,6 +21,7 @@ namespace SwingPop.Gameplay.Shot
         [SerializeField] private float baseLaunchSpeed;
         [SerializeField] private float loftDegrees;
         [SerializeField] private ShotSpin spin;
+        [SerializeField] private float surfacePowerModifier;
 
         public ShotCommand(
             Vector3 aimDirection,
@@ -76,6 +77,7 @@ namespace SwingPop.Gameplay.Shot
             this.baseLaunchSpeed = baseLaunchSpeed;
             this.loftDegrees = loftDegrees;
             this.spin = spin;
+            surfacePowerModifier = 1f;
         }
 
         public Vector3 AimDirection => aimDirection;
@@ -90,6 +92,15 @@ namespace SwingPop.Gameplay.Shot
         public float BaseLaunchSpeed => baseLaunchSpeed;
         public float LoftDegrees => loftDegrees;
         public ShotSpin Spin => spin;
+        public float SurfacePowerModifier => surfacePowerModifier;
+
+        public ShotCommand WithSurfacePowerModifier(float modifier)
+        {
+            ShotCommand modified = this;
+            modified.surfacePowerModifier = Mathf.Max(0f, modifier);
+            modified.effectivePower01 = Mathf.Clamp01(effectivePower01 * modified.surfacePowerModifier);
+            return modified;
+        }
 
         public override string ToString()
         {

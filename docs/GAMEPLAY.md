@@ -206,3 +206,25 @@ Aim은 초기 launch direction이고 SideSpin은 비행 중 방향을 계속 휘
 공중에서는 gravity, launch velocity, tunable drag, 작은 vertical-spin lift/downforce, velocity-relative side curve가 적용된다. Spin은 공중과 지면에서 서로 다른 속도로 감소한다. 첫 bounce 이후 TopSpin은 전진을 보강하고 BackSpin은 rollout을 줄인다. Stop 시 spin과 velocity를 zero로 만들어 미세 움직임이 지속되지 않게 한다.
 
 최근 실제 trajectory는 Game View의 line으로 남으며 Reset 또는 다음 launch 때 초기화된다. M3에는 predicted trajectory, Wind force, terrain modifier가 없다.
+
+## 16. M4 Wind / Terrain
+
+Wind debug preset:
+
+- `6`: Calm
+- `7`: Tailwind
+- `8`: Headwind
+- `9`: Left Crosswind
+- `0`: Right Crosswind
+
+Wind는 world-space direction과 m/s strength로 표시되며 공중에서만 ball acceleration에 반영된다. Tailwind는 carry를 늘리고 Headwind는 줄이며 Crosswind는 해당 world direction으로 drift시킨다.
+
+Surface lie:
+
+- Tee/Fairway: 기준에 가까운 response
+- Rough: bounce와 spin이 줄고 rolling resistance가 증가하며 power modifier는 0.90
+- Bunker: 매우 낮은 bounce/spin, 강한 rolling resistance, power modifier는 0.65
+- Green: 낮은 bounce와 예측 가능한 긴 rolling 기반. Putter와 slope는 아직 없다.
+- Water/OutOfBounds: shot을 즉시 안전하게 Stopped로 만들고 hazard를 기록한다. R reset으로 회복한다.
+
+Debug overlay는 current wind, current surface/lie, surface modifier, last hazard를 표시한다. Water/OOB stroke penalty, hole/scoring, putter는 M5 이후 범위다.

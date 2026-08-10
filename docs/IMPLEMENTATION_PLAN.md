@@ -116,7 +116,7 @@ Package 추가는 실제 버전 확인 후 수행한다.
 
 ## Next Action
 
-M1 수동 입력 검증을 완료한 뒤에만 `prompts/milestones/03-M2-aim-power-impact.md`를 진행한다.
+M4 수동 키보드/시각 검증을 완료한다. M5 Hole / Scoring은 별도 요청 전까지 시작하지 않는다.
 
 ## M1 Ball Launch Implementation (2026-08-10)
 
@@ -198,3 +198,45 @@ M1 수동 입력 검증을 완료한 뒤에만 `prompts/milestones/03-M2-aim-pow
 - 다섯 preset 모두 `Ready → Airborne → Bouncing → Rolling → Stopped → Reset/Aiming`을 통과했다.
 - M2 회귀 검증도 통과했다: low power 9.39m, high power 46.48m, MISS 27.66m/X 13.41m, Reset/Aiming 복구.
 - 실제 숫자키 및 trajectory 육안 체감은 사용자 수동 검증이 필요하다.
+
+## M4 Wind / Terrain Implementation (2026-08-11)
+
+- `WindController`가 world-space direction, strength(m/s), preset의 단일 source of truth다. Ball physics와 debug presentation은 동일 controller를 읽는다.
+- `M4WindTuning.asset`에서 preset strength와 `WindForceMultiplier`, `HeadTailMultiplier`, `CrosswindMultiplier`를 조정한다.
+- 숫자 `6~0`으로 Calm/Tailwind/Headwind/Left Crosswind/Right Crosswind를 선택한다. 상단 숫자열과 숫자패드를 모두 지원한다.
+- Wind는 공중에서만 적용되며 Tail/Head는 carry, Crosswind는 lateral drift에 영향을 준다.
+- 각 surface collider의 `TerrainSurface` component가 `TerrainSurfaceData`를 제공한다. Tag 문자열 비교는 사용하지 않는다.
+- Tee/Fairway/Rough/Bunker/Green/Water/OutOfBounds data asset을 추가했다. Power, friction, bounce, spin response, rolling resistance가 asset에서 조정 가능하다.
+- Ball은 contact surface를 current lie로 기록하고 surface rolling/bounce/spin response를 적용한다. `ShotFlowController`는 ShotCommand에 current lie power modifier를 반영하는 seam을 사용한다.
+- Water/OOB 진입 또는 설정 높이 아래 추락 시 ball을 안전하게 `Stopped`로 만들고 hazard를 기록한다. `R` reset으로 `Ready/Aiming`을 복구한다. Stroke penalty/scoring은 M5 범위이므로 구현하지 않았다.
+- Foundation 씬에 색상 placeholder Tee/Fairway/Rough/Bunker/Green과 Water/OOB trigger zone, wind vector, 확장 debug overlay를 연결했다.
+
+## M4 Automated Validation (2026-08-11)
+
+- Unity Test Framework EditMode: 총 41 passed, 0 failed. 기존 32개와 wind 방향/부호, surface response, lie power, spin response 테스트를 포함한다.
+- 동일 Rigidbody 샷 착지: Headwind 24.06m < Calm 30.19m < Tailwind 37.80m.
+- Crosswind 착지: Left X -7.02m, Right X +7.02m.
+- 동일 65% 샷 surface 이동: Fairway 29.99m > Rough 25.69m > Bunker 22.62m.
+- 첫 bounce 상승 속도: Green 0.00m/s < Fairway 0.75m/s.
+- Water/OOB는 안전하게 shot을 종료했고 Reset 후 Ball Ready / ShotFlow Aiming을 복구했다.
+- M3 회귀: NoSpin 44.27m, TopSpin 50.06m, BackSpin 30.85m/rollback 0.23m, SideSpin X -11.43m/+11.43m; 전체 state sequence 통과.
+
+## M4 Manual Play Validation
+
+1. Project 창에서 `Assets > _Game > Scenes > Foundation`을 더블클릭한다.
+2. `Window > General > Console`을 열고 왼쪽 위 `Clear`를 클릭한다.
+3. 상단 중앙의 `Play` 버튼을 누른 뒤 `Game` 탭 안쪽을 한 번 클릭한다.
+4. Debug overlay가 `M4 SHOT / WIND / TERRAIN DEBUG`, `Wind: Calm`, `Surface / Lie: Tee`를 표시하는지 확인한다.
+5. 숫자 `6, 7, 8, 9, 0`을 누를 때 Wind preset/direction/strength가 각각 바뀌고 magenta wind vector가 나타나는지 확인한다.
+6. 숫자 `1~5`로 spin preset이 여전히 변경되는지 확인한다.
+7. A/D 또는 좌우키로 가운데 Fairway, 왼쪽 Rough, 오른쪽 Bunker 방향을 조준하고 Space 3회로 샷한다. Rough와 Bunker에서 더 짧게 구르는지 확인한다.
+8. 강한 중앙 샷으로 먼 밝은 Green에 도달했을 때 bounce가 낮고 lie가 Green으로 표시되는지 확인한다.
+9. 왼쪽 파란 Water 또는 오른쪽 빨간 OOB trigger로 공을 보내 `Ball: Stopped`, `Last Hazard`가 표시되는지 확인한다.
+10. `R`을 눌러 Ball `Ready`, Shot `Aiming`, Lie `Tee`로 돌아오는지 확인한다.
+11. Play를 종료하고 Console의 빨간 Error가 0인지 확인한다.
+
+튜닝 위치:
+
+- Wind: `Assets/_Game/ScriptableObjects/M4WindTuning.asset`
+- Surface: `Assets/_Game/ScriptableObjects/Terrain/*.asset`
+- Ball fallback OOB height: `Assets/_Game/ScriptableObjects/M1BallTuning.asset > Hazard Recovery`

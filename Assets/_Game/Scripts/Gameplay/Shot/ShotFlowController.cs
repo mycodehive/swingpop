@@ -199,6 +199,11 @@ namespace SwingPop.Gameplay.Shot
                 ballTuning.LaunchAngleDegrees,
                 SelectedSpin);
 
+            float surfacePowerModifier = ball.CurrentSurfaceData != null
+                ? ball.CurrentSurfaceData.PowerModifier
+                : 1f;
+            command = ShotCalculator.ApplySurfacePowerModifier(command, surfacePowerModifier);
+
             if (!ball.Launch(command))
             {
                 return;

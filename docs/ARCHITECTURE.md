@@ -251,3 +251,27 @@ BallTrajectoryDebug + ShotDebugOverlay ← read-only presentation/debug
 - Physics Material은 vertical bounce, custom landing response는 planar spin 효과만 담당한다.
 - Wind는 `BallFlightModel.CalculateAirAcceleration`의 `externalAcceleration` seam만 있고 실제 provider는 M4까지 없다.
 - trajectory와 overlay는 gameplay 결과를 변경하지 않는다.
+
+## M4 Wind / Terrain Boundary
+
+```text
+WindDebugInputController → WindController ← WindTuningData
+                              ↓ read-only
+                       GolfBallController
+
+Collider → TerrainSurface → TerrainSurfaceData
+                              ↓ contact query
+                       GolfBallController
+                              ↓ current lie modifier
+                       ShotFlowController → ShotCommand
+
+ShotDebugOverlay + WindDebugVisualizer ← read-only state
+```
+
+- `WindController`만 current wind preset/direction/strength를 소유한다. UI/debug는 값을 복제하지 않는다.
+- `WindPhysics`는 travel direction 기준 head/tail과 crosswind 가속도를 계산하는 순수 함수다.
+- `TerrainSurface`는 collider와 data의 adapter이며 type별 수치는 `TerrainSurfaceData`에만 있다.
+- `TerrainResponse`는 power, rolling, bounce, spin modifier를 계산하는 순수 경계다.
+- `GolfBallController`는 collision/trigger lifecycle, current lie, hazard 종료를 소유한다. Water/OOB scoring은 소유하지 않는다.
+- `ShotCommand.SurfacePowerModifier`는 향후 lie/club 계산 확장을 위한 직렬화 seam이다.
+- Surface별 bounce는 충돌 직전 하강 속도에 Ball base retention과 surface modifier를 적용해 PhysX callback 순서에 의존하지 않는다.

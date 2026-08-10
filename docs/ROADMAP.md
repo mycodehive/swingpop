@@ -14,8 +14,8 @@ Yaw aim, three-step Space flow, power/impact gauges, grade-based power loss and 
 ### M3 Ball Flight — Implementation Complete (2026-08-10)
 Tuneable arcade drag/lift/side curve, Top/Back/Side spin, spin-aware landing/roll, decay, stable stop, actual trajectory trace, tests and automated Rigidbody comparison are complete. Manual input/visual feel validation remains.
 
-### M4 Wind / Terrain
-Wind and surface-specific responses.
+### M4 Wind / Terrain — Implementation Complete (2026-08-11)
+Single-source world-space wind, airborne carry/drift, data-driven Tee/Fairway/Rough/Bunker/Green response, Water/OOB recovery, debug presets/vector/telemetry, Foundation test course, EditMode tests and automated Rigidbody comparisons are complete. Manual keyboard and visual feel validation remains.
 
 ### M5 Hole / Scoring
 Cup, stroke count, result.
