@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using SwingPop.Data;
 using SwingPop.Gameplay.Ball;
 using SwingPop.Gameplay.Shot;
+using SwingPop.Gameplay.Hole;
 using UnityEditor;
 using UnityEngine;
 
@@ -26,6 +27,12 @@ namespace SwingPop.Editor
 
             GolfBallController ball = Object.FindAnyObjectByType<GolfBallController>();
             ShotFlowController shotFlow = Object.FindAnyObjectByType<ShotFlowController>();
+            HoleFlowController holeFlow = Object.FindAnyObjectByType<HoleFlowController>();
+            if (holeFlow != null)
+            {
+                holeFlow.SetAutomaticFlowSuspended(true);
+                holeFlow.DebugResetHole();
+            }
             if (ball == null || shotFlow == null || ball.Tuning == null)
             {
                 Debug.LogError("SWINGPOP_M3_PLAYMODE_VALIDATION_FAIL: M3 scene dependencies were not found.");

@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using SwingPop.Data;
 using SwingPop.Gameplay.Ball;
 using SwingPop.Gameplay.Shot;
+using SwingPop.Gameplay.Hole;
 using UnityEditor;
 using UnityEditor.TestTools.TestRunner.Api;
 using UnityEngine;
@@ -42,6 +43,12 @@ namespace SwingPop.Editor
             }
 
             GolfBallController ball = Object.FindAnyObjectByType<GolfBallController>();
+            HoleFlowController holeFlow = Object.FindAnyObjectByType<HoleFlowController>();
+            if (holeFlow != null)
+            {
+                holeFlow.SetAutomaticFlowSuspended(true);
+                holeFlow.DebugResetHole();
+            }
             if (ball == null)
             {
                 Debug.LogError("SWINGPOP_M1_PLAYMODE_VALIDATION_FAIL: GolfBallController was not found.");
@@ -240,6 +247,7 @@ namespace SwingPop.Editor
         private int scenarioIndex;
         private ShotCommand currentCommand;
         private bool finished;
+        private HoleFlowController holeFlow;
 
         private enum ValidationPhase
         {
@@ -267,6 +275,9 @@ namespace SwingPop.Editor
         {
             ball = targetBall;
             shotFlow = targetShotFlow;
+            holeFlow = Object.FindAnyObjectByType<HoleFlowController>();
+            holeFlow?.SetAutomaticFlowSuspended(true);
+            holeFlow?.DebugResetHole();
             shotTuning = GetShotTuning();
             if (shotTuning == null)
             {
@@ -352,6 +363,7 @@ namespace SwingPop.Editor
 
         private void OnDestroy()
         {
+            holeFlow?.SetAutomaticFlowSuspended(false);
             if (ball != null)
             {
                 ball.StateChanged -= OnBallStateChanged;

@@ -227,4 +227,24 @@ Surface lie:
 - Green: 낮은 bounce와 예측 가능한 긴 rolling 기반. Putter와 slope는 아직 없다.
 - Water/OutOfBounds: shot을 즉시 안전하게 Stopped로 만들고 hazard를 기록한다. R reset으로 회복한다.
 
-Debug overlay는 current wind, current surface/lie, surface modifier, last hazard를 표시한다. Water/OOB stroke penalty, hole/scoring, putter는 M5 이후 범위다.
+M4 단계의 Debug overlay는 current wind, current surface/lie, surface modifier, last hazard를 표시했다. 당시 Water/OOB penalty, hole/scoring, putter는 제외했으며 현재 구현은 아래 M5 규칙으로 확장됐다.
+
+## 17. M5 Hole / Scoring / Continuous Shot Flow
+
+정상 Hole 1 흐름:
+
+```text
+Tee → Aim → Shot → Stop → Lie 확정 → 같은 위치에서 Aim
+    → 반복 → Green → 자동 Putter → Putt → Hole In → Result
+```
+
+- Shot이 실제 commit될 때만 Stroke가 1 증가한다. Aim/Power/Impact 취소는 stroke가 아니다.
+- 정상 surface에서 공이 멈추면 위치와 lie를 Last Valid Position으로 기록하고 `R` 없이 다음 shot을 준비한다.
+- 다음 shot 기본 조준 방향은 Cup 방향이며 A/D 또는 좌우키로 다시 조정할 수 있다.
+- Fairway/Rough/Bunker의 power modifier가 다음 shot carry에 적용된다.
+- Green에서 Current Club은 Putter로 자동 전환된다. Putter는 spin을 제거하고 airborne arc 없이 rolling을 시작한다.
+- Cup은 Green, capture radius, 낮은 horizontal speed, height tolerance가 모두 맞아야 Hole In이다. 외곽 assist는 가까운 저속 공에만 작게 적용된다.
+- Hole In 시 Ball은 `Holed`, Hole은 `HoleComplete`가 되고 입력은 더 이상 shot을 commit하지 않는다.
+- Par 4 대비 total stroke로 Albatross/Eagle/Birdie/Par/Bogey/Double Bogey/+N 결과를 계산한다.
+- Water/OOB shot은 committed shot 1회에 +1 penalty stroke를 더하고 Last Valid Position/Lie로 자동 복구한다.
+- `R`은 정상 shot 진행용이 아니라 Hole 1 전체를 다시 시작하는 debug 기능이다.

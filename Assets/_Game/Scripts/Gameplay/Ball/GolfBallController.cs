@@ -1,6 +1,7 @@
 using System;
 using SwingPop.Data;
 using SwingPop.Gameplay.Course;
+using SwingPop.Gameplay.Club;
 using SwingPop.Gameplay.Shot;
 using SwingPop.Gameplay.Wind;
 using UnityEngine;
@@ -35,6 +36,7 @@ namespace SwingPop.Gameplay.Ball
         private TerrainSurfaceType lastHazard;
         private bool hasLastHazard;
         private float lastFixedVerticalVelocity;
+        private float activeRollModifier = 1f;
 
         public event Action<BallState, BallState> StateChanged;
         public event Action Launched;
@@ -78,7 +80,7 @@ namespace SwingPop.Gameplay.Ball
 
         private void FixedUpdate()
         {
-            if (state is BallState.Ready or BallState.Stopped || tuning == null)
+            if (state is BallState.Ready or BallState.Stopped or BallState.Holed || tuning == null)
             {
                 return;
             }
@@ -154,10 +156,16 @@ namespace SwingPop.Gameplay.Ball
                 return false;
             }
 
-            Vector3 velocity = tuning.CalculateLaunchVelocity(
+            Vector3 velocity = ClubShotCalculator.CalculateLaunchVelocity(
                 command.FinalDirection,
-                command.EffectivePower01);
-            return LaunchVelocity(velocity, command.Spin);
+                command.BaseLaunchSpeed,
+                command.LoftDegrees,
+                command.EffectivePower01,
+                command.CarryModifier);
+            activeRollModifier = command.RollModifier;
+            return command.IsPutter
+                ? LaunchPutt(velocity)
+                : LaunchVelocity(velocity, command.Spin);
         }
 
         public void ResetBall()
@@ -168,6 +176,7 @@ namespace SwingPop.Gameplay.Ball
             firstLandingResponseApplied = false;
             backSpinRollbackApplied = false;
             lastFixedVerticalVelocity = 0f;
+            activeRollModifier = 1f;
             currentSurface = defaultSurface;
 
             ballBody.useGravity = false;
@@ -184,6 +193,60 @@ namespace SwingPop.Gameplay.Ball
 
             ChangeState(BallState.Ready);
             ResetPerformed?.Invoke();
+        }
+
+        public void SetResetPose(Vector3 position, Quaternion rotation, TerrainSurfaceData surface, bool resetNow)
+        {
+            resetPosition = position;
+            resetRotation = rotation;
+            defaultSurface = surface ?? defaultSurface;
+            if (resetNow)
+            {
+                ResetBall();
+            }
+        }
+
+        public void PrepareNextShot(Vector3 position, TerrainSurfaceData surface)
+        {
+            if (state == BallState.Holed)
+            {
+                return;
+            }
+
+            stopDetector.Reset();
+            spinState.Reset();
+            firstLandingResponseApplied = false;
+            backSpinRollbackApplied = false;
+            activeRollModifier = 1f;
+            isGrounded = false;
+            currentSurface = surface ?? currentSurface ?? defaultSurface;
+            ballBody.useGravity = false;
+            ballBody.isKinematic = true;
+            ballBody.position = position;
+            transform.position = position;
+            ChangeState(BallState.Ready);
+        }
+
+        public void ApplyExternalAcceleration(Vector3 acceleration)
+        {
+            if (!ballBody.isKinematic && state is BallState.Bouncing or BallState.Rolling)
+            {
+                ballBody.AddForce(acceleration, ForceMode.Acceleration);
+            }
+        }
+
+        public void HoleBall(Vector3 cupPosition)
+        {
+            stopDetector.Reset();
+            spinState.Reset();
+            isGrounded = false;
+            ballBody.linearVelocity = Vector3.zero;
+            ballBody.angularVelocity = Vector3.zero;
+            ballBody.useGravity = false;
+            ballBody.isKinematic = true;
+            ballBody.position = cupPosition;
+            transform.position = cupPosition;
+            ChangeState(BallState.Holed);
         }
 
         public Vector3 GetPreviewLaunchVelocity()
@@ -329,6 +392,9 @@ namespace SwingPop.Gameplay.Ball
             float surfaceDeceleration = TerrainResponse.CalculateRollingDeceleration(
                 tuning.RollingDeceleration,
                 currentSurface);
+            surfaceDeceleration = ClubShotCalculator.ApplyRollModifier(
+                surfaceDeceleration,
+                activeRollModifier);
             float surfaceSpin = TerrainResponse.ApplySpinResponse(
                 spinState.VerticalSpin,
                 currentSurface);
@@ -370,6 +436,28 @@ namespace SwingPop.Gameplay.Ball
             ballBody.WakeUp();
             ballBody.linearVelocity = velocity;
             ChangeState(BallState.Airborne);
+            Launched?.Invoke();
+            return true;
+        }
+
+        private bool LaunchPutt(Vector3 velocity)
+        {
+            isGrounded = true;
+            firstLandingResponseApplied = true;
+            backSpinRollbackApplied = true;
+            stopDetector.Reset();
+            lastFixedVerticalVelocity = 0f;
+            hasLastHazard = false;
+            spinState.Reset();
+            Vector3 planarVelocity = Vector3.ProjectOnPlane(velocity, Vector3.up);
+            launchForward = planarVelocity.sqrMagnitude > Mathf.Epsilon
+                ? planarVelocity.normalized
+                : Vector3.forward;
+            ballBody.isKinematic = false;
+            ballBody.useGravity = true;
+            ballBody.WakeUp();
+            ballBody.linearVelocity = planarVelocity;
+            ChangeState(BallState.Rolling);
             Launched?.Invoke();
             return true;
         }

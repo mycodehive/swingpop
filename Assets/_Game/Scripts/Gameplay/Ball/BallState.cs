@@ -6,6 +6,7 @@ namespace SwingPop.Gameplay.Ball
         Airborne,
         Bouncing,
         Rolling,
-        Stopped
+        Stopped,
+        Holed
     }
 }

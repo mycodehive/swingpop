@@ -12,6 +12,7 @@ namespace SwingPop.Gameplay.Shot
         [SerializeField] private BallTuningData ballTuning;
         [SerializeField] private ShotTuningData shotTuning;
         [SerializeField] private Transform aimDirectionReference;
+        [SerializeField] private ClubData defaultClub;
 
         private ShotFlowState state = ShotFlowState.Preparing;
         private Quaternion baseAimRotation;
@@ -25,9 +26,11 @@ namespace SwingPop.Gameplay.Shot
         private ShotCommand lastShotCommand;
         private bool hasLastShotCommand;
         private SpinPreset selectedSpinPreset;
+        private ClubData currentClub;
 
         public event Action<ShotFlowState, ShotFlowState> StateChanged;
         public event Action<ShotCommand> ShotCommitted;
+        public event Action DebugResetRequested;
 
         public ShotFlowState State => state;
         public float AimAngleDegrees => aimAngleDegrees;
@@ -39,9 +42,11 @@ namespace SwingPop.Gameplay.Shot
         public Vector3 AimDirection => Quaternion.AngleAxis(aimAngleDegrees, Vector3.up) * baseAimForward;
         public SpinPreset SelectedSpinPreset => selectedSpinPreset;
         public ShotSpin SelectedSpin => ShotSpin.FromPreset(selectedSpinPreset);
+        public ClubData CurrentClub => currentClub != null ? currentClub : defaultClub;
 
         private void Awake()
         {
+            currentClub = defaultClub;
             if (aimDirectionReference != null)
             {
                 baseAimRotation = aimDirectionReference.rotation;
@@ -142,6 +147,18 @@ namespace SwingPop.Gameplay.Shot
             CommitShot();
         }
 
+        public bool TryCommitShot(float selectedPower01, float selectedImpactOffset)
+        {
+            if (state != ShotFlowState.Aiming || ball == null || ball.State != BallState.Ready)
+            {
+                return false;
+            }
+
+            confirmedPower01 = Mathf.Clamp01(selectedPower01);
+            impactCursor = Mathf.Clamp(selectedImpactOffset, -1f, 1f);
+            return CommitShot();
+        }
+
         public void SetSpinPreset(SpinPreset preset)
         {
             if (ball == null || ball.State != BallState.Ready)
@@ -149,18 +166,45 @@ namespace SwingPop.Gameplay.Shot
                 return;
             }
 
-            selectedSpinPreset = preset;
+            selectedSpinPreset = CurrentClub != null && CurrentClub.IsPutter
+                ? SpinPreset.NoSpin
+                : preset;
         }
 
         public void ResetShot()
         {
-            if (ball != null)
+            if (DebugResetRequested != null)
+            {
+                DebugResetRequested.Invoke();
+            }
+            else if (ball != null)
             {
                 ball.ResetBall();
             }
             else
             {
                 BeginAiming();
+            }
+        }
+
+        public void PrepareNextShot(Vector3 defaultDirection, ClubData club)
+        {
+            SetClub(club);
+            Vector3 planarDirection = Vector3.ProjectOnPlane(defaultDirection, Vector3.up).normalized;
+            if (planarDirection.sqrMagnitude > Mathf.Epsilon)
+            {
+                baseAimForward = planarDirection;
+                baseAimRotation = Quaternion.LookRotation(baseAimForward, Vector3.up);
+            }
+            BeginAiming();
+        }
+
+        public void SetClub(ClubData club)
+        {
+            currentClub = club != null ? club : defaultClub;
+            if (currentClub != null && currentClub.IsPutter)
+            {
+                selectedSpinPreset = SpinPreset.NoSpin;
             }
         }
 
@@ -173,11 +217,11 @@ namespace SwingPop.Gameplay.Shot
             ApplyAimRotation();
         }
 
-        private void CommitShot()
+        private bool CommitShot()
         {
             if (ball == null || ballTuning == null || shotTuning == null)
             {
-                return;
+                return false;
             }
 
             ShotCommand command = ShotCalculator.CreateCommand(
@@ -203,16 +247,18 @@ namespace SwingPop.Gameplay.Shot
                 ? ball.CurrentSurfaceData.PowerModifier
                 : 1f;
             command = ShotCalculator.ApplySurfacePowerModifier(command, surfacePowerModifier);
+            command = ShotCalculator.ApplyClub(command, CurrentClub);
 
             if (!ball.Launch(command))
             {
-                return;
+                return false;
             }
 
             lastShotCommand = command;
             hasLastShotCommand = true;
             ChangeState(ShotFlowState.ShotCommitted);
             ShotCommitted?.Invoke(command);
+            return true;
         }
 
         private ImpactGrade EvaluateCurrentImpactGrade()

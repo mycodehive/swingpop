@@ -86,3 +86,9 @@ Codex는 Placeholder를 만들거나 발견할 때 이 문서를 갱신한다.
 - [ ] `M4Tee/Fairway/Rough/Bunker/Green/Water/OutOfBounds` 단색 material을 Hole 1 stylized course material로 교체
 - [ ] `M4WindVector` debug line을 M8 정식 wind widget 및 M9 environment wind presentation으로 교체
 - [ ] Foundation의 직사각형 surface strip/trigger layout을 Hole 1 최종 terrain mesh와 collider로 교체
+
+## M5 Hole / Scoring Placeholder
+
+- [ ] `M5Cup`, `M5FlagPole`, `M5Flag` primitive geometry/material을 최종 cup/flag asset으로 교체
+- [ ] `TemporaryDriver`/`Putter` 텍스트 debug 표시를 M8 정식 club icon/presentation으로 교체
+- [ ] IMGUI Hole/Stroke/Result 정보를 M8 정식 HUD와 result popup으로 교체

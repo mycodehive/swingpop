@@ -275,3 +275,27 @@ ShotDebugOverlay + WindDebugVisualizer ← read-only state
 - `GolfBallController`는 collision/trigger lifecycle, current lie, hazard 종료를 소유한다. Water/OOB scoring은 소유하지 않는다.
 - `ShotCommand.SurfacePowerModifier`는 향후 lie/club 계산 확장을 위한 직렬화 seam이다.
 - Surface별 bounce는 충돌 직전 하강 속도에 Ball base retention과 surface modifier를 적용해 PhysX callback 순서에 의존하지 않는다.
+
+## M5 Hole / Scoring Boundary
+
+```text
+ShotFlowController --ShotCommitted--> HoleFlowController --> HoleProgressTracker
+        |                                      |                    |
+        |                                      |                    +--> ScoreCalculator
+        v                                      v
+  ShotCommand + ClubData              next position / lie / club
+        |                                      |
+        +--------------> GolfBallController <--+
+                               |
+Collider trigger --> CupCaptureController --> HoleFlowController.TryCompleteHole
+
+ShotDebugOverlay ← read-only HoleFlow / ShotFlow / Ball state
+```
+
+- `HoleFlowController`만 stroke, penalty, last valid position, next-shot setup, hole state와 result 전이를 소유한다.
+- `HoleProgressTracker`, `ScoreCalculator`, `CupCaptureRules`, `ClubShotCalculator`는 MonoBehaviour lifecycle과 분리된 순수 로직이다.
+- `GolfBallController`는 `Ready/Airborne/Bouncing/Rolling/Stopped/Holed` 물리 상태와 Rigidbody만 소유한다. Score UI나 hole result를 계산하지 않는다.
+- `ShotFlowController`는 입력 상태와 `ShotCommand` 생성만 소유하며 `HoleFlowController`가 선택한 ClubData를 command 값으로 캡처한다.
+- `CupCaptureController`는 trigger adapter다. Green/거리/속도/높이 조건을 순수 규칙에 전달하고 성공 시 HoleFlow에 완료 command를 보낸다.
+- Water/OOB detection은 계속 Ball에 있고, penalty/recovery 정책은 HoleFlow가 맡는다.
+- `ValidationRequestRunner`는 Game View가 shortcut을 소비하는 환경에서 PlayMode 검증을 시작하는 Editor-only 도구이며 player build에 포함되지 않는다.

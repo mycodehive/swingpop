@@ -4,6 +4,7 @@ using SwingPop.Gameplay.Ball;
 using SwingPop.Gameplay.Course;
 using SwingPop.Gameplay.Shot;
 using SwingPop.Gameplay.Wind;
+using SwingPop.Gameplay.Hole;
 using UnityEditor;
 using UnityEngine;
 
@@ -29,6 +30,12 @@ namespace SwingPop.Editor
             GolfBallController ball = Object.FindAnyObjectByType<GolfBallController>();
             ShotFlowController shotFlow = Object.FindAnyObjectByType<ShotFlowController>();
             WindController wind = Object.FindAnyObjectByType<WindController>();
+            HoleFlowController holeFlow = Object.FindAnyObjectByType<HoleFlowController>();
+            if (holeFlow != null)
+            {
+                holeFlow.SetAutomaticFlowSuspended(true);
+                holeFlow.DebugResetHole();
+            }
             if (ball == null || shotFlow == null || wind == null || ball.Tuning == null)
             {
                 Debug.LogError("SWINGPOP_M4_PLAYMODE_VALIDATION_FAIL: M4 scene dependencies were not found.");
@@ -405,7 +412,7 @@ namespace SwingPop.Editor
 
         private TerrainSurface FindSurface(TerrainSurfaceType type)
         {
-            foreach (TerrainSurface surface in Object.FindObjectsByType<TerrainSurface>(FindObjectsSortMode.None))
+            foreach (TerrainSurface surface in Object.FindObjectsByType<TerrainSurface>())
             {
                 if (surface.SurfaceType == type)
                 {

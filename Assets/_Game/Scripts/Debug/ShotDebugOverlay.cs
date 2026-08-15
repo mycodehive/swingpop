@@ -1,6 +1,7 @@
 using SwingPop.Gameplay.Ball;
 using SwingPop.Gameplay.Shot;
 using SwingPop.Gameplay.Wind;
+using SwingPop.Gameplay.Hole;
 using UnityEngine;
 
 namespace SwingPop.Debugging
@@ -12,13 +13,14 @@ namespace SwingPop.Debugging
         [SerializeField] private GolfBallController ball;
         [SerializeField] private LineRenderer aimLine;
         [SerializeField] private WindController wind;
+        [SerializeField] private HoleFlowController holeFlow;
 
         [Header("Presentation")]
         [SerializeField] private bool showOverlay = true;
         [SerializeField] private bool showAimLine = true;
         [SerializeField, Min(1f)] private float aimLineLength = 24f;
         [SerializeField] private Vector2 overlayPosition = new(16f, 16f);
-        [SerializeField] private Vector2 overlaySize = new(520f, 500f);
+        [SerializeField] private Vector2 overlaySize = new(570f, 680f);
 
         private GUIStyle headingStyle;
         private GUIStyle labelStyle;
@@ -37,7 +39,27 @@ namespace SwingPop.Debugging
 
             EnsureStyles();
             GUILayout.BeginArea(new Rect(overlayPosition, overlaySize), GUI.skin.box);
-            GUILayout.Label("M4 SHOT / WIND / TERRAIN DEBUG", headingStyle);
+            GUILayout.Label("M5 HOLE / SCORING DEBUG", headingStyle);
+            if (holeFlow != null && holeFlow.Hole != null)
+            {
+                GUILayout.Label(
+                    $"Hole {holeFlow.Hole.HoleNumber}: {holeFlow.Hole.DisplayName}  Par {holeFlow.Hole.Par}",
+                    labelStyle);
+                GUILayout.Label(
+                    $"Hole State: {holeFlow.State}  Stroke: {holeFlow.StrokeCount}  Penalty: {holeFlow.PenaltyCount}",
+                    labelStyle);
+                GUILayout.Label(
+                    $"Current Club: {(holeFlow.CurrentClub != null ? holeFlow.CurrentClub.DisplayName : "None")}",
+                    labelStyle);
+                GUILayout.Label(
+                    $"Remaining / Cup Distance: {holeFlow.RemainingDistance:F1} m  Height Difference: {holeFlow.HeightDifference:+0.0;-0.0;0.0} m",
+                    labelStyle);
+                GUILayout.Label(
+                    holeFlow.State == HoleFlowState.HoleComplete
+                        ? $"RESULT: {holeFlow.Result}"
+                        : "Score Result: Playing",
+                    labelStyle);
+            }
             GUILayout.Label($"Shot State: {shotFlow.State}    Ball: {ball.State}", labelStyle);
             GUILayout.Label($"Aim: {shotFlow.AimAngleDegrees:+0.0;-0.0;0.0}°", labelStyle);
             DrawMeter("Power", shotFlow.Power01, new Color(0.2f, 0.9f, 0.45f));
@@ -62,12 +84,13 @@ namespace SwingPop.Debugging
                     : "Surface modifiers: default neutral",
                 labelStyle);
             GUILayout.Label(
-                ball.HasLastHazard ? $"Last Hazard: {ball.LastHazard} (R to recover)" : "Last Hazard: None",
+                ball.HasLastHazard ? $"Last Hazard: {ball.LastHazard} (automatic +1 recovery)" : "Last Hazard: None",
                 labelStyle);
             GUILayout.Label("A/D or ←/→: Aim   Space: Confirm   R: Reset   Esc: Cancel", labelStyle);
             GUILayout.Label("P during Impact: Force PERFECT (Debug)", labelStyle);
             GUILayout.Label("Spin: 1 None  2 Top  3 Back  4 Left  5 Right", labelStyle);
             GUILayout.Label("Wind: 6 Calm  7 Tail  8 Head  9 Left  0 Right", labelStyle);
+            GUILayout.Label("Stopped balls continue from the lie automatically. R: debug restart Hole 1", labelStyle);
             GUILayout.Label(
                 shotFlow.HasLastShotCommand
                     ? $"Last: {shotFlow.LastShotCommand}"

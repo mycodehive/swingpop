@@ -17,8 +17,8 @@ Tuneable arcade drag/lift/side curve, Top/Back/Side spin, spin-aware landing/rol
 ### M4 Wind / Terrain — Implementation Complete (2026-08-11)
 Single-source world-space wind, airborne carry/drift, data-driven Tee/Fairway/Rough/Bunker/Green response, Water/OOB recovery, debug presets/vector/telemetry, Foundation test course, EditMode tests and automated Rigidbody comparisons are complete. Manual keyboard and visual feel validation remains.
 
-### M5 Hole / Scoring
-Cup, stroke count, result.
+### M5 Hole / Scoring — Implementation Complete (2026-08-15)
+HoleData/Par 4, continuous next-shot flow, stroke/penalty count, last-valid Water/OOB recovery, data-driven Driver/Putter, Green putting, tunable cup capture, HoleComplete/result calculation, expanded debug telemetry, EditMode tests and automated PlayMode/regression validation are complete. Manual keyboard and visual feel validation remains.
 
 ### M6 Camera Director
 Address, swing, ball, landing, result cameras.

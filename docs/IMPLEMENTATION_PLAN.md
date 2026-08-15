@@ -116,7 +116,7 @@ Package 추가는 실제 버전 확인 후 수행한다.
 
 ## Next Action
 
-M4 수동 키보드/시각 검증을 완료한다. M5 Hole / Scoring은 별도 요청 전까지 시작하지 않는다.
+M5 수동 키보드/시각 검증을 완료한다. M6 Camera Director는 별도 요청 전까지 시작하지 않는다.
 
 ## M1 Ball Launch Implementation (2026-08-10)
 
@@ -240,3 +240,47 @@ M4 수동 키보드/시각 검증을 완료한다. M5 Hole / Scoring은 별도 �
 - Wind: `Assets/_Game/ScriptableObjects/M4WindTuning.asset`
 - Surface: `Assets/_Game/ScriptableObjects/Terrain/*.asset`
 - Ball fallback OOB height: `Assets/_Game/ScriptableObjects/M1BallTuning.asset > Hazard Recovery`
+
+## M5 Hole / Scoring / Continuous Shot Flow Implementation (2026-08-15)
+
+- `Hole01.asset`이 Hole 1 / Par 4 / Tee `(0, 0.15, 0)` / Cup `(0, 0.05, 78)` / 78m와 cup capture tuning을 소유한다.
+- `HoleFlowController`가 hole 시작, committed shot/penalty stroke, last valid lie/position, 다음 shot 준비, hole complete/result를 단일 소유한다.
+- 정상 shot이 `Stopped`가 되면 공 위치와 lie를 유지한 채 다음 프레임 `Ready/Aiming`으로 전환한다. 정상 진행에는 `R`이 필요하지 않다.
+- `R`은 Hole 1 전체를 Tee/0 stroke/0 penalty로 되돌리는 debug restart로 남긴다.
+- `TemporaryDriver.asset`과 `Putter.asset`의 최소 ClubData를 추가했다. Green에서는 Putter로 자동 전환하며 Putter는 spin/wind 비행 대신 즉시 rolling을 시작한다.
+- `ShotCommand`는 club type/carry/roll modifier를 직렬화하고, 기존 surface power modifier와 club data가 실제 launch velocity에 반영된다.
+- `CupCaptureController`가 Green, horizontal distance/speed, height 조건을 모두 검사한다. 작은 outer assist 영역에서 저속 공에만 inward acceleration을 적용한다.
+- Water/OOB는 committed shot과 별도로 +1 penalty stroke를 더하고 마지막 정상 정지 위치/surface로 자동 복구한다.
+- `ScoreCalculator`는 Albatross/Eagle/Birdie/Par/Bogey/Double Bogey 및 +3 이상을 순수 계산한다.
+- Debug overlay에 Hole/Par/Stroke/Penalty/Lie/Club/Remaining Distance/Height Difference/Hole State/Result/Cup Distance/Last Hazard를 추가했다.
+- Foundation의 M4 blockout은 `M5 Hole 1 Placeholder Course`로 이어 사용하며 Green에 placeholder Cup/Flag trigger를 연결했다.
+
+## M5 Automated Validation (2026-08-15)
+
+- Unity Test Framework EditMode: 총 54 passed, 0 failed. 기존 41개와 score mapping, stroke/penalty, last valid position, cup eligibility, putter launch/roll tests를 포함한다.
+- M5 PlayMode: 첫 shot이 `(0.00, 0.15, 17.40)`에서 멈춘 뒤 teleport/reset 없이 그 위치에서 `Ready/Aiming`으로 복귀했다.
+- 동일 62% shot 실제 이동: Fairway `25.59m` > Rough `19.19m` > Bunker `9.19m`.
+- Green test position에서 Putter 자동 선택, rolling putt, `Ball Holed`, `HoleComplete`, Par 4 결과 계산을 통과했다.
+- Water/OOB가 각각 +1 penalty를 추가하고 Last Valid Position으로 복귀한 뒤 다음 shot 가능 상태가 됐다.
+- 회귀: M1 physics flow, M2 Aim/Power/Impact, M3 5개 spin, M4 wind/terrain/hazard validation이 모두 통과했다.
+
+## M5 Manual Play Validation
+
+1. Project 창에서 `Assets > _Game > Scenes > Foundation`을 더블클릭한다.
+2. `Window > General > Console`을 열고 `Clear`를 클릭한 뒤 상단 `Play`를 누른다.
+3. Game 탭을 클릭하고 overlay의 `Hole 1`, `Par 4`, `Stroke 0`, `Current Club: Temporary Driver`, `Hole State: Playing`을 확인한다.
+4. A/D 또는 좌우키로 조준하고 Space 3회로 첫 shot을 완료한다. 공이 멈춘 뒤 `R`을 누르지 않고 같은 위치에서 `Aiming`이 되는지 확인한다.
+5. 같은 방식으로 두 번째/세 번째 shot을 진행하고 Stroke가 committed shot마다 1씩 증가하는지 확인한다. Escape로 Power/Impact를 취소했을 때는 증가하지 않아야 한다.
+6. Green에 공이 멈추면 `Current Club: Putter`와 `Current Lie: Green`을 확인한다. 다음 Space 3회 putt은 거의 뜨지 않고 Green 위를 굴러야 한다.
+7. 저속 putt을 Cup/Flag 쪽으로 보내 `Ball: Holed`, `Hole State: HoleComplete`, `RESULT`를 확인한다. 완료 후 Space를 눌러도 새 shot이 시작되지 않아야 한다.
+8. `R`로 Hole 1을 debug restart한 뒤 왼쪽 Water 또는 오른쪽 OOB로 shot한다. Penalty가 1 증가하고 이전 정상 정지 위치로 자동 복구되는지 확인한다.
+9. 숫자 1~5 spin, 6~0 wind, trajectory, camera follow가 계속 동작하는지 확인한다.
+10. Play를 종료하고 Console의 빨간 Error가 0인지 확인한다.
+
+튜닝 위치:
+
+- Hole/cup: `Assets/_Game/ScriptableObjects/Holes/Hole01.asset`
+- Clubs: `Assets/_Game/ScriptableObjects/Clubs/TemporaryDriver.asset`, `Putter.asset`
+- Lie response: `Assets/_Game/ScriptableObjects/Terrain/*.asset`
+- Ball/putt stop: `Assets/_Game/ScriptableObjects/M1BallTuning.asset`
+- Aim/Power/Impact: `Assets/_Game/ScriptableObjects/M2ShotTuning.asset`

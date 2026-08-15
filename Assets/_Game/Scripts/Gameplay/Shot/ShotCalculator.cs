@@ -1,4 +1,5 @@
 using UnityEngine;
+using SwingPop.Data;
 
 namespace SwingPop.Gameplay.Shot
 {
@@ -17,6 +18,18 @@ namespace SwingPop.Gameplay.Shot
         public static ShotCommand ApplySurfacePowerModifier(ShotCommand command, float modifier)
         {
             return command.WithSurfacePowerModifier(Mathf.Max(0f, modifier));
+        }
+
+        public static ShotCommand ApplyClub(ShotCommand command, ClubData club)
+        {
+            return club == null
+                ? command
+                : command.WithClub(
+                    club.ClubType,
+                    club.BasePower,
+                    club.LoftDegrees,
+                    club.CarryModifier,
+                    club.RollModifier);
         }
 
         public static float EvaluatePingPong01(float elapsedSeconds, float sweepSpeed)
