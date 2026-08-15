@@ -299,3 +299,21 @@ ShotDebugOverlay ← read-only HoleFlow / ShotFlow / Ball state
 - `CupCaptureController`는 trigger adapter다. Green/거리/속도/높이 조건을 순수 규칙에 전달하고 성공 시 HoleFlow에 완료 command를 보낸다.
 - Water/OOB detection은 계속 Ball에 있고, penalty/recovery 정책은 HoleFlow가 맡는다.
 - `ValidationRequestRunner`는 Game View가 shortcut을 소비하는 환경에서 PlayMode 검증을 시작하는 Editor-only 도구이며 player build에 포함되지 않는다.
+
+## M6 Camera Director Boundary
+
+```text
+ShotFlowController ----state/commit event---+
+GolfBallController ----state/velocity event-+--> CameraDirector --> Main Camera pose/FOV
+HoleFlowController ----state/hole event------+        |
+                                                   CameraTuningData
+
+ShotDebugOverlay <--- read-only camera telemetry
+```
+
+- `CameraDirector`만 active Main Camera pose와 FOV를 쓴다. M1 `BallFollowCamera`는 교체 이력을 위해 남겨 두되 scene에서는 disabled다.
+- `CameraModeStateMachine`, `CameraMath`, `CameraPose`, `CameraFramingSolver`는 mode/transition/framing 계산을 MonoBehaviour lifecycle과 분리한다.
+- Camera는 Shot/Ball/Hole 상태를 관찰할 뿐 상태 전이, physics, stroke, result를 소유하지 않는다.
+- 모드별 offset/FOV/hold/transition/follow/collision 값은 `CameraTuningData`에서만 조정한다.
+- Geometry 회피는 target-to-camera sphere cast이며 trigger는 무시한다. 향후 복잡한 occluder가 필요할 때 layer를 전용 CameraCollision layer로 분리할 수 있다.
+- Cinemachine은 설치하지 않았다. 여러 virtual camera rig, rail, procedural composition 요구가 생길 때 Unity 6 호환 버전을 다시 평가한다.

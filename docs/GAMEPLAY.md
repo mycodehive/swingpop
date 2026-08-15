@@ -248,3 +248,27 @@ Tee → Aim → Shot → Stop → Lie 확정 → 같은 위치에서 Aim
 - Par 4 대비 total stroke로 Albatross/Eagle/Birdie/Par/Bogey/Double Bogey/+N 결과를 계산한다.
 - Water/OOB shot은 committed shot 1회에 +1 penalty stroke를 더하고 Last Valid Position/Lie로 자동 복구한다.
 - `R`은 정상 shot 진행용이 아니라 Hole 1 전체를 다시 시작하는 debug 기능이다.
+
+## 18. M6 Camera Flow
+
+정상 shot presentation:
+
+```text
+HoleIntro → Address → Aim → Swing → Impact → BallFollow
+          → Landing(Bounce/Roll) → NextShot → Address/Aim
+```
+
+Green/Hole In presentation:
+
+```text
+Putt Address → Impact → Putt Follow → HoleComplete → Result
+```
+
+- Camera mode는 gameplay 상태를 변경하지 않는 presentation 상태다.
+- HoleIntro는 기본 2.8초 동안 Tee에서 Cup 방향의 코스 흐름을 보여 준다.
+- Address/Aim은 공과 목표 방향을 동시에 읽게 하며 aim yaw 반응을 제한한다.
+- Impact는 FOV kick과 Perfect/Normal 강도 차이가 있는 짧은 shake hook을 사용한다.
+- BallFollow는 속도 방향, look-ahead, 속도 기반 거리/FOV를 사용하고 높은 arc에서는 시야를 넓힌다.
+- Landing은 첫 충돌부터 Bounce/Roll을 이어 보며, Stop 후 NextShot blend를 거쳐 새 lie의 Address로 돌아간다.
+- Putt는 낮은 시점에서 공과 Cup을 함께 구성하며 Hole In 이후 Cup/Result를 보여 준다.
+- 모든 feel 값은 `M6CameraTuning.asset`에서 조정한다. M6에는 Character, HUD, VFX/Audio 완성 연출이 포함되지 않는다.

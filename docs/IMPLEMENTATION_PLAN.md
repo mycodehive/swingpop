@@ -10,7 +10,7 @@
 - Unity Editor: `6000.5.7f1` (`ProjectSettings/ProjectVersion.txt` 기준)
 - Render pipeline: Universal Render Pipeline `17.5.0`; `GraphicsSettings.asset`의 active pipeline은 `Assets/Settings/PC_RPAsset.asset`을 참조한다.
 - Input: Input System `1.20.0`; Player Settings의 Active Input Handling은 새 Input System이며 템플릿 `InputSystem_Actions.inputactions`가 존재한다.
-- Cinemachine: 설치되어 있지 않다. M0에는 필요하지 않으며 M6에서 실제 호환 버전과 필요성을 다시 판단한다.
+- Cinemachine: 설치되어 있지 않다. M6 감사에서 Unity 6용 정식 3.1.5를 확인했으나, 현재 단일 Main Camera의 명시적 모드 전환에는 새 패키지가 필요하지 않아 custom `CameraDirector`를 선택했다.
 - Other direct packages: AI Navigation `2.0.14`, Test Framework `1.7.0`, Timeline `1.8.12`, uGUI `2.5.0` 등. 정확한 전체 목록은 `Packages/manifest.json`과 lock file이 source of truth다.
 - Existing scene before M0: `Assets/Scenes/SampleScene.unity` 한 개. URP 템플릿 카메라, Directional Light, Global Volume만 있고 ground/gameplay object는 없었다.
 - Existing scripts before M0: Unity 템플릿 Readme/Editor 스크립트만 존재했다.
@@ -116,7 +116,7 @@ Package 추가는 실제 버전 확인 후 수행한다.
 
 ## Next Action
 
-M5 수동 키보드/시각 검증을 완료한다. M6 Camera Director는 별도 요청 전까지 시작하지 않는다.
+M6 카메라의 수동 시각/멀미/가림 검증을 완료한다. M7 Character는 별도 요청 전까지 시작하지 않는다.
 
 ## M1 Ball Launch Implementation (2026-08-10)
 
@@ -284,3 +284,39 @@ M5 수동 키보드/시각 검증을 완료한다. M6 Camera Director는 별도 
 - Lie response: `Assets/_Game/ScriptableObjects/Terrain/*.asset`
 - Ball/putt stop: `Assets/_Game/ScriptableObjects/M1BallTuning.asset`
 - Aim/Power/Impact: `Assets/_Game/ScriptableObjects/M2ShotTuning.asset`
+
+## M6 Camera Director Implementation (2026-08-15)
+
+- Main Camera의 기존 `BallFollowCamera`는 삭제하지 않고 비활성화했으며, `CameraDirector`만 transform/rotation/FOV를 제어한다.
+- 명시적 모드: `HoleIntro`, `Address`, `Aim`, `Swing`, `Impact`, `BallFollow`, `Landing`, `NextShot`, `Putt`, `HoleComplete`, `Result`.
+- Shot/Ball/Hole 이벤트를 관찰해 presentation 상태만 전환한다. Camera는 gameplay state, physics, scoring을 변경하지 않는다.
+- `M6CameraTuning.asset`이 모드별 offset/FOV/hold, transition, follow look-ahead, speed distance, apex extension, shake, collision sphere cast를 소유한다.
+- 위치/회전/FOV는 transition pose 보간 후 exponential damping으로 이어지며, BallFollow는 현재 velocity를 기준으로 방향과 거리를 계산한다.
+- Debug overlay는 현재/이전 Camera Mode, transition 여부, target, FOV, follow distance를 표시한다.
+- Cinemachine 3.1.5는 Unity 6의 정식 선택지지만 현재 요구에 비해 virtual camera/package 구조가 불필요하여 설치하지 않았다.
+
+## M6 Automated Validation (2026-08-15)
+
+- Unity Test Framework EditMode: 총 62 passed, 0 failed. 기존 54개와 Camera mode state, transition, pose/FOV interpolation, offset, velocity fallback, follow-distance 테스트 8개를 포함한다.
+- M6 PlayMode: `HoleIntro → Address → Aim → Swing → Impact → BallFollow → Landing → NextShot → Address → Putt → Impact → Putt → HoleComplete → Result` 순서를 통과했다.
+- 관측 FOV 범위는 42.0–60.3, BallFollow 최대 거리는 14.1m였고 일반 shot 정지 후 같은 lie에서 다음 Address/Aim으로 복귀했다.
+- M1, M2, M3, M4, M5 PlayMode validation을 다시 실행해 모두 PASS했다.
+
+## M6 Manual Camera Validation
+
+1. Project 창에서 `Assets > _Game > Scenes > Foundation`을 더블클릭한다.
+2. 상단 메뉴에서 `Window > General > Console`을 열고 왼쪽 위 `Clear`를 클릭한다.
+3. 상단 중앙 `Play`를 클릭한다. Game 탭에서 코스를 훑는 약 2.8초 `HoleIntro`와 `Camera: HoleIntro` 표시를 확인한다.
+4. Intro가 끝나면 공 뒤·옆의 `Address`, 이어 `Aim`으로 부드럽게 전환되고 공과 목표 방향이 함께 보이는지 확인한다.
+5. Game 탭을 클릭하고 A/D 또는 좌우키로 조준한다. 카메라가 제한적으로 반응하며 급회전하지 않는지 확인한다.
+6. Space를 세 번 눌러 Power/Impact를 확정한다. `Swing → Impact → BallFollow`가 이어지고 Perfect shot은 일반 shot보다 짧은 반응이 더 강한지 확인한다.
+7. 비행 중 공이 화면에서 사라지지 않고, 최고점 부근에서 시야가 답답하지 않으며, 착지 때 `Landing`으로 전환되는지 확인한다.
+8. Bounce/Roll 후 `NextShot`을 거쳐 같은 lie의 `Address/Aim`으로 돌아오며 순간이동처럼 보이지 않는지 확인한다.
+9. Green에서 Club이 Putter가 되면 `Putt` 구도로 공과 Cup이 함께 읽히는지 확인한다. Hole In 후 `HoleComplete → Result`를 확인한다.
+10. 카메라와 공 사이에 course geometry가 들어올 때 카메라가 지형을 관통하지 않는지 확인한다.
+11. `R`을 눌러 HoleIntro부터 재시작되는지 확인하고 Play를 종료한 뒤 Console의 빨간 Error가 0인지 확인한다.
+
+튜닝 위치:
+
+- 전체 카메라: `Assets/_Game/ScriptableObjects/Camera/M6CameraTuning.asset`
+- Main Camera wiring: `Assets/_Game/Scenes/Foundation.unity > Presentation > Main Camera > Camera Director`

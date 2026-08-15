@@ -1,3 +1,4 @@
+using SwingPop.CameraSystem;
 using SwingPop.Gameplay.Ball;
 using SwingPop.Gameplay.Shot;
 using SwingPop.Gameplay.Wind;
@@ -14,6 +15,7 @@ namespace SwingPop.Debugging
         [SerializeField] private LineRenderer aimLine;
         [SerializeField] private WindController wind;
         [SerializeField] private HoleFlowController holeFlow;
+        [SerializeField] private CameraDirector cameraDirector;
 
         [Header("Presentation")]
         [SerializeField] private bool showOverlay = true;
@@ -39,7 +41,16 @@ namespace SwingPop.Debugging
 
             EnsureStyles();
             GUILayout.BeginArea(new Rect(overlayPosition, overlaySize), GUI.skin.box);
-            GUILayout.Label("M5 HOLE / SCORING DEBUG", headingStyle);
+            GUILayout.Label("M6 CAMERA DIRECTOR DEBUG", headingStyle);
+            if (cameraDirector != null)
+            {
+                GUILayout.Label(
+                    $"Camera: {cameraDirector.CurrentMode}  Previous: {cameraDirector.PreviousMode}  Transition: {(cameraDirector.IsTransitioning ? "Blending" : "Stable")}",
+                    labelStyle);
+                GUILayout.Label(
+                    $"Camera Target: {cameraDirector.CurrentTargetName}  FOV: {cameraDirector.CurrentFieldOfView:F1}  Follow Distance: {cameraDirector.CurrentFollowDistance:F1} m",
+                    labelStyle);
+            }
             if (holeFlow != null && holeFlow.Hole != null)
             {
                 GUILayout.Label(

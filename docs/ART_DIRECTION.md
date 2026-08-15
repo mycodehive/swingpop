@@ -127,3 +127,10 @@ Perfect:
 - Trail readability
 - Impact response
 - Landing feedback
+
+## M6 Placeholder Camera Composition
+
+- Address/Aim은 reference의 화면 밀도와 third-person 방향성을 기준으로 공과 fairway depth를 함께 읽게 한다. Character 자리는 화면 한쪽에 남겨 두되 M7 전에는 가짜 character를 만들지 않는다.
+- Flight는 속도 기반 거리/FOV와 높은 arc의 추가 높이로 공 궤적을 읽게 하고, Landing은 지면과 공을 함께 유지한다.
+- Putt는 낮고 가까운 구도에서 ball-to-cup line을 우선하며, HoleComplete/Result는 cup을 presentation anchor로 사용한다.
+- 현재 course와 ball은 blockout이므로 최종 색감·landmark·character scale 품질은 평가 대상이 아니다. M6 평가는 framing, continuity, readability, motion comfort에 한정한다.

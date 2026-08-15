@@ -6,7 +6,7 @@ namespace SwingPop.Editor
 {
     /// <summary>
     /// Editor-only one-shot bridge used by automated local validation when the Game view owns keyboard focus.
-    /// Create Temp/SwingPopValidation.request with M1, M2, M3, M4, or M5 before entering Play Mode.
+    /// Create Temp/SwingPopValidation.request with M1, M2, M3, M4, M5, or M6 before entering Play Mode.
     /// </summary>
     [InitializeOnLoad]
     public static class ValidationRequestRunner
@@ -54,6 +54,9 @@ namespace SwingPop.Editor
                     break;
                 case "M5":
                     M5ValidationTools.RunHoleFlowValidation();
+                    break;
+                case "M6":
+                    M6ValidationTools.RunCameraFlowValidation();
                     break;
                 default:
                     Debug.LogError($"Unknown SwingPop validation request '{milestone}'.");

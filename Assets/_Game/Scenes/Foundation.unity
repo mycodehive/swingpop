@@ -569,6 +569,7 @@ GameObject:
   - component: {fileID: 621407173}
   - component: {fileID: 621407172}
   - component: {fileID: 621407174}
+  - component: {fileID: 621407175}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -657,7 +658,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 621407170}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 257fad9503af5a845a502bcb1101036b, type: 3}
   m_Name:
@@ -668,6 +669,24 @@ MonoBehaviour:
   positionSmoothTime: 0.22
   rotationSharpness: 8
   maximumFollowSpeed: 80
+--- !u!114 &621407175
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 621407170}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4d2cf3933f7059d4e831f4a000a1ae8a, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: SwingPop.Runtime::SwingPop.CameraSystem.CameraDirector
+  controlledCamera: {fileID: 621407173}
+  ball: {fileID: 1953279982}
+  shotFlow: {fileID: 856989763}
+  holeFlow: {fileID: 856989767}
+  tuning: {fileID: 11400000, guid: 36b7f6ef3c7f8e14abd52a331d5d7f66, type: 2}
+  drawCompositionGizmos: 1
 --- !u!1 &656572207
 GameObject:
   m_ObjectHideFlags: 0
@@ -901,7 +920,7 @@ GameObject:
   - component: {fileID: 856989766}
   - component: {fileID: 856989767}
   m_Layer: 0
-  m_Name: M5 Hole Scoring Systems
+  m_Name: M6 Camera Director Systems
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -942,11 +961,12 @@ MonoBehaviour:
   aimLine: {fileID: 1532339368}
   wind: {fileID: 856989765}
   holeFlow: {fileID: 856989767}
+  cameraDirector: {fileID: 621407175}
   showOverlay: 1
   showAimLine: 1
   aimLineLength: 90
   overlayPosition: {x: 16, y: 16}
-  overlaySize: {x: 600, y: 700}
+  overlaySize: {x: 650, y: 750}
 --- !u!114 &856989762
 MonoBehaviour:
   m_ObjectHideFlags: 0

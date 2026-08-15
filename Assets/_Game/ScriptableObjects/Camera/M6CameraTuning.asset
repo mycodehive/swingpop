@@ -1,0 +1,64 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fdd97e3b3b56c674da9eb50ce3c1436e, type: 3}
+  m_Name: M6CameraTuning
+  m_EditorClassIdentifier: SwingPop.Runtime::SwingPop.Data.CameraTuningData
+  holeIntroDuration: 2.8
+  introTeeOffset: {x: -14, y: 11, z: -16}
+  introCupOffset: {x: 11, y: 8, z: -12}
+  introFieldOfView: 58
+  addressOffset: {x: 6.5, y: 3.8, z: -8.5}
+  addressLookOffset: {x: 0, y: 0.55, z: 7}
+  addressFieldOfView: 48
+  addressHoldDuration: 0.35
+  aimYawResponse: 0.35
+  swingOffset: {x: 5.5, y: 3.2, z: -7}
+  swingFieldOfView: 45
+  impactFovKick: 6
+  impactHoldDuration: 0.24
+  normalImpactShake: 0.06
+  perfectImpactShake: 0.13
+  impactShakeFrequency: 34
+  followOffset: {x: 6.5, y: 4.5, z: -9.5}
+  followLookAheadSeconds: 0.28
+  speedDistanceScale: 0.12
+  maximumDistanceExtension: 7
+  followFieldOfView: 58
+  maximumFollowFieldOfView: 68
+  fovSpeedReference: 34
+  apexWideHeight: 9
+  apexHeightExtension: 3
+  landingOffset: {x: 6, y: 3.2, z: -8}
+  landingFieldOfView: 50
+  nextShotOffset: {x: 7, y: 4.2, z: -9}
+  nextShotHoldDuration: 0.55
+  puttOffset: {x: 4.2, y: 2.25, z: -5.4}
+  puttFieldOfView: 43
+  holeCompleteOffset: {x: 4.5, y: 2.6, z: -4.5}
+  holeCompleteFieldOfView: 42
+  holeCompleteHoldDuration: 1.1
+  resultOffset: {x: 8, y: 5.5, z: -8}
+  resultFieldOfView: 52
+  holeCompleteShake: 0.04
+  defaultTransitionDuration: 0.45
+  introTransitionDuration: 0.8
+  impactTransitionDuration: 0.12
+  nextShotTransitionDuration: 0.55
+  followPositionSharpness: 6
+  followRotationSharpness: 9
+  followFovSharpness: 7
+  collisionLayers:
+    serializedVersion: 2
+    m_Bits: 1
+  collisionRadius: 0.28
+  collisionPadding: 0.18
+  minimumTargetDistance: 1.4
