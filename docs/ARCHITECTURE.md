@@ -317,3 +317,31 @@ ShotDebugOverlay <--- read-only camera telemetry
 - 모드별 offset/FOV/hold/transition/follow/collision 값은 `CameraTuningData`에서만 조정한다.
 - Geometry 회피는 target-to-camera sphere cast이며 trigger는 무시한다. 향후 복잡한 occluder가 필요할 때 layer를 전용 CameraCollision layer로 분리할 수 있다.
 - Cinemachine은 설치하지 않았다. 여러 virtual camera rig, rail, procedural composition 요구가 생길 때 Unity 6 호환 버전을 다시 평가한다.
+
+## M7 Character / Animation Boundary
+
+```text
+ShotFlowController --state/commit/club event--> CharacterGolfController
+        |                                             |
+        |                                             v
+        |                              CharacterAnimationController
+        |                                             |
+        |                                  single Impact signal
+        |                                             v
+        +<---------------------- TryLaunchCommittedShot()
+                                                      |
+GolfBallController --launch/state event---------------+
+        |
+        +--> CameraDirector (Impact/BallFollow)
+        +--> Character FollowThrough/WatchBall
+
+HoleFlowController --HoleCompleted--> Character celebration hook
+CharacterTuningData -------------> placement/timeline/fallback/socket
+```
+
+- `ShotFlowController`가 ShotCommand와 pending Ball launch를 계속 소유한다. Character는 물리 velocity나 stroke를 계산하지 않는다.
+- `CharacterGolfController`는 gameplay event를 character state로 매핑하는 adapter이며 Animator state 문자열을 Shot/Ball/Camera 코드에 노출하지 않는다.
+- `CharacterAnimationController`만 Animator/procedural pose 실행과 Impact marker single-fire를 소유한다. 현재 prefab은 procedural placeholder이며 향후 clip의 Animation Event가 동일 method를 호출할 수 있다.
+- `CharacterPresentation`은 address transform, primitive rig, `ClubSocket`, Driver/Putter visual 교체 지점만 소유한다.
+- Character adapter가 연결되지 않은 scene은 즉시 launch compatibility를 유지한다. 연결된 adapter의 Impact가 누락되면 `ShotImpactDelayGuard`가 제한시간 후 launch해 soft lock을 방지한다.
+- Camera는 캐릭터를 제어하지 않으며 실제 `Ball.Launched` event에서 Impact mode로 전환한다.

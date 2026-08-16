@@ -20,11 +20,11 @@ Single-source world-space wind, airborne carry/drift, data-driven Tee/Fairway/Ro
 ### M5 Hole / Scoring — Implementation Complete (2026-08-15)
 HoleData/Par 4, continuous next-shot flow, stroke/penalty count, last-valid Water/OOB recovery, data-driven Driver/Putter, Green putting, tunable cup capture, HoleComplete/result calculation, expanded debug telemetry, EditMode tests and automated PlayMode/regression validation are complete. Manual keyboard and visual feel validation remains.
 
-### M6 Camera Director
-Address, swing, ball, landing, result cameras.
+### M6 Camera Director — Implementation Complete (2026-08-15)
+Address/Aim/Swing/Impact/BallFollow/Landing/NextShot/Putt/HoleComplete/Result modes, data-driven framing/blending/collision, automated validation and M1–M5 regression are complete. Manual visual comfort validation remains.
 
-### M7 Character
-Placeholder/final-ready character adapter and swing animations.
+### M7 Character — Implementation Complete (2026-08-16)
+Primitive replaceable golfer prefab, Ball-relative Address/reposition, Aim rotation, procedural Driver/Putter flow, Impact-delayed single Ball launch with fallback, FollowThrough/WatchBall, club visual and celebration hooks are scene-connected. EditMode and M1–M7 PlayMode regression validations pass; manual motion/feel review remains.
 
 ### M8 HUD
 Full gameplay HUD.

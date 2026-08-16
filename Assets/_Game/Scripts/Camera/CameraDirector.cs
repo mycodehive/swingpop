@@ -57,6 +57,7 @@ namespace SwingPop.CameraSystem
             if (ball != null)
             {
                 ball.StateChanged += OnBallStateChanged;
+                ball.Launched += OnBallLaunched;
                 ball.ResetPerformed += OnBallReset;
             }
 
@@ -90,6 +91,7 @@ namespace SwingPop.CameraSystem
             if (ball != null)
             {
                 ball.StateChanged -= OnBallStateChanged;
+                ball.Launched -= OnBallLaunched;
                 ball.ResetPerformed -= OnBallReset;
             }
 
@@ -227,6 +229,12 @@ namespace SwingPop.CameraSystem
 
         private void OnShotCommitted(ShotCommand command)
         {
+            RequestMode(CameraMode.Swing);
+        }
+
+        private void OnBallLaunched()
+        {
+            ShotCommand command = shotFlow.LastShotCommand;
             impactShakeStrength = command.ImpactGrade == ImpactGrade.Perfect
                 ? tuning.PerfectImpactShake
                 : tuning.NormalImpactShake;
@@ -242,10 +250,6 @@ namespace SwingPop.CameraSystem
 
             switch (next)
             {
-                case BallState.Airborne when CurrentMode != CameraMode.Impact
-                                             && shotFlow.State == ShotFlowState.ShotCommitted:
-                    RequestMode(CameraMode.BallFollow);
-                    break;
                 case BallState.Bouncing:
                     RequestMode(CameraMode.Landing);
                     break;

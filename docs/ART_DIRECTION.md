@@ -134,3 +134,11 @@ Perfect:
 - Flight는 속도 기반 거리/FOV와 높은 arc의 추가 높이로 공 궤적을 읽게 하고, Landing은 지면과 공을 함께 유지한다.
 - Putt는 낮고 가까운 구도에서 ball-to-cup line을 우선하며, HoleComplete/Result는 cup을 presentation anchor로 사용한다.
 - 현재 course와 ball은 blockout이므로 최종 색감·landmark·character scale 품질은 평가 대상이 아니다. M6 평가는 framing, continuity, readability, motion comfort에 한정한다.
+
+## M7 Placeholder Character Direction
+
+- 외부 asset 없이 body/head/arms/legs/ClubSocket primitive hierarchy로 gameplay scale과 silhouette를 검증한다.
+- cyan outfit, pink accent, dark hair/legs로 밝은 course에서 캐릭터 형태를 구분한다. 이는 최종 anime design이 아니다.
+- Address camera에서 Character, Ball, Aim line, fairway depth가 동시에 읽혀야 한다. Debug overlay가 가리면 `H`로 숨긴다.
+- Driver swing은 torso/arm/club의 큰 회전, Putter는 낮고 짧은 motion으로 구분한다.
+- 최종 character는 같은 prefab adapter와 ClubSocket을 유지하면서 licensed model, humanoid rig, clips로 교체한다.

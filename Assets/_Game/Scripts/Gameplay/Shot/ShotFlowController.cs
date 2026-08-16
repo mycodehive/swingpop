@@ -27,9 +27,16 @@ namespace SwingPop.Gameplay.Shot
         private bool hasLastShotCommand;
         private SpinPreset selectedSpinPreset;
         private ClubData currentClub;
+        private readonly ShotImpactDelayGuard fallbackImpactGuard = new();
+        private ShotCommand pendingShotCommand;
+        private bool hasPendingBallLaunch;
+        private bool deferBallLaunchUntilImpact;
+        private float fallbackImpactDelay = 0.45f;
+        private bool lastBallLaunchUsedFallback;
 
         public event Action<ShotFlowState, ShotFlowState> StateChanged;
         public event Action<ShotCommand> ShotCommitted;
+        public event Action<ClubData> ClubChanged;
         public event Action DebugResetRequested;
 
         public ShotFlowState State => state;
@@ -43,6 +50,8 @@ namespace SwingPop.Gameplay.Shot
         public SpinPreset SelectedSpinPreset => selectedSpinPreset;
         public ShotSpin SelectedSpin => ShotSpin.FromPreset(selectedSpinPreset);
         public ClubData CurrentClub => currentClub != null ? currentClub : defaultClub;
+        public bool HasPendingBallLaunch => hasPendingBallLaunch;
+        public bool LastBallLaunchUsedFallback => lastBallLaunchUsedFallback;
 
         private void Awake()
         {
@@ -90,6 +99,16 @@ namespace SwingPop.Gameplay.Shot
                     impactCursor = ShotCalculator.EvaluateImpactCursor(
                         gaugeElapsedSeconds,
                         shotTuning.ImpactSweepSpeed);
+                    break;
+                case ShotFlowState.ShotCommitted when hasPendingBallLaunch && deferBallLaunchUntilImpact:
+                    if (fallbackImpactGuard.Tick(Time.deltaTime))
+                    {
+                        lastBallLaunchUsedFallback = true;
+                        Debug.LogWarning(
+                            $"Shot impact signal did not arrive within {fallbackImpactDelay:F2}s. Launching through the M7 fallback path.",
+                            this);
+                        TryLaunchCommittedShot();
+                    }
                     break;
             }
         }
@@ -201,11 +220,49 @@ namespace SwingPop.Gameplay.Shot
 
         public void SetClub(ClubData club)
         {
-            currentClub = club != null ? club : defaultClub;
+            ClubData nextClub = club != null ? club : defaultClub;
+            bool changed = currentClub != nextClub;
+            currentClub = nextClub;
             if (currentClub != null && currentClub.IsPutter)
             {
                 selectedSpinPreset = SpinPreset.NoSpin;
             }
+            if (changed)
+            {
+                ClubChanged?.Invoke(currentClub);
+            }
+        }
+
+        /// <summary>
+        /// Presentation adapters can defer launch until their impact marker. Without an adapter,
+        /// commits retain the M1-M6 immediate-launch behavior.
+        /// </summary>
+        public void ConfigureImpactTiming(bool deferUntilImpact, float fallbackDelaySeconds)
+        {
+            deferBallLaunchUntilImpact = deferUntilImpact;
+            fallbackImpactDelay = Mathf.Max(0.01f, fallbackDelaySeconds);
+            if (!deferBallLaunchUntilImpact && hasPendingBallLaunch)
+            {
+                TryLaunchCommittedShot();
+            }
+        }
+
+        public bool TryLaunchCommittedShot()
+        {
+            if (!hasPendingBallLaunch || ball == null || state != ShotFlowState.ShotCommitted)
+            {
+                return false;
+            }
+
+            ShotCommand command = pendingShotCommand;
+            hasPendingBallLaunch = false;
+            if (ball.Launch(command))
+            {
+                return true;
+            }
+
+            hasPendingBallLaunch = true;
+            return false;
         }
 
         private void UpdateAim(float deltaTime)
@@ -219,7 +276,7 @@ namespace SwingPop.Gameplay.Shot
 
         private bool CommitShot()
         {
-            if (ball == null || ballTuning == null || shotTuning == null)
+            if (ball == null || ball.State != BallState.Ready || ballTuning == null || shotTuning == null)
             {
                 return false;
             }
@@ -249,16 +306,15 @@ namespace SwingPop.Gameplay.Shot
             command = ShotCalculator.ApplySurfacePowerModifier(command, surfacePowerModifier);
             command = ShotCalculator.ApplyClub(command, CurrentClub);
 
-            if (!ball.Launch(command))
-            {
-                return false;
-            }
-
             lastShotCommand = command;
             hasLastShotCommand = true;
+            pendingShotCommand = command;
+            hasPendingBallLaunch = true;
+            fallbackImpactGuard.Begin(fallbackImpactDelay);
+            lastBallLaunchUsedFallback = false;
             ChangeState(ShotFlowState.ShotCommitted);
             ShotCommitted?.Invoke(command);
-            return true;
+            return deferBallLaunchUntilImpact || TryLaunchCommittedShot();
         }
 
         private ImpactGrade EvaluateCurrentImpactGrade()
@@ -282,6 +338,7 @@ namespace SwingPop.Gameplay.Shot
 
         private void BeginAiming()
         {
+            hasPendingBallLaunch = false;
             aimInput = 0f;
             aimAngleDegrees = 0f;
             power01 = 0f;

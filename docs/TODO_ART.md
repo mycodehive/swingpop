@@ -16,15 +16,24 @@ Codex는 Placeholder를 만들거나 발견할 때 이 문서를 갱신한다.
 
 - [ ] CHARACTER_MODEL_01
 - [ ] CHARACTER_TEXTURE_01
+- [ ] CHARACTER_HUMANOID_RIG
 - [ ] IDLE_ANIMATION
 - [ ] ADDRESS_ANIMATION
 - [ ] BACKSWING_ANIMATION
 - [ ] SWING_ANIMATION
 - [ ] FOLLOW_THROUGH_ANIMATION
 - [ ] WATCH_BALL_ANIMATION
+- [ ] PUTT_ADDRESS_ANIMATION
+- [ ] PUTT_BACKSWING_ANIMATION
+- [ ] PUTT_SWING_ANIMATION
+- [ ] PUTT_FOLLOW_THROUGH_ANIMATION
 - [ ] HAPPY_ANIMATION
 - [ ] SAD_ANIMATION
+- [ ] BIRDIE_CELEBRATION_ANIMATION
+- [ ] EAGLE_CELEBRATION_ANIMATION
 - [ ] HOLE_IN_CELEBRATION
+- [ ] DRIVER_MODEL
+- [ ] PUTTER_MODEL
 
 ## Course
 
@@ -92,3 +101,11 @@ Codex는 Placeholder를 만들거나 발견할 때 이 문서를 갱신한다.
 - [ ] `M5Cup`, `M5FlagPole`, `M5Flag` primitive geometry/material을 최종 cup/flag asset으로 교체
 - [ ] `TemporaryDriver`/`Putter` 텍스트 debug 표시를 M8 정식 club icon/presentation으로 교체
 - [ ] IMGUI Hole/Stroke/Result 정보를 M8 정식 HUD와 result popup으로 교체
+
+## M7 Character / Animation Placeholder
+
+- [ ] `PlaceholderGolfer.prefab` primitive body hierarchy를 최종 licensed anime-style character model/texture/rig로 교체
+- [ ] procedural pose를 Idle/Address/BackSwing/Swing/FollowThrough/WatchBall humanoid clips로 교체하고 단일 Impact Animation Event 연결
+- [ ] procedural Putt pose를 PuttAddress/PuttBackSwing/PuttSwing/PuttFollowThrough clips로 교체
+- [ ] placeholder celebration motion을 Happy/Sad/Birdie/Eagle/HoleInOne clips로 교체
+- [ ] primitive Driver/Putter visual을 최종 club model로 교체하되 `ClubSocket` attachment seam 유지

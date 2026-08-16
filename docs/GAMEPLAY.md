@@ -272,3 +272,31 @@ Putt Address → Impact → Putt Follow → HoleComplete → Result
 - Landing은 첫 충돌부터 Bounce/Roll을 이어 보며, Stop 후 NextShot blend를 거쳐 새 lie의 Address로 돌아간다.
 - Putt는 Ball-Cup 중간점과 남은 거리를 기준으로 카메라 거리·높이·FOV를 조절해 공과 Cup을 함께 구성하며, Hole In 이후 Cup/Result를 보여 준다.
 - 모든 feel 값은 `M6CameraTuning.asset`에서 조정한다. M6에는 Character, HUD, VFX/Audio 완성 연출이 포함되지 않는다.
+
+## 19. M7 Character / Animation Flow
+
+정상 Driver shot:
+
+```text
+Aiming/PowerSelecting → Address
+ImpactSelecting → BackSwing
+ShotCommitted → Swing
+Animation Impact marker → Ball Launch + Camera Impact
+→ FollowThrough → WatchBall
+Ball Stopped/NextShot → 새 Ball 위치 Address
+```
+
+Green Putter:
+
+```text
+PuttAddress → PuttBackSwing → PuttSwing
+→ Impact marker → Ball Rolling
+→ PuttFollowThrough → WatchBall → Celebration
+```
+
+- Shot commit은 command/stroke 확정 시점이고 Ball launch는 animation Impact 시점이다.
+- Impact signal은 한 swing에서 한 번만 launch할 수 있으며 누락 시 0.65초 fallback이 soft lock을 방지한다.
+- Character는 현재 Ball 위치와 Aim direction을 기준으로 배치·회전하며 Fairway/Rough/Bunker/Green의 다음 shot을 따라간다.
+- Driver와 Putter는 서로 다른 placeholder visual과 motion 크기를 사용한다.
+- Hole result는 Happy/Sad/Birdie/Eagle/HoleInOne celebration hook으로 매핑된다.
+- 현재 procedural motion은 architecture 검증용이며 최종 humanoid rig/clip/IK가 아니다.

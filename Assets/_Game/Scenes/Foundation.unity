@@ -920,7 +920,7 @@ GameObject:
   - component: {fileID: 856989766}
   - component: {fileID: 856989767}
   m_Layer: 0
-  m_Name: M6 Camera Director Systems
+  m_Name: M7 Character Animation Systems
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -962,11 +962,12 @@ MonoBehaviour:
   wind: {fileID: 856989765}
   holeFlow: {fileID: 856989767}
   cameraDirector: {fileID: 621407175}
+  character: {fileID: 1958169847}
   showOverlay: 1
   showAimLine: 1
   aimLineLength: 90
   overlayPosition: {x: 16, y: 16}
-  overlaySize: {x: 650, y: 750}
+  overlaySize: {x: 690, y: 820}
 --- !u!114 &856989762
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1960,6 +1961,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 621407171}
+  - {fileID: 1958169846}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1402614270
@@ -2646,6 +2648,91 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 8669318119232419288, guid: 3c91879bfc3e1004ca540c02387f2307, type: 3}
   m_PrefabInstance: {fileID: 1953279981}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &1958169845
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1385689832}
+    m_Modifications:
+    - target: {fileID: 2243110126240325670, guid: aafae5cd422ed734b976fe61266f8eb8, type: 3}
+      propertyPath: m_Name
+      value: Placeholder Golfer
+      objectReference: {fileID: 0}
+    - target: {fileID: 2506422739610790630, guid: aafae5cd422ed734b976fe61266f8eb8, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2506422739610790630, guid: aafae5cd422ed734b976fe61266f8eb8, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2506422739610790630, guid: aafae5cd422ed734b976fe61266f8eb8, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2506422739610790630, guid: aafae5cd422ed734b976fe61266f8eb8, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2506422739610790630, guid: aafae5cd422ed734b976fe61266f8eb8, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2506422739610790630, guid: aafae5cd422ed734b976fe61266f8eb8, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2506422739610790630, guid: aafae5cd422ed734b976fe61266f8eb8, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2506422739610790630, guid: aafae5cd422ed734b976fe61266f8eb8, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2506422739610790630, guid: aafae5cd422ed734b976fe61266f8eb8, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2506422739610790630, guid: aafae5cd422ed734b976fe61266f8eb8, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4133735450730641530, guid: aafae5cd422ed734b976fe61266f8eb8, type: 3}
+      propertyPath: ball
+      value:
+      objectReference: {fileID: 1953279982}
+    - target: {fileID: 4133735450730641530, guid: aafae5cd422ed734b976fe61266f8eb8, type: 3}
+      propertyPath: holeFlow
+      value:
+      objectReference: {fileID: 856989767}
+    - target: {fileID: 4133735450730641530, guid: aafae5cd422ed734b976fe61266f8eb8, type: 3}
+      propertyPath: shotFlow
+      value:
+      objectReference: {fileID: 856989763}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: aafae5cd422ed734b976fe61266f8eb8, type: 3}
+--- !u!4 &1958169846 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2506422739610790630, guid: aafae5cd422ed734b976fe61266f8eb8, type: 3}
+  m_PrefabInstance: {fileID: 1958169845}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1958169847 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4133735450730641530, guid: aafae5cd422ed734b976fe61266f8eb8, type: 3}
+  m_PrefabInstance: {fileID: 1958169845}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 88fad4418e9977a4c9770405fd6cd66a, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: SwingPop.Runtime::SwingPop.CharacterSystem.CharacterGolfController
 --- !u!1 &2054416273
 GameObject:
   m_ObjectHideFlags: 0

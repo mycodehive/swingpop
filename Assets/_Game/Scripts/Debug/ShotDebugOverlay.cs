@@ -1,9 +1,11 @@
 using SwingPop.CameraSystem;
+using SwingPop.CharacterSystem;
 using SwingPop.Gameplay.Ball;
 using SwingPop.Gameplay.Shot;
 using SwingPop.Gameplay.Wind;
 using SwingPop.Gameplay.Hole;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace SwingPop.Debugging
 {
@@ -16,6 +18,7 @@ namespace SwingPop.Debugging
         [SerializeField] private WindController wind;
         [SerializeField] private HoleFlowController holeFlow;
         [SerializeField] private CameraDirector cameraDirector;
+        [SerializeField] private CharacterGolfController character;
 
         [Header("Presentation")]
         [SerializeField] private bool showOverlay = true;
@@ -29,7 +32,17 @@ namespace SwingPop.Debugging
 
         private void LateUpdate()
         {
+            if (Keyboard.current != null
+                && (Keyboard.current.f1Key.wasPressedThisFrame || Keyboard.current.hKey.wasPressedThisFrame))
+            {
+                showOverlay = !showOverlay;
+            }
             UpdateAimLine();
+        }
+
+        public void SetOverlayVisible(bool visible)
+        {
+            showOverlay = visible;
         }
 
         private void OnGUI()
@@ -41,7 +54,8 @@ namespace SwingPop.Debugging
 
             EnsureStyles();
             GUILayout.BeginArea(new Rect(overlayPosition, overlaySize), GUI.skin.box);
-            GUILayout.Label("M6 CAMERA DIRECTOR DEBUG", headingStyle);
+            GUILayout.Label("M7 CHARACTER / CAMERA DEBUG", headingStyle);
+            GUILayout.Label("H: Toggle Debug Overlay", labelStyle);
             if (cameraDirector != null)
             {
                 GUILayout.Label(
@@ -72,6 +86,18 @@ namespace SwingPop.Debugging
                     labelStyle);
             }
             GUILayout.Label($"Shot State: {shotFlow.State}    Ball: {ball.State}", labelStyle);
+            if (character != null)
+            {
+                GUILayout.Label(
+                    $"Character: {character.CurrentState}  Animation: {character.AnimationState}  Aim: {character.CharacterAimAngle:+0.0;-0.0;0.0}°",
+                    labelStyle);
+                GUILayout.Label(
+                    $"Impact Event: {(character.ImpactEventFired ? "Fired" : "Waiting/Idle")}  Pending Launch: {shotFlow.HasPendingBallLaunch}  Club Visual: {character.CurrentClubVisual}",
+                    labelStyle);
+                GUILayout.Label(
+                    $"Fallback Launch Used: {shotFlow.LastBallLaunchUsedFallback}",
+                    labelStyle);
+            }
             GUILayout.Label($"Aim: {shotFlow.AimAngleDegrees:+0.0;-0.0;0.0}°", labelStyle);
             DrawMeter("Power", shotFlow.Power01, new Color(0.2f, 0.9f, 0.45f));
             GUILayout.Label($"Power: {shotFlow.Power01 * 100f:0}%", labelStyle);

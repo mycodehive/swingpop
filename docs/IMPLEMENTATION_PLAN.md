@@ -116,7 +116,7 @@ Package 추가는 실제 버전 확인 후 수행한다.
 
 ## Next Action
 
-M6 카메라의 수동 시각/멀미/가림 검증을 완료한다. M7 Character는 별도 요청 전까지 시작하지 않는다.
+M7 캐릭터의 수동 motion/타격감/카메라 composition 검증을 완료한다. M8 HUD는 별도 요청 전까지 시작하지 않는다.
 
 ## M1 Ball Launch Implementation (2026-08-10)
 
@@ -324,3 +324,44 @@ Green까지 직접 이동하지 않고 Putt 구도만 확인하려면 Play Mode�
 
 - 전체 카메라: `Assets/_Game/ScriptableObjects/Camera/M6CameraTuning.asset`
 - Main Camera wiring: `Assets/_Game/Scenes/Foundation.unity > Presentation > Main Camera > Camera Director`
+
+## M7 Character / Animation Implementation (2026-08-16)
+
+- 저장소에는 라이선스가 확인되는 gameplay character/humanoid asset이 없어 외부 다운로드 없이 primitive hierarchy 기반 `PlaceholderGolfer.prefab`을 제작했다.
+- `CharacterGolfController`는 Shot/Ball/Hole event를 Character presentation state로 연결하고, `CharacterAnimationController`는 procedural pose와 향후 Animator 교체 지점을 소유한다.
+- 상태는 `Address`, `BackSwing`, `Swing`, `FollowThrough`, `WatchBall`, `PuttAddress`, `PuttBackSwing`, `PuttSwing`, `PuttFollowThrough`와 결과 celebration hook을 포함한다.
+- Address 위치는 현재 Ball과 Aim direction 기준 lateral/backward/height offset으로 계산한다. Aim 변경은 smoothing된 character orientation에 반영되고 다음 lie에서는 캐릭터가 새 Ball 위치로 이동한다.
+- Shot commit은 더 이상 즉시 Ball을 발사하지 않는다. 캐릭터 Swing의 normalized Impact marker가 `ShotFlowController.TryLaunchCommittedShot()`을 한 번 호출하며, 중복 신호는 차단된다.
+- Character adapter가 없으면 기존 즉시 launch를 유지하고, 연결된 adapter의 Impact 신호가 누락되면 data 기반 timeout fallback이 launch를 보장한다.
+- Camera는 Shot commit에서 Swing을 유지하고 실제 `Ball.Launched` 시점에 Impact로 전환해 `Impact → BallFollow/Putt` 순서를 animation과 동기화한다.
+- `ClubSocket`과 교체 가능한 Driver/Putter primitive visual을 추가했다. Green에서 Club 변경 event가 Putter visual과 낮은 putt motion을 즉시 선택한다.
+- Debug overlay는 Character/Animation state, Impact fired 여부, pending launch, fallback 사용 여부, club visual, character aim angle을 표시한다. `H`로 overlay를 숨기거나 다시 표시한다.
+
+## M7 Automated Validation (2026-08-16)
+
+- Unity Test Framework EditMode: 총 77 passed, 0 failed. 기존 63개와 character placement/orientation, state mapping, Impact single-fire, fallback delay, club visual, celebration mapping 테스트 14개를 포함한다.
+- M7 PlayMode: `BackSwing → Swing → FollowThrough → WatchBall → Address → PuttAddress → PuttSwing → PuttFollowThrough → WatchBall → EagleCelebration`을 통과했다.
+- Shot commit 직후 Ball이 Ready인 구간, primary Impact event 이후 단일 launch, fallback 미사용, 다음 lie character reposition을 확인했다.
+- Camera integration은 `HoleIntro → Address → Swing → Impact → BallFollow → Landing → NextShot → Putt → HoleComplete → Result`를 통과했다.
+- M1, M2, M3, M4, M5, M6 PlayMode regression validation을 다시 실행해 모두 PASS했다.
+
+## M7 Manual Character Validation
+
+1. Project 창에서 `Assets > _Game > Scenes > Foundation`을 더블클릭한다.
+2. Unity 상단 메뉴에서 `Window > General > Console`을 클릭하고 Console 왼쪽 위 `Clear`를 클릭한다.
+3. 상단 중앙의 ▶ `Play` 버튼을 누른다. 약 2.8초 HoleIntro 뒤 Golfer가 공 옆 Address 위치에 보이는지 확인한다.
+4. Game 탭 내부를 클릭하고 `H`를 눌러 큰 debug overlay를 숨긴다. 다시 `H`를 누르면 telemetry가 나타난다.
+5. `A/D` 또는 좌우 방향키로 조준하고 Golfer가 aim 방향을 부드럽게 따라 회전하는지 확인한다.
+6. Space를 한 번 눌러 PowerSelecting에서 Address pose가 유지되는지 확인한다.
+7. Space를 두 번째로 눌러 ImpactSelecting에서 BackSwing 준비 pose가 나타나는지 확인한다.
+8. Space를 세 번째로 눌러 `Swing → Impact에서 Ball Launch → FollowThrough → WatchBall` 순서인지 확인한다. 공이 club impact보다 먼저 출발하면 안 된다.
+9. 공이 멈춘 뒤 캐릭터가 새 Ball 위치로 이동해 Address로 돌아오는지 확인한다.
+10. Green에서 Current Club이 Putter가 되면 짧은 `PuttAddress/PuttBackSwing/PuttSwing/PuttFollowThrough`와 납작한 Putter head가 보이는지 확인한다.
+11. Hole In 후 결과에 맞는 placeholder Happy/Sad/Birdie/Eagle/HoleInOne reaction이 보이는지 확인한다.
+12. Play를 종료한 뒤 Console의 빨간 Error가 0인지 확인한다.
+
+튜닝 위치:
+
+- Character placement/timeline/fallback/socket: `Assets/_Game/ScriptableObjects/Character/M7CharacterTuning.asset`
+- Placeholder prefab/attachment: `Assets/_Game/Prefabs/Characters/PlaceholderGolfer.prefab`
+- Scene wiring: `Assets/_Game/Scenes/Foundation.unity > Presentation > Placeholder Golfer`
