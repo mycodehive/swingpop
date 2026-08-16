@@ -345,3 +345,26 @@ CharacterTuningData -------------> placement/timeline/fallback/socket
 - `CharacterPresentation`은 address transform, primitive rig, `ClubSocket`, Driver/Putter visual 교체 지점만 소유한다.
 - Character adapter가 연결되지 않은 scene은 즉시 launch compatibility를 유지한다. 연결된 adapter의 Impact가 누락되면 `ShotImpactDelayGuard`가 제한시간 후 launch해 soft lock을 방지한다.
 - Camera는 캐릭터를 제어하지 않으며 실제 `Ball.Launched` event에서 Impact mode로 전환한다.
+
+## M8 Gameplay HUD Boundary
+
+```text
+ShotFlowController --state/commit/club/spin event--+
+GolfBallController --state/hazard event------------+--> GameplayHudPresenter --> GameplayHudView
+WindController -----wind event---------------------+             |                    |
+HoleFlowController -stroke/state/result event------+             |                    +--> uGUI widgets
+                                                                HudTuningData          +--> Gauge/Popup/Result views
+
+Primary uGUI Button --> GameplayHudPresenter --> ShotFlowController.ConfirmCurrentStep()
+Keyboard Space ------> ShotInputController -----> same command
+```
+
+- Unity 6000.5.7f1 프로젝트에 이미 포함된 uGUI 2.5.0을 사용한다. TMP나 추가 UI package는 설치하지 않았다.
+- `GameplayHudPresenter`는 gameplay source of truth의 event를 구독하며 physics, score, wind, lie 값을 다시 계산하지 않는다.
+- `GameplayHudView`, `HudGaugeView`, `HudPopupView`, `HudResultView`는 표시와 작은 presentation motion만 소유한다.
+- Power/Impact cursor와 world-to-screen Aim marker, 이동 중 거리만 frame update한다. Hole/Club/Spin/Wind/Stroke/Result는 event 기반으로 갱신한다.
+- Impact zone 폭은 `ShotFlowController.Tuning`의 Perfect/Great/Good threshold를 직접 읽어 실제 gameplay 판정과 일치한다.
+- Primary button과 Space는 모두 `ConfirmCurrentStep()`을 호출하며 같은 frame 중복 confirm은 ShotFlow가 차단한다.
+- `GameplayHUD.prefab`은 scene dependency가 없는 교체 가능한 presentation asset이고, Foundation instance가 Shot/Ball/Wind/Hole/Main Camera를 명시적으로 참조한다.
+- Canvas는 1920×1080 reference, width/height match 0.5, corner anchor와 full-screen `Safe Area` wrapper를 사용한다.
+- 기존 `ShotDebugOverlay`와 trajectory/aim debug는 독립적으로 유지되며 `H`/`F1`로 표시를 전환한다.

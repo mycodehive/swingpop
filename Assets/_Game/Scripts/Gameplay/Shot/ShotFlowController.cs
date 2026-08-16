@@ -33,10 +33,12 @@ namespace SwingPop.Gameplay.Shot
         private bool deferBallLaunchUntilImpact;
         private float fallbackImpactDelay = 0.45f;
         private bool lastBallLaunchUsedFallback;
+        private int lastConfirmFrame = -1;
 
         public event Action<ShotFlowState, ShotFlowState> StateChanged;
         public event Action<ShotCommand> ShotCommitted;
         public event Action<ClubData> ClubChanged;
+        public event Action<SpinPreset> SpinChanged;
         public event Action DebugResetRequested;
 
         public ShotFlowState State => state;
@@ -50,6 +52,7 @@ namespace SwingPop.Gameplay.Shot
         public SpinPreset SelectedSpinPreset => selectedSpinPreset;
         public ShotSpin SelectedSpin => ShotSpin.FromPreset(selectedSpinPreset);
         public ClubData CurrentClub => currentClub != null ? currentClub : defaultClub;
+        public ShotTuningData Tuning => shotTuning;
         public bool HasPendingBallLaunch => hasPendingBallLaunch;
         public bool LastBallLaunchUsedFallback => lastBallLaunchUsedFallback;
 
@@ -128,6 +131,12 @@ namespace SwingPop.Gameplay.Shot
 
         public void ConfirmCurrentStep()
         {
+            if (lastConfirmFrame == Time.frameCount)
+            {
+                return;
+            }
+            lastConfirmFrame = Time.frameCount;
+
             switch (state)
             {
                 case ShotFlowState.Aiming:
@@ -185,9 +194,16 @@ namespace SwingPop.Gameplay.Shot
                 return;
             }
 
-            selectedSpinPreset = CurrentClub != null && CurrentClub.IsPutter
+            SpinPreset nextPreset = CurrentClub != null && CurrentClub.IsPutter
                 ? SpinPreset.NoSpin
                 : preset;
+            if (selectedSpinPreset == nextPreset)
+            {
+                return;
+            }
+
+            selectedSpinPreset = nextPreset;
+            SpinChanged?.Invoke(selectedSpinPreset);
         }
 
         public void ResetShot()
@@ -222,6 +238,7 @@ namespace SwingPop.Gameplay.Shot
         {
             ClubData nextClub = club != null ? club : defaultClub;
             bool changed = currentClub != nextClub;
+            SpinPreset previousSpin = selectedSpinPreset;
             currentClub = nextClub;
             if (currentClub != null && currentClub.IsPutter)
             {
@@ -230,6 +247,10 @@ namespace SwingPop.Gameplay.Shot
             if (changed)
             {
                 ClubChanged?.Invoke(currentClub);
+            }
+            if (previousSpin != selectedSpinPreset)
+            {
+                SpinChanged?.Invoke(selectedSpinPreset);
             }
         }
 

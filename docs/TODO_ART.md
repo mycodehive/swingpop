@@ -53,12 +53,18 @@ Codex는 Placeholder를 만들거나 발견할 때 이 문서를 갱신한다.
 ## UI
 
 - [ ] PLAYER_PORTRAIT_FRAME
+- [ ] PLAYER_PORTRAIT
 - [ ] WIND_WIDGET
+- [ ] WIND_ARROW_ICON
 - [ ] POWER_GAUGE_SKIN
 - [ ] IMPACT_GAUGE_SKIN
 - [ ] SHOT_BUTTON
 - [ ] CLUB_ICONS
+- [ ] SPIN_ICONS
 - [ ] RESULT_POPUP
+- [ ] HAZARD_POPUP
+- [ ] AIM_MARKER_AND_GUIDE
+- [ ] UI_TYPOGRAPHY_FONT
 
 ## VFX
 
@@ -109,3 +115,13 @@ Codex는 Placeholder를 만들거나 발견할 때 이 문서를 갱신한다.
 - [ ] procedural Putt pose를 PuttAddress/PuttBackSwing/PuttSwing/PuttFollowThrough clips로 교체
 - [ ] placeholder celebration motion을 Happy/Sad/Birdie/Eagle/HoleInOne clips로 교체
 - [ ] primitive Driver/Putter visual을 최종 club model로 교체하되 `ClubSocket` attachment seam 유지
+
+## M8 Gameplay HUD Placeholder
+
+- [ ] `GameplayHUD.prefab`의 기본 uGUI panel/background를 최종 rounded fantasy HUD skin과 9-slice sprite로 교체
+- [ ] `P` 문자 portrait와 원형 frame을 최종 Player portrait/frame으로 교체
+- [ ] 도형 기반 Wind arrow와 Club initial을 최종 Wind/Driver/Putter icon으로 교체
+- [ ] ASCII 기반 Spin 방향 표시를 최종 No/Top/Back/Left/Right Spin icon으로 교체
+- [ ] Power/Impact bar, cursor, Perfect zone을 최종 gauge skin과 animation으로 교체
+- [ ] Primary Action, Impact/Hazard/Lie popup, Result panel을 최종 UI art로 교체
+- [ ] `LegacyRuntime.ttf` placeholder를 라이선스 확인된 영문/한글 대응 typography로 교체

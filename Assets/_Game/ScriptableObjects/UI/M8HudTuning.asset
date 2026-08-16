@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8aac5fcc94a63124caa2933151333df2, type: 3}
+  m_Name: M8HudTuning
+  m_EditorClassIdentifier: SwingPop.Runtime::SwingPop.Data.HudTuningData
+  impactFeedbackDuration: 1.1
+  hazardFeedbackDuration: 2.6
+  lieFeedbackDuration: 1.2
+  buttonBreathingScale: 0.025
+  buttonBreathingSpeed: 2.2
+  popupFadeDuration: 0.18
+  resultShowDuration: 0.42
+  aimMarkerDistance: 22
+  aimScreenMargin: 90

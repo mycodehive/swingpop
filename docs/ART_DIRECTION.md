@@ -142,3 +142,12 @@ Perfect:
 - Address camera에서 Character, Ball, Aim line, fairway depth가 동시에 읽혀야 한다. Debug overlay가 가리면 `H`로 숨긴다.
 - Driver swing은 torso/arm/club의 큰 회전, Putter는 낮고 짧은 motion으로 구분한다.
 - 최종 character는 같은 prefab adapter와 ClubSocket을 유지하면서 licensed model, humanoid rig, clips로 교체한다.
+
+## M8 Placeholder HUD Direction
+
+- reference의 상단 정보 밀도, 중앙 Aim/Distance 가독성, 하단 timing interaction 존재감만 quality bar로 사용하고 고유 디자인은 복제하지 않는다.
+- cyan/mint/white/blue를 기본으로 하고 Perfect에는 gold, hazard/miss에는 orange-red를 제한적으로 사용한다.
+- 어두운 반투명 rounded-style panel, outline/shadow, 큰 typography hierarchy로 밝은 outdoor 배경에서도 읽히게 한다.
+- Player/Hole/Wind를 세 모서리 그룹으로 분리하고, Club/Spin과 Power/Impact/Primary Action을 하단에 두어 Character와 course 중앙 시야를 남긴다.
+- 기본 Unity uGUI sprite와 `LegacyRuntime.ttf`만 사용한 placeholder이며 최종 portrait/icon/gauge/button/font asset으로 교체 가능하다.
+- motion은 action breathing, active power glow, Impact popup pulse, wind 방향 smoothing, Result fade/scale에 한정한다.

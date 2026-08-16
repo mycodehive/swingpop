@@ -300,3 +300,27 @@ PuttAddress → PuttBackSwing → PuttSwing
 - Driver와 Putter는 서로 다른 placeholder visual과 motion 크기를 사용한다.
 - Hole result는 Happy/Sad/Birdie/Eagle/HoleInOne celebration hook으로 매핑된다.
 - 현재 procedural motion은 architecture 검증용이며 최종 humanoid rig/clip/IK가 아니다.
+
+## 20. M8 Gameplay HUD Flow
+
+상태별 주요 HUD:
+
+```text
+Aiming          → Hole/Stroke/Wind/Aim/Distance/Height/Club/Lie/Spin + START SHOT
+PowerSelecting  → Power gauge + SET POWER 강조
+ImpactSelecting → gameplay threshold 기반 Impact zones + IMPACT 강조
+ShotCommitted   → timing/action 숨김 + Impact grade popup
+Ball flight     → 상단 gameplay context 유지, timing interaction 비활성
+Next shot       → 새 Distance/Lie/Club/Spin 상태 갱신
+HoleComplete    → timing/action 숨김 + ScoreCalculator 기반 Result panel
+```
+
+- 좌상단은 PLAYER placeholder, Stroke, penalty를 표시한다.
+- 중앙 상단은 Hole/Par와 live Stroke를 표시하고 완료 전 결과 명칭을 미리 계산하지 않는다.
+- 우상단 Wind arrow와 m/s는 `WindController.Direction/Strength`를 사용한다.
+- Aim marker는 현재 Ball과 `ShotFlowController.AimDirection`을 world-to-screen projection하며 Remaining Distance/Height Difference는 `HoleFlowController` 값을 표시한다.
+- 하단 Club/Lie는 현재 `ClubData`와 Ball lie를 표시한다. Driver에서 숫자 1~5 Spin preset을 표시하고 Putter에서는 `SPIN DISABLED`로 바뀐다.
+- uGUI Primary button click과 Keyboard Space는 같은 ShotFlow command를 사용한다.
+- Impact 확정 시 Perfect/Great/Good/Miss popup, Water/OOB 시 +1 penalty popup, 새 정상 lie에서는 작은 lie feedback을 표시한다.
+- Result panel은 `ScoreCalculator`가 만든 `ScoreResult`만 표시한다.
+- 기존 IMGUI `ShotDebugOverlay`는 개발용으로 유지하며 정식 HUD와 독립적이다.

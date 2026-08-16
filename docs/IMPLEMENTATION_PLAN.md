@@ -116,7 +116,7 @@ Package 추가는 실제 버전 확인 후 수행한다.
 
 ## Next Action
 
-M7 캐릭터의 수동 motion/타격감/카메라 composition 검증을 완료한다. M8 HUD는 별도 요청 전까지 시작하지 않는다.
+M8 HUD의 수동 visual/readability, mouse click, 1920×1080/1600×900/1280×720 anchor 검증을 완료한다. M9 VFX/Audio는 별도 요청 전까지 시작하지 않는다.
 
 ## M1 Ball Launch Implementation (2026-08-10)
 
@@ -365,3 +365,51 @@ Green까지 직접 이동하지 않고 Putt 구도만 확인하려면 Play Mode�
 - Character placement/timeline/fallback/socket: `Assets/_Game/ScriptableObjects/Character/M7CharacterTuning.asset`
 - Placeholder prefab/attachment: `Assets/_Game/Prefabs/Characters/PlaceholderGolfer.prefab`
 - Scene wiring: `Assets/_Game/Scenes/Foundation.unity > Presentation > Placeholder Golfer`
+
+## M8 Gameplay HUD Implementation (2026-08-16)
+
+- UI technology는 이미 설치된 uGUI 2.5.0을 선택했다. Unity 6000.5.7f1에서 runtime HUD, CanvasScaler, Input System pointer, 간단한 animation, prefab 교체 흐름을 추가 package 없이 구성할 수 있기 때문이다.
+- `GameplayHUD.prefab`은 1920×1080 reference resolution, Match 0.5, full-screen `Safe Area` wrapper, corner/center/bottom anchor를 사용한다.
+- Player/Stroke/Penalty, Hole/Par/Live Stroke, Wind arrow/m/s, projected Aim marker, Remaining Distance/Height Difference, Club/Lie/Spin을 gameplay source에서 표시한다.
+- `GameplayHudPresenter`가 Shot/Ball/Wind/Hole event를 구독하고 `GameplayHudView`, `HudGaugeView`, `HudPopupView`, `HudResultView`에 presentation만 전달한다.
+- Power와 Impact cursor는 기존 ShotFlow의 현재 값을 표시한다. Perfect/Great/Good zone은 `M2ShotTuning.asset` threshold에서 구성해 판정과 시각 구간이 일치한다.
+- Primary button click과 Keyboard Space는 `ShotFlowController.ConfirmCurrentStep()`의 동일 command path를 사용한다. 같은 frame 중복 confirm은 차단한다.
+- Impact grade popup, Water/OOB +1 penalty popup, 작은 next-lie feedback, Result fade/scale, button breathing, power glow, wind rotation smoothing을 추가했다.
+- Green/Putter에서는 Spin을 `SPIN DISABLED`로 표시한다. 기존 숫자 1~5, 6~0, H debug overlay, trajectory와 M1~M7 gameplay는 유지한다.
+- `ShotDebugOverlay`는 삭제하지 않았고 gameplay HUD와 독립적인 개발 도구로 유지했다.
+
+## M8 Automated Validation (2026-08-16)
+
+- Unity Test Framework EditMode: 총 94 passed, 0 failed. 기존 77개와 Action state, Spin label, Height, Wind arrow, Score result, Hazard message presentation mapping 17개를 포함한다.
+- M8 PlayMode: initial HUD, mouse Primary Action, Power/Impact gauge, data-backed Perfect zone, Spin 5종, Wind 5종, Ball flight interaction hiding, next-shot Lie, Water +1 popup/recovery, Green Putter/Spin disabled, Result panel을 통과했다.
+- CanvasScaler는 `Scale With Screen Size`, reference `1920×1080`, Match `0.5`로 자동 확인했다.
+- M1, M2, M3, M4, M5, M6, M7 PlayMode regression validation을 다시 실행해 모두 PASS했다.
+- 실제 Game View에서의 미세 spacing, button pointer click 체감, 1920×1080/1600×900/1280×720 visual anchor 검증은 아래 수동 절차가 필요하다.
+
+## M8 Manual HUD Validation
+
+1. Project 창에서 `Assets > _Game > Scenes > Foundation`을 더블클릭한다.
+2. 상단 메뉴 `Window > General > Console`을 열고 Console 왼쪽 위 `Clear`를 클릭한다.
+3. `Game` 탭을 연다. Game 탭 상단 왼쪽 해상도 dropdown을 클릭하고 `1920x1080`을 선택한다. 목록에 없다면 `+`를 눌러 Type `Fixed Resolution`, Width `1920`, Height `1080`, Label `PC 1920x1080`으로 추가한다.
+4. 상단 중앙 ▶ `Play`를 클릭하고 Game 탭 내부를 한 번 클릭한다.
+5. `H`를 눌러 큰 Debug Overlay를 숨긴 뒤 좌상단 Player/Stroke, 상단 Hole/Par, 우상단 Wind가 보이는지 확인한다.
+6. `A/D` 또는 좌우 방향키로 Aim하고 중앙 marker, Remaining Distance, Height Difference가 읽히는지 확인한다.
+7. 숫자 `1~5`를 차례로 눌러 `NO/TOP/BACK/LEFT/RIGHT SPIN` 표시가 모두 바뀌는지 확인한다.
+8. 숫자 `6~0`을 차례로 눌러 Wind preset, arrow 방향, m/s가 함께 바뀌는지 확인한다.
+9. Space 또는 우하단 `START SHOT`을 클릭하고 Power Gauge와 `SET POWER`를 확인한다.
+10. 다시 Space 또는 버튼을 클릭하고 Impact Gauge의 MISS/GOOD/GREAT/PERFECT 색 구간과 moving cursor를 확인한다.
+11. 세 번째 Space 또는 버튼으로 확정하고 Impact grade popup이 잠깐 보이는지 확인한다. Perfect는 더 강하게 pulse한다.
+12. Ball flight 중 Power/Impact와 Shot button이 숨고 상단 gameplay 정보가 안정적으로 남는지 확인한다.
+13. 공이 멈춘 뒤 새 Lie/Club/Distance가 갱신되고 `START SHOT`이 다시 나타나는지 확인한다.
+14. Green에서 Club이 `PUTTER`, Lie가 `GREEN`, Spin이 `SPIN DISABLED`인지 확인한다. Putt 카메라에서 Ball과 Cup이 함께 보여야 한다.
+15. 왼쪽 Water 또는 오른쪽 OOB로 보내 `WATER HAZARD`/`OUT OF BOUNDS`와 `+1 PENALTY` popup을 확인한다.
+16. Hole In 후 timing/action이 숨고 중앙 Result panel의 Hole/Par/Strokes/Score label이 실제 결과와 일치하는지 확인한다.
+17. Play를 종료하고 Game 탭 해상도를 `1600x900`, `1280x720`으로 각각 바꿔 다시 Play한다. Top/Bottom panel이 화면 밖으로 나가거나 중앙 course/character를 과도하게 가리지 않는지 확인한다.
+18. 마지막으로 Play를 종료하고 Console의 빨간 Error가 0인지 확인한다.
+
+튜닝 위치:
+
+- HUD popup/motion/aim marker: `Assets/_Game/ScriptableObjects/UI/M8HudTuning.asset`
+- Power/Impact timing과 grade zone: `Assets/_Game/ScriptableObjects/M2ShotTuning.asset`
+- HUD prefab/anchors/style: `Assets/_Game/Prefabs/UI/GameplayHUD.prefab`
+- Scene wiring: `Assets/_Game/Scenes/Foundation.unity > Presentation > Gameplay HUD`

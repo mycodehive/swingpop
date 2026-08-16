@@ -4,7 +4,9 @@
   "references": [
     "SwingPop.Runtime",
     "UnityEditor.TestRunner",
-    "Unity.RenderPipelines.Core.Runtime"
+    "Unity.RenderPipelines.Core.Runtime",
+    "Unity.InputSystem",
+    "Unity.ugui"
   ],
   "includePlatforms": [
     "Editor"

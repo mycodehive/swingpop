@@ -26,8 +26,8 @@ Address/Aim/Swing/Impact/BallFollow/Landing/NextShot/Putt/HoleComplete/Result mo
 ### M7 Character — Implementation Complete (2026-08-16)
 Primitive replaceable golfer prefab, Ball-relative Address/reposition, Aim rotation, procedural Driver/Putter flow, Impact-delayed single Ball launch with fallback, FollowThrough/WatchBall, club visual and celebration hooks are scene-connected. EditMode and M1–M7 PlayMode regression validations pass; manual motion/feel review remains.
 
-### M8 HUD
-Full gameplay HUD.
+### M8 HUD — Implementation Complete (2026-08-16)
+uGUI 1920×1080 scalable Canvas, Player/Hole/Wind/Aim/Distance/Height/Club/Lie/Spin HUD, gameplay-driven Power/Impact gauges, shared keyboard/mouse Primary Action, Impact/Hazard/Lie feedback, Result panel, placeholder motion, EditMode tests, M8 PlayMode validation and M1–M7 regressions are complete. Manual visual/readability and 16:9 resolution review remains.
 
 ### M9 VFX / Audio
 Impact, trail, landing, basic sound.
