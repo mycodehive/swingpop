@@ -43,6 +43,11 @@ MonoBehaviour:
   nextShotHoldDuration: 0.55
   puttOffset: {x: 4.2, y: 2.25, z: -5.4}
   puttFieldOfView: 43
+  puttDistanceScale: 0.42
+  puttMaximumDistanceExtension: 12
+  puttHeightScale: 0.08
+  puttFovPerMeter: 0.55
+  puttMaximumFieldOfView: 60
   holeCompleteOffset: {x: 4.5, y: 2.6, z: -4.5}
   holeCompleteFieldOfView: 42
   holeCompleteHoldDuration: 1.1

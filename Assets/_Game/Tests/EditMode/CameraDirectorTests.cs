@@ -1,5 +1,6 @@
 using NUnit.Framework;
 using SwingPop.CameraSystem;
+using SwingPop.Data;
 using UnityEngine;
 using UnityEngine.TestTools.Utils;
 
@@ -89,6 +90,39 @@ namespace SwingPop.Tests
 
             Assert.That(blend, Is.GreaterThan(0f).And.LessThan(1f));
             Assert.That(CameraMath.ExponentialBlend(8f, 0f), Is.Zero);
+        }
+
+        [Test]
+        public void PuttFraming_LongPuttMovesBehindBallAndWidensFov()
+        {
+            CameraTuningData tuning = ScriptableObject.CreateInstance<CameraTuningData>();
+            try
+            {
+                Vector3 ball = Vector3.zero;
+                Vector3 cup = Vector3.forward * 12f;
+
+                CameraFraming framing = CameraFramingSolver.Resolve(
+                    CameraMode.Putt,
+                    tuning,
+                    ball,
+                    ball,
+                    cup,
+                    Vector3.forward,
+                    Vector3.zero,
+                    Vector3.forward,
+                    Vector3.forward,
+                    0f,
+                    0f);
+
+                Assert.That(framing.Position.z, Is.LessThan(ball.z));
+                Assert.That(framing.Target.z, Is.EqualTo(6f).Within(0.001f));
+                Assert.That(framing.FieldOfView, Is.GreaterThan(tuning.PuttFieldOfView));
+                Assert.That(framing.FieldOfView, Is.LessThanOrEqualTo(tuning.PuttMaximumFieldOfView));
+            }
+            finally
+            {
+                Object.DestroyImmediate(tuning);
+            }
         }
     }
 }

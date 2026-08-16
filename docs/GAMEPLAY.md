@@ -270,5 +270,5 @@ Putt Address → Impact → Putt Follow → HoleComplete → Result
 - Impact는 FOV kick과 Perfect/Normal 강도 차이가 있는 짧은 shake hook을 사용한다.
 - BallFollow는 속도 방향, look-ahead, 속도 기반 거리/FOV를 사용하고 높은 arc에서는 시야를 넓힌다.
 - Landing은 첫 충돌부터 Bounce/Roll을 이어 보며, Stop 후 NextShot blend를 거쳐 새 lie의 Address로 돌아간다.
-- Putt는 낮은 시점에서 공과 Cup을 함께 구성하며 Hole In 이후 Cup/Result를 보여 준다.
+- Putt는 Ball-Cup 중간점과 남은 거리를 기준으로 카메라 거리·높이·FOV를 조절해 공과 Cup을 함께 구성하며, Hole In 이후 Cup/Result를 보여 준다.
 - 모든 feel 값은 `M6CameraTuning.asset`에서 조정한다. M6에는 Character, HUD, VFX/Audio 완성 연출이 포함되지 않는다.

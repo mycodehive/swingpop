@@ -293,13 +293,15 @@ M6 카메라의 수동 시각/멀미/가림 검증을 완료한다. M7 Character
 - `M6CameraTuning.asset`이 모드별 offset/FOV/hold, transition, follow look-ahead, speed distance, apex extension, shake, collision sphere cast를 소유한다.
 - 위치/회전/FOV는 transition pose 보간 후 exponential damping으로 이어지며, BallFollow는 현재 velocity를 기준으로 방향과 거리를 계산한다.
 - Debug overlay는 현재/이전 Camera Mode, transition 여부, target, FOV, follow distance를 표시한다.
+- Putt 구도는 Ball-Cup 중간점을 기준으로 남은 거리에 따라 후퇴 거리, 높이, FOV를 확장해 긴 Green putt에서도 두 대상을 함께 유지한다.
 - Cinemachine 3.1.5는 Unity 6의 정식 선택지지만 현재 요구에 비해 virtual camera/package 구조가 불필요하여 설치하지 않았다.
 
 ## M6 Automated Validation (2026-08-15)
 
-- Unity Test Framework EditMode: 총 62 passed, 0 failed. 기존 54개와 Camera mode state, transition, pose/FOV interpolation, offset, velocity fallback, follow-distance 테스트 8개를 포함한다.
+- Unity Test Framework EditMode: 총 63 passed, 0 failed. 기존 54개와 Camera mode state, transition, pose/FOV interpolation, offset, velocity fallback, follow-distance, 장거리 Putt framing 테스트 9개를 포함한다.
 - M6 PlayMode: `HoleIntro → Address → Aim → Swing → Impact → BallFollow → Landing → NextShot → Address → Putt → Impact → Putt → HoleComplete → Result` 순서를 통과했다.
 - 관측 FOV 범위는 42.0–60.3, BallFollow 최대 거리는 14.1m였고 일반 shot 정지 후 같은 lie에서 다음 Address/Aim으로 복귀했다.
+- 12m Green putt에서 Ball과 Cup이 모두 safe viewport 안에 있는지 자동 검사한다.
 - M1, M2, M3, M4, M5 PlayMode validation을 다시 실행해 모두 PASS했다.
 
 ## M6 Manual Camera Validation
@@ -315,6 +317,8 @@ M6 카메라의 수동 시각/멀미/가림 검증을 완료한다. M7 Character
 9. Green에서 Club이 Putter가 되면 `Putt` 구도로 공과 Cup이 함께 읽히는지 확인한다. Hole In 후 `HoleComplete → Result`를 확인한다.
 10. 카메라와 공 사이에 course geometry가 들어올 때 카메라가 지형을 관통하지 않는지 확인한다.
 11. `R`을 눌러 HoleIntro부터 재시작되는지 확인하고 Play를 종료한 뒤 Console의 빨간 Error가 0인지 확인한다.
+
+Green까지 직접 이동하지 않고 Putt 구도만 확인하려면 Play Mode에서 상단 메뉴 `SwingPop > M6 > Preview 12m Putt Camera`를 클릭한다. 공을 Cup 12m 앞 Green에 배치하고 개발용 overlay를 숨긴 상태로 Putt 카메라를 보여 준다. Play Mode를 종료하면 원래 상태로 복구된다.
 
 튜닝 위치:
 

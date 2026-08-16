@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using SwingPop.CameraSystem;
 using SwingPop.Data;
+using SwingPop.Debugging;
 using SwingPop.Gameplay.Ball;
 using SwingPop.Gameplay.Club;
 using SwingPop.Gameplay.Course;
@@ -14,6 +15,56 @@ namespace SwingPop.Editor
 {
     public static class M6ValidationTools
     {
+        [MenuItem("SwingPop/M6/Preview 12m Putt Camera _F3")]
+        public static void PreviewLongPuttCamera()
+        {
+            if (!EditorApplication.isPlaying)
+            {
+                Debug.LogWarning("Enter Play Mode before previewing the Putt camera.");
+                return;
+            }
+
+            CameraDirector director = Object.FindAnyObjectByType<CameraDirector>();
+            GolfBallController ball = Object.FindAnyObjectByType<GolfBallController>();
+            ShotFlowController shotFlow = Object.FindAnyObjectByType<ShotFlowController>();
+            HoleFlowController holeFlow = Object.FindAnyObjectByType<HoleFlowController>();
+            TerrainSurface green = FindSurface(TerrainSurfaceType.Green);
+            if (director == null || ball == null || shotFlow == null || holeFlow == null || green == null)
+            {
+                Debug.LogError("M6 Putt preview requires CameraDirector, Ball, ShotFlow, HoleFlow, and Green.");
+                return;
+            }
+
+            SerializedObject serializedHole = new(holeFlow);
+            ClubData putter = serializedHole.FindProperty("putter").objectReferenceValue as ClubData;
+            if (putter == null)
+            {
+                Debug.LogError("M6 Putt preview could not find the assigned Putter.");
+                return;
+            }
+
+            if (holeFlow.State != HoleFlowState.Playing)
+            {
+                holeFlow.DebugResetHole();
+            }
+
+            Vector3 cup = holeFlow.Hole.CupPosition;
+            Vector3 start = new(cup.x, green.GetComponent<Collider>().bounds.max.y + 0.15f, cup.z - 12f);
+            ball.PrepareNextShot(start, green.Data);
+            shotFlow.PrepareNextShot(cup - start, putter);
+            director.RequestDebugMode(CameraMode.Putt);
+
+            ShotDebugOverlay overlay = Object.FindAnyObjectByType<ShotDebugOverlay>();
+            if (overlay != null)
+            {
+                SerializedObject serializedOverlay = new(overlay);
+                serializedOverlay.FindProperty("showOverlay").boolValue = false;
+                serializedOverlay.ApplyModifiedPropertiesWithoutUndo();
+            }
+
+            Debug.Log("SWINGPOP_M6_PUTT_PREVIEW: 12m Green Putt prepared; Ball and Cup should both be visible. Exit Play Mode to restore the Debug overlay.");
+        }
+
         [MenuItem("SwingPop/M6/Run Camera Flow Validation _F4")]
         public static void RunCameraFlowValidation()
         {
@@ -44,6 +95,18 @@ namespace SwingPop.Editor
                 hideFlags = HideFlags.HideAndDontSave
             };
             driverObject.AddComponent<M6PlayModeValidationDriver>().Begin(director, ball, shotFlow, holeFlow);
+        }
+
+        private static TerrainSurface FindSurface(TerrainSurfaceType type)
+        {
+            foreach (TerrainSurface surface in Object.FindObjectsByType<TerrainSurface>())
+            {
+                if (surface.SurfaceType == type)
+                {
+                    return surface;
+                }
+            }
+            return null;
         }
     }
 
@@ -176,6 +239,24 @@ namespace SwingPop.Editor
             }
 
             Vector3 cup = holeFlow.Hole.CupPosition;
+            Vector3 longPuttStart = new(cup.x, green.GetComponent<Collider>().bounds.max.y + 0.15f, cup.z - 12f);
+            ball.PrepareNextShot(longPuttStart, green.Data);
+            shotFlow.PrepareNextShot(cup - longPuttStart, putter);
+            yield return WaitFor(
+                () => director.CurrentMode == CameraMode.Putt && !director.IsTransitioning,
+                "long Putt framing camera");
+            if (finished) yield break;
+            yield return null;
+
+            UnityEngine.Camera activeCamera = UnityEngine.Camera.main;
+            if (activeCamera == null
+                || !IsInsideSafeViewport(activeCamera.WorldToViewportPoint(ball.PhysicsPosition + Vector3.up * 0.15f))
+                || !IsInsideSafeViewport(activeCamera.WorldToViewportPoint(cup + Vector3.up * 0.15f)))
+            {
+                Fail("12m Putt framing did not keep both Ball and Cup inside the camera viewport.");
+                yield break;
+            }
+
             Vector3 puttStart = new(cup.x, green.GetComponent<Collider>().bounds.max.y + 0.15f, cup.z - 3f);
             ball.PrepareNextShot(puttStart, green.Data);
             shotFlow.PrepareNextShot(cup - puttStart, putter);
@@ -278,6 +359,13 @@ namespace SwingPop.Editor
                 }
             }
             return null;
+        }
+
+        private static bool IsInsideSafeViewport(Vector3 viewportPoint)
+        {
+            return viewportPoint.z > 0f
+                   && viewportPoint.x is >= 0.04f and <= 0.96f
+                   && viewportPoint.y is >= 0.04f and <= 0.96f;
         }
 
         private void Complete()

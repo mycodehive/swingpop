@@ -46,8 +46,16 @@ namespace SwingPop.Data
         [SerializeField, Min(0f)] private float nextShotHoldDuration = 0.55f;
 
         [Header("Putt / Hole Complete")]
+        [Tooltip("Ball-Cup midpoint 기준의 기본 side / height / backward offset입니다.")]
         [SerializeField] private Vector3 puttOffset = new(4.2f, 2.25f, -5.4f);
         [SerializeField, Range(20f, 90f)] private float puttFieldOfView = 43f;
+        [Tooltip("Putt 거리 1m당 카메라가 추가로 뒤로 물러나는 거리입니다.")]
+        [SerializeField, Min(0f)] private float puttDistanceScale = 0.42f;
+        [SerializeField, Min(0f)] private float puttMaximumDistanceExtension = 12f;
+        [Tooltip("긴 Putt에서 Ball과 Cup을 함께 보기 위한 거리당 추가 높이입니다.")]
+        [SerializeField, Min(0f)] private float puttHeightScale = 0.08f;
+        [SerializeField, Min(0f)] private float puttFovPerMeter = 0.55f;
+        [SerializeField, Range(20f, 100f)] private float puttMaximumFieldOfView = 60f;
         [SerializeField] private Vector3 holeCompleteOffset = new(4.5f, 2.6f, -4.5f);
         [SerializeField, Range(20f, 90f)] private float holeCompleteFieldOfView = 42f;
         [SerializeField, Min(0f)] private float holeCompleteHoldDuration = 1.1f;
@@ -101,6 +109,11 @@ namespace SwingPop.Data
         public float NextShotHoldDuration => nextShotHoldDuration;
         public Vector3 PuttOffset => puttOffset;
         public float PuttFieldOfView => puttFieldOfView;
+        public float PuttDistanceScale => puttDistanceScale;
+        public float PuttMaximumDistanceExtension => puttMaximumDistanceExtension;
+        public float PuttHeightScale => puttHeightScale;
+        public float PuttFovPerMeter => puttFovPerMeter;
+        public float PuttMaximumFieldOfView => puttMaximumFieldOfView;
         public Vector3 HoleCompleteOffset => holeCompleteOffset;
         public float HoleCompleteFieldOfView => holeCompleteFieldOfView;
         public float HoleCompleteHoldDuration => holeCompleteHoldDuration;

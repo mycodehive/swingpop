@@ -154,10 +154,22 @@ namespace SwingPop.CameraSystem
             Vector3 aimForward)
         {
             Vector3 cupForward = CameraMath.ResolvePlanarForward(cupPosition - ballPosition, aimForward);
+            Vector3 midpoint = Vector3.Lerp(ballPosition, cupPosition, 0.5f);
+            float puttDistance = Vector3.ProjectOnPlane(cupPosition - ballPosition, Vector3.up).magnitude;
+            float distanceExtension = Mathf.Min(
+                puttDistance * tuning.PuttDistanceScale,
+                tuning.PuttMaximumDistanceExtension);
+            Vector3 adaptiveOffset = tuning.PuttOffset + new Vector3(
+                0f,
+                puttDistance * tuning.PuttHeightScale,
+                -distanceExtension);
+            float adaptiveFov = Mathf.Min(
+                tuning.PuttMaximumFieldOfView,
+                tuning.PuttFieldOfView + puttDistance * tuning.PuttFovPerMeter);
             return new CameraFraming(
-                CameraMath.LocalOffset(ballPosition, cupForward, tuning.PuttOffset),
-                Vector3.Lerp(ballPosition, cupPosition, 0.55f) + Vector3.up * 0.18f,
-                tuning.PuttFieldOfView,
+                CameraMath.LocalOffset(midpoint, cupForward, adaptiveOffset),
+                midpoint + Vector3.up * 0.18f,
+                adaptiveFov,
                 "Ball and Cup");
         }
 
