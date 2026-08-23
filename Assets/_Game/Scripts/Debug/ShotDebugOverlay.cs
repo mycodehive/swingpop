@@ -23,9 +23,12 @@ namespace SwingPop.Debugging
         [SerializeField] private CharacterGolfController character;
         [SerializeField] private ShotPresentationController shotPresentation;
         [SerializeField] private GameplayAudioController gameplayAudio;
+        [SerializeField] private BallTrajectoryDebug trajectoryDebug;
 
         [Header("Presentation")]
         [SerializeField] private bool showOverlay = true;
+        [SerializeField] private bool startHidden;
+        [SerializeField] private bool syncTrajectoryVisibility;
         [SerializeField] private bool showAimLine = true;
         [SerializeField, Min(1f)] private float aimLineLength = 24f;
         [SerializeField] private Vector2 overlayPosition = new(16f, 16f);
@@ -34,12 +37,22 @@ namespace SwingPop.Debugging
         private GUIStyle headingStyle;
         private GUIStyle labelStyle;
 
+        public bool IsOverlayVisible => showOverlay;
+
+        private void Awake()
+        {
+            if (startHidden)
+            {
+                SetOverlayVisible(false);
+            }
+        }
+
         private void LateUpdate()
         {
             if (Keyboard.current != null
                 && (Keyboard.current.f1Key.wasPressedThisFrame || Keyboard.current.hKey.wasPressedThisFrame))
             {
-                showOverlay = !showOverlay;
+                SetOverlayVisible(!showOverlay);
             }
             UpdateAimLine();
         }
@@ -47,6 +60,10 @@ namespace SwingPop.Debugging
         public void SetOverlayVisible(bool visible)
         {
             showOverlay = visible;
+            if (syncTrajectoryVisibility && trajectoryDebug != null)
+            {
+                trajectoryDebug.SetTrajectoryVisible(visible);
+            }
         }
 
         private void OnGUI()
@@ -58,7 +75,7 @@ namespace SwingPop.Debugging
 
             EnsureStyles();
             GUILayout.BeginArea(new Rect(overlayPosition, overlaySize), GUI.skin.box);
-            GUILayout.Label("M9 VFX / AUDIO / SHOT FEEL DEBUG", headingStyle);
+            GUILayout.Label("SWINGPOP GAMEPLAY DEBUG", headingStyle);
             GUILayout.Label("H: Toggle Debug Overlay", labelStyle);
             if (cameraDirector != null)
             {

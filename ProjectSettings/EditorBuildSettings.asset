@@ -6,6 +6,9 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/_Game/Scenes/Hole01_SkyIsland.unity
+    guid: c5c96505ed37dda41bb246026caf2d93
+  - enabled: 1
     path: Assets/_Game/Scenes/Foundation.unity
     guid: 13b3f05aab43b4e40b75f7154477513c
   m_configObjects:

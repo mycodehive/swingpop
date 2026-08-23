@@ -1,140 +1,71 @@
 # SwingPop Art Replacement List
 
-Codex는 Placeholder를 만들거나 발견할 때 이 문서를 갱신한다.
+M10 `Hole01_SkyIsland`는 플레이 가능한 구조와 교체 지점을 완성한 아트 플레이스홀더다. 아래 항목을 완료하기 전에는 상용 최종 품질로 판정하지 않는다.
 
-## M0 Foundation Placeholder
+## Required Before Commercial Quality
 
-- [ ] `FoundationGround` primitive를 실제 Hole 1 course blockout 또는 최종 course asset으로 교체
-- [x] `FoundationInputProbe` instance를 M1 scene에서 제거함 (prefab asset은 M0 기록용으로 보존)
+### Character / Animation
 
-## M1 Ball Placeholder
+- [ ] 최종 original anime-style character model, texture, humanoid rig
+- [ ] Idle, Address, BackSwing, Swing, FollowThrough, WatchBall clip과 단일 Impact Animation Event
+- [ ] PuttAddress, PuttBackSwing, PuttSwing, PuttFollowThrough clip
+- [ ] Happy, Sad, Birdie, Eagle, Hole-In-One celebration clip
+- [ ] 최종 Driver/Putter model을 기존 `ClubSocket` seam에 연결
 
-- [ ] `GolfBall` primitive sphere mesh를 최종 golf ball mesh로 교체
-- [ ] `GolfBallPlaceholder` 단색 URP material을 최종 golf ball material/texture로 교체
+### Course / Environment
 
-## Character
+- [ ] Tee/Fairway/Rough/Green/Bunker용 authored terrain mesh와 stylized material
+- [ ] Water hazard shader와 authored shoreline
+- [ ] Sky-island cliff mesh, edge treatment, waterfall VFX
+- [ ] 최종 tree/flower/cloud/floating-island set
+- [ ] 최종 windmill 또는 original fantasy landmark model
+- [ ] Cup/flag model, flag cloth/animation, course signage
+- [ ] 단순 직사각 gameplay collider를 시각 지형과 일치하는 안정적인 low-poly collider로 교체
 
-- [ ] CHARACTER_MODEL_01
-- [ ] CHARACTER_TEXTURE_01
-- [ ] CHARACTER_HUMANOID_RIG
-- [ ] IDLE_ANIMATION
-- [ ] ADDRESS_ANIMATION
-- [ ] BACKSWING_ANIMATION
-- [ ] SWING_ANIMATION
-- [ ] FOLLOW_THROUGH_ANIMATION
-- [ ] WATCH_BALL_ANIMATION
-- [ ] PUTT_ADDRESS_ANIMATION
-- [ ] PUTT_BACKSWING_ANIMATION
-- [ ] PUTT_SWING_ANIMATION
-- [ ] PUTT_FOLLOW_THROUGH_ANIMATION
-- [ ] HAPPY_ANIMATION
-- [ ] SAD_ANIMATION
-- [ ] BIRDIE_CELEBRATION_ANIMATION
-- [ ] EAGLE_CELEBRATION_ANIMATION
-- [ ] HOLE_IN_CELEBRATION
-- [ ] DRIVER_MODEL
-- [ ] PUTTER_MODEL
+### UI
 
-## Course
+- [ ] 최종 fantasy HUD skin, 9-slice panel, player portrait/frame
+- [ ] Wind/club/spin/aim icon set
+- [ ] 최종 Power/Impact gauge, primary shot button, popup/result panel
+- [ ] 라이선스가 확인된 영문/한글 typography와 outdoor readability 검증
 
-- [ ] FAIRWAY_MATERIAL
-- [ ] ROUGH_MATERIAL
-- [ ] GREEN_MATERIAL
-- [ ] BUNKER_MATERIAL
-- [ ] WATER_MATERIAL
-- [ ] STYLIZED_TREE_PACK
-- [ ] FLOWERING_TREE_PACK
-- [ ] WINDMILL_PROP
-- [ ] FANTASY_BUILDING_SET
-- [ ] FLOATING_ISLAND_BACKGROUND
-- [ ] WATERFALL_VFX
-- [ ] CLOUD_SET
+### VFX
 
-## UI
+- [ ] authored Normal/Perfect impact sprite, flipbook 또는 shader
+- [ ] URP overdraw를 검증한 Normal/Perfect ball trail
+- [ ] Fairway/Green/Rough/Bunker landing 및 Water splash texture/VFX
+- [ ] 최종 Hole-In celebration VFX
 
-- [ ] PLAYER_PORTRAIT_FRAME
-- [ ] PLAYER_PORTRAIT
-- [ ] WIND_WIDGET
-- [ ] WIND_ARROW_ICON
-- [ ] POWER_GAUGE_SKIN
-- [ ] IMPACT_GAUGE_SKIN
-- [ ] SHOT_BUTTON
-- [ ] CLUB_ICONS
-- [ ] SPIN_ICONS
-- [ ] RESULT_POPUP
-- [ ] HAZARD_POPUP
-- [ ] AIM_MARKER_AND_GUIDE
-- [ ] UI_TYPOGRAPHY_FONT
+### Audio
 
-## VFX
+- [ ] licensed UI confirm, swing, putt, impact, perfect accent clip
+- [ ] surface별 landing, roll, Water/OOB hazard clip
+- [ ] Hole-In, result stinger, wind/water/distant course ambience
+- [ ] 필요 시 AudioMixer category group과 limiter
 
-- [ ] NORMAL_IMPACT
-- [ ] PERFECT_IMPACT
-- [ ] NORMAL_TRAIL
-- [ ] PERFECT_TRAIL
-- [ ] LANDING_DUST
-- [ ] HOLE_IN_EFFECT
+### Quality / Technical Art
 
-## Audio
+- [ ] 1920×1080, 1600×900, 1280×720 실제 Game View composition 승인
+- [ ] PC 1080p target에서 Unity Profiler 60 FPS 검증
+- [ ] draw call, shadow distance, transparency, material batching 최종 점검
+- [ ] final screenshot quality review 및 색각/텍스트 대비 점검
 
-- [ ] SWING_SFX
-- [ ] IMPACT_SFX
-- [ ] PERFECT_SFX
-- [ ] LANDING_SFX
-- [ ] ROLL_SFX
-- [ ] HOLE_IN_SFX
-- [ ] RESULT_STINGER
-- [ ] COURSE_AMBIENCE
+## Optional Polish
 
-## M2 Debug Placeholder
+- [ ] Butterflies 또는 작은 ambient creature
+- [ ] extra flowers와 grass variation
+- [ ] animated flag와 foliage sway
+- [ ] distant birds
+- [ ] secondary waterfalls와 mist accent
+- [ ] cloud variation/slow parallax 추가
+- [ ] distant fantasy settlement silhouette
+- [ ] subtle water sparkle와 landing decal variation
 
-- [ ] `M2AimLine` 단색 debug line을 이후 trajectory/aim presentation asset으로 교체
-- [ ] IMGUI `ShotDebugOverlay`를 M8 최종 HUD 구현 시 정식 power/impact gauge skin으로 교체
+## Preserved Development Placeholders
 
-## M3 Flight Debug Placeholder
-
-- [ ] `M3TrajectoryLine` 단색 actual-trace material을 이후 정식 ball trail/VFX로 교체
-- [ ] 숫자키 spin preset 안내를 M8 이후 정식 spin presentation으로 교체
-
-## M4 Wind / Terrain Placeholder
-
-- [ ] `M4Tee/Fairway/Rough/Bunker/Green/Water/OutOfBounds` 단색 material을 Hole 1 stylized course material로 교체
-- [ ] `M4WindVector` debug line을 M8 정식 wind widget 및 M9 environment wind presentation으로 교체
-- [ ] Foundation의 직사각형 surface strip/trigger layout을 Hole 1 최종 terrain mesh와 collider로 교체
-
-## M5 Hole / Scoring Placeholder
-
-- [ ] `M5Cup`, `M5FlagPole`, `M5Flag` primitive geometry/material을 최종 cup/flag asset으로 교체
-- [ ] `TemporaryDriver`/`Putter` 텍스트 debug 표시를 M8 정식 club icon/presentation으로 교체
-- [ ] IMGUI Hole/Stroke/Result 정보를 M8 정식 HUD와 result popup으로 교체
-
-## M7 Character / Animation Placeholder
-
-- [ ] `PlaceholderGolfer.prefab` primitive body hierarchy를 최종 licensed anime-style character model/texture/rig로 교체
-- [ ] procedural pose를 Idle/Address/BackSwing/Swing/FollowThrough/WatchBall humanoid clips로 교체하고 단일 Impact Animation Event 연결
-- [ ] procedural Putt pose를 PuttAddress/PuttBackSwing/PuttSwing/PuttFollowThrough clips로 교체
-- [ ] placeholder celebration motion을 Happy/Sad/Birdie/Eagle/HoleInOne clips로 교체
-- [ ] primitive Driver/Putter visual을 최종 club model로 교체하되 `ClubSocket` attachment seam 유지
-
-## M8 Gameplay HUD Placeholder
-
-- [ ] `GameplayHUD.prefab`의 기본 uGUI panel/background를 최종 rounded fantasy HUD skin과 9-slice sprite로 교체
-- [ ] `P` 문자 portrait와 원형 frame을 최종 Player portrait/frame으로 교체
-- [ ] 도형 기반 Wind arrow와 Club initial을 최종 Wind/Driver/Putter icon으로 교체
-- [ ] ASCII 기반 Spin 방향 표시를 최종 No/Top/Back/Left/Right Spin icon으로 교체
-- [ ] Power/Impact bar, cursor, Perfect zone을 최종 gauge skin과 animation으로 교체
-- [ ] Primary Action, Impact/Hazard/Lie popup, Result panel을 최종 UI art로 교체
-- [ ] `LegacyRuntime.ttf` placeholder를 라이선스 확인된 영문/한글 대응 typography로 교체
-
-## M9 VFX / Audio Placeholder
-
-- [ ] cyan/white Normal Impact particle을 최종 stylized flash/burst sprite 또는 flipbook으로 교체
-- [ ] gold-accent Perfect Impact flash/streak를 최종 authored VFX로 교체
-- [ ] Normal/Perfect Trail material을 공 가독성과 URP overdraw를 검증한 최종 trail shader/texture로 교체
-- [ ] Fairway/Green landing grass/dust, Rough grass, Bunker sand, Water splash particle texture를 제작
-- [ ] Hole-In sparkle/ring을 최종 cup success VFX로 교체
-- [ ] procedural `SWING_SFX`, `PUTT_SFX`, `IMPACT_SFX`, `PERFECT_SFX`를 licensed final clip으로 교체
-- [ ] Fairway/Rough/Bunker/Green/Water/OOB surface·hazard SFX를 제작/구매 후 clip slot에 연결
-- [ ] `HOLE_IN_SFX`, `RESULT_STINGER`, `UI_CONFIRM` 최종 음원을 연결
-- [ ] Ambient course audio는 M10 이후 환경 통합 범위에서 별도 설계
-- [ ] Unity AudioMixer가 필요해질 경우 UI/Swing/Impact/Terrain/Hazard/Hole/Result group과 limiter를 추가 검토
+- `GolfBall` primitive sphere와 단색 material
+- `PlaceholderGolfer.prefab` primitive hierarchy와 procedural motion
+- `GameplayHUD.prefab` 기본 uGUI 도형/font
+- `ShotFeelPresentation.prefab` ParticleSystem/TrailRenderer/procedural tone
+- `Hole01_SkyIsland` primitive environment prefabs와 shared materials
+- `ShotDebugOverlay`, aim/trajectory/wind debug visual은 개발 도구이며 M10에서는 기본 숨김

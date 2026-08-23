@@ -19,6 +19,8 @@ namespace SwingPop.Debugging
         private readonly List<Vector3> points = new(512);
         private float sampleElapsed;
 
+        public bool IsTrajectoryVisible => showTrajectory;
+
         private void OnEnable()
         {
             if (ball != null)
@@ -62,6 +64,22 @@ namespace SwingPop.Debugging
             trajectoryLine.positionCount = 0;
             trajectoryLine.enabled = showTrajectory;
             AddPoint(ball.transform.position);
+        }
+
+        public void SetTrajectoryVisible(bool visible)
+        {
+            showTrajectory = visible;
+            if (trajectoryLine == null)
+            {
+                return;
+            }
+
+            trajectoryLine.enabled = visible && points.Count > 0;
+            if (!visible)
+            {
+                trajectoryLine.positionCount = 0;
+                points.Clear();
+            }
         }
 
         private void ClearTrace()

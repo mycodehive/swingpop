@@ -345,3 +345,17 @@ Perfect는 같은 gameplay/physics 흐름을 사용하고 `ImpactGrade.Perfect` 
 - Hazard presentation은 기존 penalty/recovery를 계산하지 않는다. Ball/Hole flow가 계산한 Water/OOB event를 VFX/Audio/HUD가 각각 표시한다.
 - Hole-In은 기존 CupCapture/HoleFlow 완료 이후 cup sparkle/ring, success/result audio, Camera Result, HUD Result, Character celebration이 같은 완료 event에 반응한다.
 - 지속 roll particle/audio loop는 이번 단계에서 생략했다. 화면 노이즈와 source stop 문제를 피하고 impact/landing/hole의 우선순위를 유지한다.
+
+## 22. M10 Hole01 Vertical Slice Flow
+
+```text
+Hole01_SkyIsland load → 3s HoleIntro → Address
+→ A/D Aim → Space Power → Space Impact → Space Commit
+→ Character Swing/Impact → Ball Flight → Surface Landing/Bounce/Roll
+→ Next Lie/Address → Green/Putter → Putt → Hole-In → Celebration/Result
+```
+
+- 기본 presentation은 debug overlay와 trajectory가 숨겨진 상태다. H/F1은 개발 telemetry와 trajectory를 함께 toggle한다.
+- Tee/Fairway/Rough/Bunker/Green/Water/OOB 판정과 모든 score/penalty rule은 M4/M5 데이터를 그대로 사용한다.
+- M10 environment art는 physics에 참여하지 않으므로 Ball collision, aim line, Cup capture, Hazard recovery를 방해하지 않는다.
+- Build Settings 첫 scene은 `Hole01_SkyIsland`, 두 번째 scene은 회귀용 `Foundation`이다.

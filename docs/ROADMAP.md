@@ -32,8 +32,8 @@ uGUI 1920×1080 scalable Canvas, Player/Hole/Wind/Aim/Distance/Height/Club/Lie/S
 ### M9 VFX / Audio — Implementation Complete (2026-08-23)
 Character Impact marker와 실제 Ball launch를 단일 타격 시점으로 사용하고, Normal/Perfect impact, gameplay trail, surface landing/bounce, Water/OOB, Hole-In VFX와 category별 AudioSource/event route를 연결했다. 최종 음원 대신 교체 가능한 clip slot과 procedural placeholder tone을 제공한다. EditMode 117개와 M9 PlayMode 통합 검증은 통과했으며 수동 시청각 quality review는 남아 있다.
 
-### M10 Hole 1 Vertical Slice
-Sky Island Hole 1 full flow.
+### M10 Hole 1 Vertical Slice — Implementation Complete (2026-08-23)
+별도 `Hole01_SkyIsland` scene에 M1–M9 full flow, gameplay surface mapping, bright sky-island placeholder environment, landmark, shared prefab/material, scene-specific Camera/HUD/VFX tuning, default-clean debug presentation을 통합했다. EditMode 117개와 Foundation/Hole01 PlayMode 2개가 통과했다. 최종 art와 Game View/해상도/Profiler 수동 quality approval은 남아 있다.
 
 ### M11 Polish / Quality Gate
 Reference comparison, UX polish, performance, bugs.

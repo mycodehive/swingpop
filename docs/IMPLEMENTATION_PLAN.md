@@ -455,3 +455,26 @@ Green까지 직접 이동하지 않고 Putt 구도만 확인하려면 Play Mode�
 - Scene wiring: `Assets/_Game/Scenes/Foundation.unity > Presentation > M9 Shot Feel Presentation`
 - Camera impact 강도: `Assets/_Game/ScriptableObjects/Camera/M6CameraTuning.asset`
 - HUD impact pulse: `Assets/_Game/ScriptableObjects/UI/M8HudTuning.asset`
+
+## M10 Sky Island Hole 1 Vertical Slice Implementation (2026-08-23)
+
+- Foundation을 그대로 보존하고 `Assets/_Game/Scenes/Hole01_SkyIsland.unity`를 독립적으로 생성했다.
+- 기존 gameplay course collider/surface/cup을 유지하면서 M10 shared material로 visual separation을 적용했다.
+- collider 없는 floating-island silhouette, edge trees/flowers, five drifting cloud clusters, four distant islands, waterfall island와 rotating windmill을 prefab 기반으로 추가했다.
+- procedural skybox, soft-shadow directional light, trilight ambient, restrained linear fog로 밝은 daytime fantasy palette를 구성했다.
+- 기존 CameraDirector/HUD/M9 ShotFeel graph는 scene 전용 tuning clone만 연결했다. 새 camera, shot, score, character, HUD system은 만들지 않았다.
+- Debug overlay/trajectory는 M10에서 기본 숨김이고 H/F1로 복원된다. Foundation 기본값은 변경하지 않았다.
+- M10 HUD 하단에는 `A/D AIM   SPACE / CLICK SHOT   1-5 SPIN` control hint를 scene override로 표시한다.
+- `M10VerticalSlicePlayModeTests`는 필수 object/reference, surface mapping, art collider 0, environment budget, Normal/Perfect, Water recovery, Putter Hole-In/Result를 확인한다.
+- 자동 결과: EditMode 117 passed, PlayMode 2 passed(Foundation M9 + Hole01 M10), compile/test error 0.
+- 실제 Game View/해상도/스피커/Profiler 수동 검증은 `M10_VERTICAL_SLICE_REVIEW.md`와 최종 보고 절차에 남긴다.
+- M11은 시작하지 않는다.
+
+튜닝 위치:
+
+- Environment motion/ambience: `Assets/_Game/ScriptableObjects/Environment/M10SkyIslandEnvironmentTuning.asset`
+- Hole01 camera: `Assets/_Game/ScriptableObjects/Environment/M10CameraTuning.asset`
+- Hole01 HUD: `Assets/_Game/ScriptableObjects/Environment/M10HudTuning.asset`
+- Hole01 VFX/trail/audio: `Assets/_Game/ScriptableObjects/Environment/M10ShotPresentationTuning.asset`
+- Reusable environment prefabs: `Assets/_Game/Prefabs/Environment/`
+- Shared environment materials: `Assets/_Game/Materials/Environment/`

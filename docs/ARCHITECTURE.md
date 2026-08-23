@@ -394,3 +394,22 @@ Presentation controllers <-- ShotPresentationTuningData
 - VFX component는 scene에 있는 ParticleSystem/TrailRenderer를 재설정·재사용한다. shot마다 GameObject/Material을 생성하거나 제거하지 않는다.
 - `GameplayAudioController`는 cue dispatch와 category source 선택만 소유한다. gameplay state를 변경하지 않고 최종 clip은 tuning asset slot으로 교체한다.
 - CameraDirector, GameplayHudPresenter, CharacterGolfController는 서로를 직접 호출하지 않으며 동일 gameplay event를 각자 관찰한다.
+
+## M10 Vertical Slice Environment Boundary
+
+```text
+Hole01_SkyIsland scene
+├─ M1–M9 gameplay/presentation graph (source of truth)
+├─ TerrainSurfaceData + gameplay colliders
+└─ M10 Sky Island Art (no gameplay collider)
+   ├─ shared materials / reusable environment prefabs
+   ├─ SkyIslandEnvironmentMotion (clouds + windmill only)
+   └─ SkyIslandAmbienceController --> replaceable ambient clip hook
+```
+
+- Foundation을 복제한 별도 scene만 art integration 대상으로 삼아 회귀 기준 씬을 보존한다.
+- 시각 material은 `TerrainSurfaceData`의 physics/lie 판정을 소유하지 않는다.
+- 반복 tree/flower/cloud/island/windmill은 prefab과 shared material을 사용하며 renderer별 material instance를 만들지 않는다.
+- 모든 장식 primitive collider는 제거한다. gameplay surface/hazard/cup collider만 M1–M9 flow에 참여한다.
+- 환경 동작은 단일 coordinator가 구름과 풍차를 갱신하며 Camera/HUD/GameFlow를 참조하지 않는다.
+- M10 전용 Camera/HUD/ShotPresentation tuning clone은 Foundation tuning asset을 변경하지 않는다.

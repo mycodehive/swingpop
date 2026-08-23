@@ -511,3 +511,11 @@ Vertical Slice 승인 이후에만 다음 단계 논의:
 - Match result synchronization
 - Character customization
 - Additional courses
+
+## 23. M10 Vertical Slice Status (2026-08-23)
+
+- 기본 플레이 씬은 `Hole01_SkyIsland.unity`이며 Foundation은 회귀/개발 검증 씬으로 보존한다.
+- M1–M9의 Ball, Shot, Wind/Terrain, Hole/Score, Camera, Character, HUD, VFX/Audio 전체 흐름을 한 Sky Island Hole 1에 연결했다.
+- 밝은 procedural sky, floating island silhouette, clouds, waterfall, windmill, trees/flowers와 shared stylized palette를 placeholder로 구성했다.
+- 자동 검증은 117 EditMode와 Foundation/Hole01 PlayMode 2개를 통과했다.
+- 최종 아트 품질, 3개 해상도 Game View, 실제 음향, Profiler 60 FPS는 아직 승인되지 않았다. M11은 시작하지 않았다.

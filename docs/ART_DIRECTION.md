@@ -160,3 +160,12 @@ Perfect:
 - landing은 최종 texture 없이 color/shape로 grass, rough, sand, water를 구분한다. rolling 중 지속 particle은 사용하지 않는다.
 - Hole-In은 대형 fireworks가 아닌 cup 중심의 짧은 upward sparkle과 ring으로 Result/Character/Camera를 보조한다.
 - 현재 procedural tone과 Unity particle material은 architecture/feel 검증용 placeholder다. 최종 licensed audio, flipbook/sprite, stylized shader로 같은 prefab/data seam에서 교체한다.
+
+## M10 Sky Island Placeholder Direction
+
+- Sky blue/grass green/white를 base로, pink/cyan/gold/mint를 제한적 accent로 사용한다.
+- course 중앙 line-of-sight는 비우고 tree/flower를 edge에 배치해 character, ball, fairway, flag, landmark가 함께 읽히게 한다.
+- windmill과 waterfall island는 진행 방향을 기억하게 하는 visual anchor이며 gameplay logic이나 collider를 갖지 않는다.
+- 원경 floating island의 크기와 높이를 달리해 depth를 만들고, opaque cloud prefab으로 transparency overdraw를 억제한다.
+- main island underside와 cliff 색으로 OOB box visual을 숨기되 실제 OOB trigger는 보존한다.
+- 이 구성은 최종 environment art가 아니다. authored terrain shape, silhouette, vegetation, water, lighting, texture detail은 `TODO_ART.md`의 필수 교체 대상이다.
