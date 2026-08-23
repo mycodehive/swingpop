@@ -519,3 +519,11 @@ Vertical Slice 승인 이후에만 다음 단계 논의:
 - 밝은 procedural sky, floating island silhouette, clouds, waterfall, windmill, trees/flowers와 shared stylized palette를 placeholder로 구성했다.
 - 자동 검증은 117 EditMode와 Foundation/Hole01 PlayMode 2개를 통과했다.
 - 최종 아트 품질, 3개 해상도 Game View, 실제 음향, Profiler 60 FPS는 아직 승인되지 않았다. M11은 시작하지 않았다.
+
+## 24. M11 Polish / Quality Gate Status (2026-08-23)
+
+- M1–M10 gameplay contract를 유지한 채 Hole01의 Address composition, organic course layer, character presence, HUD hierarchy, material/lighting과 shadow budget을 개선했다.
+- 최종 reference를 복제하지 않고 현재 primitive/shared asset seam 안에서 original polished placeholder를 만들었다.
+- 자동 검증은 EditMode 117개와 PlayMode 3개를 통과했고, 1920×1080/1600×900/1280×720 Address render에서 HUD clipping을 발견하지 않았다.
+- 1080p 60 FPS Profiler, full-hole 수동 visual/audio/comfort review와 final commercial art는 미승인이다.
+- 판정은 다음 개발 단계 논의용 **Conditional Go**, Commercial Release **No-Go**다. 상세 근거는 `docs/M11_QUALITY_GATE_REVIEW.md`에 기록한다.

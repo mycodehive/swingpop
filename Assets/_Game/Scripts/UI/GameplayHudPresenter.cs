@@ -190,7 +190,11 @@ namespace SwingPop.UI
 
             ClubData club = shotFlow.CurrentClub;
             bool spinEnabled = club == null || !club.IsPutter;
-            string clubName = club != null ? club.DisplayName.ToUpperInvariant() : "NO CLUB";
+            string clubName = club == null
+                ? "NO CLUB"
+                : club.IsPutter
+                    ? "PUTTER"
+                    : club.ClubType.ToString().ToUpperInvariant();
             view.SetClub(
                 clubName,
                 HudPresentationMapper.FormatLie(ball.CurrentLie),

@@ -478,3 +478,20 @@ Green까지 직접 이동하지 않고 Putt 구도만 확인하려면 Play Mode�
 - Hole01 VFX/trail/audio: `Assets/_Game/ScriptableObjects/Environment/M10ShotPresentationTuning.asset`
 - Reusable environment prefabs: `Assets/_Game/Prefabs/Environment/`
 - Shared environment materials: `Assets/_Game/Materials/Environment/`
+
+## M11 Polish / Quality Gate Implementation (2026-08-23)
+
+- 실제 M10 Address baseline을 캡처한 뒤 character scale, course silhouette/depth, landmark clusters, camera framing, HUD hierarchy, ball/aim readability, material/lighting을 M11 범위에서 개선했다.
+- `M11 Visual Polish`는 collider 없는 presentation layer이며 기존 Tee/Fairway/Rough/Bunker/Green/Water/OOB gameplay data와 M1–M10 event graph를 재사용한다.
+- Hole01은 전용 `M11CameraTuning.asset`, shared polish material, organic mesh asset과 isolated `M11Skybox.mat`을 사용한다. Foundation은 변경하지 않았다.
+- structural audit: GameObjects 328, Renderers 191, SharedMaterials 54, Transparent slots 4, ShadowCasters 77, Colliders 10, Particles 7, AudioSources 5, Update behaviours 12, Missing Scripts 0.
+- 자동 검증: EditMode 117 passed, PlayMode 3 passed. 3개 16:9 Address render의 HUD fit을 확인했다.
+- Profiler 1080p 60 FPS와 full-hole visual/audio/comfort는 실행하지 않았으며 수동 quality gate에 남긴다.
+- 이후 milestone은 시작하지 않는다. 상세 절차와 판정은 `docs/M11_QUALITY_GATE_REVIEW.md`를 따른다.
+
+튜닝 위치:
+
+- M11 camera: `Assets/_Game/ScriptableObjects/Polish/M11CameraTuning.asset`
+- M11 material/skybox: `Assets/_Game/Materials/Polish/`
+- M11 course mesh: `Assets/_Game/Art/Courses/M11/`
+- scene/composition builder: `Assets/_Game/Scripts/Editor/M11PolishSceneBuilder.cs`

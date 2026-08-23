@@ -169,3 +169,12 @@ Perfect:
 - 원경 floating island의 크기와 높이를 달리해 depth를 만들고, opaque cloud prefab으로 transparency overdraw를 억제한다.
 - main island underside와 cliff 색으로 OOB box visual을 숨기되 실제 OOB trigger는 보존한다.
 - 이 구성은 최종 environment art가 아니다. authored terrain shape, silhouette, vegetation, water, lighting, texture detail은 `TODO_ART.md`의 필수 교체 대상이다.
+
+## M11 Polished Placeholder Direction
+
+- 직선 course blockout을 organic island, curved fairway/fringe, raised tee, green rim, bunker depression과 water layers로 재구성한다.
+- 중앙 shot corridor는 비우고 tree/flower는 좌우 cluster, windmill/waterfall/distant island는 mid/background anchor로 사용한다.
+- character는 더 큰 blue/pink/dark color block으로 읽히되 final anime design을 흉내 내지 않는다.
+- HUD는 dark teal/cyan의 compact corner grouping과 lower-right action을 유지하고 중앙 Ball/Aim/Distance를 가리지 않는다.
+- foreground/midground/background의 value와 saturation 차이, restrained fog, selective soft shadow로 깊이를 만든다.
+- M11 결과는 authored final art가 아니라 reference와 비교 가능한 polished placeholder다. 최종 asset gap은 `TODO_ART.md`에 숨김없이 유지한다.

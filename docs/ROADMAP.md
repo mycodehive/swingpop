@@ -35,8 +35,8 @@ Character Impact marker와 실제 Ball launch를 단일 타격 시점으로 사�
 ### M10 Hole 1 Vertical Slice — Implementation Complete (2026-08-23)
 별도 `Hole01_SkyIsland` scene에 M1–M9 full flow, gameplay surface mapping, bright sky-island placeholder environment, landmark, shared prefab/material, scene-specific Camera/HUD/VFX tuning, default-clean debug presentation을 통합했다. EditMode 117개와 Foundation/Hole01 PlayMode 2개가 통과했다. 최종 art와 Game View/해상도/Profiler 수동 quality approval은 남아 있다.
 
-### M11 Polish / Quality Gate
-Reference comparison, UX polish, performance, bugs.
+### M11 Polish / Quality Gate — Implementation Complete / Conditional Go (2026-08-23)
+M10 실제 Address baseline을 기준으로 organic course silhouette, depth/landmark composition, larger character presence, compact HUD, lower-right Primary Action, ball/aim readability, isolated lighting/material palette와 shadow budget을 정리했다. EditMode 117개, PlayMode 3개, Missing Script 0, M11 art collider 0을 통과했고 3개 16:9 Address render fit을 확인했다. Full-hole 수동 visual/audio review와 Unity Profiler 1080p 60 FPS는 아직 승인 전이므로 commercial release가 아닌 Conditional Go다. 세부 내용은 `docs/M11_QUALITY_GATE_REVIEW.md`를 따른다.
 
 ## Phase B — After Vertical Slice Approval
 

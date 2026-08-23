@@ -413,3 +413,21 @@ Hole01_SkyIsland scene
 - 모든 장식 primitive collider는 제거한다. gameplay surface/hazard/cup collider만 M1–M9 flow에 참여한다.
 - 환경 동작은 단일 coordinator가 구름과 풍차를 갱신하며 Camera/HUD/GameFlow를 참조하지 않는다.
 - M10 전용 Camera/HUD/ShotPresentation tuning clone은 Foundation tuning asset을 변경하지 않는다.
+
+## M11 Presentation Polish Boundary
+
+```text
+M1–M10 gameplay/data/event graph (unchanged)
+                |
+                +--> Hole01 gameplay colliders / TerrainSurfaceData
+                |
+                +--> M11 Visual Polish (Renderer/Mesh only, Collider 0)
+                +--> M11CameraTuning (Hole01 instance reference)
+                +--> M11 shared materials + isolated skybox
+```
+
+- organic course mesh, flower accent와 character silhouette addition은 presentation-only object다.
+- 시각 mesh는 TerrainSurface type, score, physics, camera state 또는 shot input을 소유하지 않는다.
+- 기존 rectangular gameplay collider와 hazard volume만 physics source of truth로 유지한다.
+- M11 builder는 Hole01 instance override와 교체 가능한 asset을 생성하며 Foundation scene/tuning을 변경하지 않는다.
+- capture/quality validation 도구는 Editor assembly에만 있고 runtime build의 game flow에 참여하지 않는다.

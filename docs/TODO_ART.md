@@ -1,6 +1,6 @@
 # SwingPop Art Replacement List
 
-M10 `Hole01_SkyIsland`는 플레이 가능한 구조와 교체 지점을 완성한 아트 플레이스홀더다. 아래 항목을 완료하기 전에는 상용 최종 품질로 판정하지 않는다.
+M11 `Hole01_SkyIsland`는 플레이 가능한 구조, organic composition과 교체 지점을 정리한 polished art placeholder다. 아래 항목을 완료하기 전에는 상용 최종 품질로 판정하지 않는다.
 
 ## Required Before Commercial Quality
 
@@ -68,4 +68,14 @@ M10 `Hole01_SkyIsland`는 플레이 가능한 구조와 교체 지점을 완성�
 - `GameplayHUD.prefab` 기본 uGUI 도형/font
 - `ShotFeelPresentation.prefab` ParticleSystem/TrailRenderer/procedural tone
 - `Hole01_SkyIsland` primitive environment prefabs와 shared materials
-- `ShotDebugOverlay`, aim/trajectory/wind debug visual은 개발 도구이며 M10에서는 기본 숨김
+- `ShotDebugOverlay`, aim/trajectory/wind debug visual은 개발 도구이며 M11에서도 기본 숨김
+
+## M11 Placeholder Polish Completed
+
+- [x] organic island/fairway/tee/green/bunker/water presentation mesh
+- [x] character silhouette scale/color/hand/shoe/hair placeholder pass
+- [x] compact HUD corner composition과 lower-right Primary Action
+- [x] Hole01 전용 camera tuning, shared palette와 isolated skybox
+- [x] 3개 16:9 Address render fit, regression/structure audit
+
+위 체크는 final asset 완료를 의미하지 않는다. 상단 `Required Before Commercial Quality` 항목은 계속 미완료다.

@@ -359,3 +359,12 @@ Hole01_SkyIsland load → 3s HoleIntro → Address
 - Tee/Fairway/Rough/Bunker/Green/Water/OOB 판정과 모든 score/penalty rule은 M4/M5 데이터를 그대로 사용한다.
 - M10 environment art는 physics에 참여하지 않으므로 Ball collision, aim line, Cup capture, Hazard recovery를 방해하지 않는다.
 - Build Settings 첫 scene은 `Hole01_SkyIsland`, 두 번째 scene은 회귀용 `Foundation`이다.
+
+## 23. M11 Readability Contract
+
+- Address에서 Character, Ball, Aim guide, playable corridor, Flag와 최소 2개 landmark가 동시에 읽혀야 한다.
+- M11 course visual은 collider가 없으며 shot, terrain response, hazard, cup capture와 score rule을 바꾸지 않는다.
+- Driver/Putter player-facing label은 club type을 사용하고 Power/Impact/Spin/Wind 입력 흐름은 M8–M10과 동일하다.
+- debug overlay/trajectory는 기본 숨김이고 개발자가 H/F1로만 켠다.
+- 16:9 layout은 corner HUD와 lower-right Primary Action을 safe area 안에 유지한다.
+- full-hole 수동 검증은 Address→Normal/Perfect→Flight→Landing/Hazard→Green/Putter→Hole-In→Result 순서로 수행한다.
