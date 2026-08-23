@@ -203,18 +203,19 @@ namespace SwingPop.Editor
 
             shotFlow.ForcePerfectImpactAndCommit();
             yield return null;
-            if (view.ImpactMessage != "PERFECT" || view.GaugeView.IsPowerVisible
+            if (view.GaugeView.IsPowerVisible
                 || view.GaugeView.IsImpactVisible || view.IsActionVisible)
             {
-                Fail("Committed shot HUD did not hide interaction gauges or show PERFECT feedback.");
+                Fail("Committed shot HUD did not hide interaction gauges.");
                 yield break;
             }
 
             yield return WaitFor(() => ball.State != BallState.Ready, "Ball launch after UI commit");
             if (finished) yield break;
-            if (view.GaugeView.IsPowerVisible || view.GaugeView.IsImpactVisible || view.IsActionVisible)
+            if (view.ImpactMessage != "PERFECT" || view.GaugeView.IsPowerVisible
+                || view.GaugeView.IsImpactVisible || view.IsActionVisible)
             {
-                Fail("Ball flight kept timing interaction active.");
+                Fail("Ball launch did not show synchronized PERFECT feedback or kept timing interaction active.");
                 yield break;
             }
 

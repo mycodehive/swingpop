@@ -4,6 +4,8 @@ using SwingPop.Gameplay.Ball;
 using SwingPop.Gameplay.Shot;
 using SwingPop.Gameplay.Wind;
 using SwingPop.Gameplay.Hole;
+using SwingPop.AudioSystem;
+using SwingPop.Presentation;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -19,6 +21,8 @@ namespace SwingPop.Debugging
         [SerializeField] private HoleFlowController holeFlow;
         [SerializeField] private CameraDirector cameraDirector;
         [SerializeField] private CharacterGolfController character;
+        [SerializeField] private ShotPresentationController shotPresentation;
+        [SerializeField] private GameplayAudioController gameplayAudio;
 
         [Header("Presentation")]
         [SerializeField] private bool showOverlay = true;
@@ -54,7 +58,7 @@ namespace SwingPop.Debugging
 
             EnsureStyles();
             GUILayout.BeginArea(new Rect(overlayPosition, overlaySize), GUI.skin.box);
-            GUILayout.Label("M7 CHARACTER / CAMERA DEBUG", headingStyle);
+            GUILayout.Label("M9 VFX / AUDIO / SHOT FEEL DEBUG", headingStyle);
             GUILayout.Label("H: Toggle Debug Overlay", labelStyle);
             if (cameraDirector != null)
             {
@@ -86,6 +90,21 @@ namespace SwingPop.Debugging
                     labelStyle);
             }
             GUILayout.Label($"Shot State: {shotFlow.State}    Ball: {ball.State}", labelStyle);
+            if (shotPresentation != null)
+            {
+                GUILayout.Label(
+                    $"Impact VFX: {shotPresentation.LastImpactLevel} x{shotPresentation.ImpactPresentationCount}  Landing: {shotPresentation.LastLandingEffect} x{shotPresentation.SurfacePresentationCount}",
+                    labelStyle);
+                GUILayout.Label(
+                    $"Hole VFX: x{shotPresentation.HolePresentationCount}  Reusable FX Objects: {shotPresentation.ReusableEffectObjectCount}",
+                    labelStyle);
+            }
+            if (gameplayAudio != null)
+            {
+                GUILayout.Label(
+                    $"Audio: {gameplayAudio.LastCue} x{gameplayAudio.TotalCueCount}  Procedural Fallbacks: {gameplayAudio.GeneratedFallbackCount}",
+                    labelStyle);
+            }
             if (character != null)
             {
                 GUILayout.Label(

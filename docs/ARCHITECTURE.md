@@ -368,3 +368,29 @@ Keyboard Space ------> ShotInputController -----> same command
 - `GameplayHUD.prefab`은 scene dependency가 없는 교체 가능한 presentation asset이고, Foundation instance가 Shot/Ball/Wind/Hole/Main Camera를 명시적으로 참조한다.
 - Canvas는 1920×1080 reference, width/height match 0.5, corner anchor와 full-screen `Safe Area` wrapper를 사용한다.
 - 기존 `ShotDebugOverlay`와 trajectory/aim debug는 독립적으로 유지되며 `H`/`F1`로 표시를 전환한다.
+
+## M9 Presentation / Audio Boundary
+
+```text
+CharacterAnimationController --Impact marker--> ShotFlowController.TryLaunchCommittedShot()
+                                                    |
+                                                    v
+GolfBallController --Launched/SurfaceContact/Hazard/State event--+
+ShotFlowController --ShotCommitted-------------------------------+--> ShotPresentationController
+HoleFlowController --HoleCompleted-------------------------------+          |
+                                                                           +--> ImpactVfxController
+                                                                           +--> BallTrailController
+                                                                           +--> LandingVfxController
+                                                                           +--> HoleInVfxController
+
+Character/Ball/Hole events --> GameplayAudioController --> category AudioSources
+Presentation controllers <-- ShotPresentationTuningData
+```
+
+- `Ball.Launched`가 Camera Impact, HUD grade, impact VFX, impact audio의 실제 동기화 지점이다. `ShotCommitted`는 command/profile을 준비만 한다.
+- `ImpactPresentationGate`는 commit 하나가 launch presentation 하나만 소비하도록 하며 물리 launch 판단은 계속 ShotFlow/Character boundary에 남긴다.
+- `BallSurfaceContact`는 presentation용 immutable event data다. `GolfBallController`는 ParticleSystem이나 AudioClip을 알지 못한다.
+- `ShotPresentationResolver`는 ImpactGrade, TerrainSurfaceType, ScoreResult를 presentation level/effect/audio cue로 매핑하는 순수 경계다.
+- VFX component는 scene에 있는 ParticleSystem/TrailRenderer를 재설정·재사용한다. shot마다 GameObject/Material을 생성하거나 제거하지 않는다.
+- `GameplayAudioController`는 cue dispatch와 category source 선택만 소유한다. gameplay state를 변경하지 않고 최종 clip은 tuning asset slot으로 교체한다.
+- CameraDirector, GameplayHudPresenter, CharacterGolfController는 서로를 직접 호출하지 않으며 동일 gameplay event를 각자 관찰한다.

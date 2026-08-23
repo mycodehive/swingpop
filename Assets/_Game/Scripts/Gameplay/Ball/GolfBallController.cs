@@ -37,11 +37,13 @@ namespace SwingPop.Gameplay.Ball
         private bool hasLastHazard;
         private float lastFixedVerticalVelocity;
         private float activeRollModifier = 1f;
+        private int surfaceContactSequence;
 
         public event Action<BallState, BallState> StateChanged;
         public event Action Launched;
         public event Action ResetPerformed;
         public event Action<TerrainSurfaceType> HazardEntered;
+        public event Action<BallSurfaceContact> SurfaceContacted;
 
         public BallState State => state;
         public bool IsGrounded => isGrounded;
@@ -177,6 +179,7 @@ namespace SwingPop.Gameplay.Ball
             backSpinRollbackApplied = false;
             lastFixedVerticalVelocity = 0f;
             activeRollModifier = 1f;
+            surfaceContactSequence = 0;
             currentSurface = defaultSurface;
 
             ballBody.useGravity = false;
@@ -218,6 +221,7 @@ namespace SwingPop.Gameplay.Ball
             firstLandingResponseApplied = false;
             backSpinRollbackApplied = false;
             activeRollModifier = 1f;
+            surfaceContactSequence = 0;
             isGrounded = false;
             currentSurface = surface ?? currentSurface ?? defaultSurface;
             ballBody.useGravity = false;
@@ -264,14 +268,16 @@ namespace SwingPop.Gameplay.Ball
 
         private void OnCollisionEnter(Collision collision)
         {
-            if (!TryReadGroundContact(collision, out _, out TerrainSurfaceData surface))
+            if (!TryReadGroundContact(collision, out ContactPoint contact, out TerrainSurfaceData surface))
             {
                 return;
             }
 
             currentSurface = surface ?? currentSurface ?? defaultSurface;
 
-            if (state == BallState.Airborne
+            bool wasAirborne = state == BallState.Airborne;
+            bool isFlightContact = state is BallState.Airborne or BallState.Bouncing;
+            if (wasAirborne
                 && ballBody.linearVelocity.y > tuning.MaximumUpwardLandingSpeed)
             {
                 isGrounded = false;
@@ -292,6 +298,17 @@ namespace SwingPop.Gameplay.Ball
             if (state == BallState.Airborne)
             {
                 ChangeState(BallState.Bouncing);
+            }
+
+            if (isFlightContact)
+            {
+                surfaceContactSequence++;
+                SurfaceContacted?.Invoke(new BallSurfaceContact(
+                    contact.point,
+                    CurrentLie,
+                    Mathf.Max(Speed, Mathf.Abs(lastFixedVerticalVelocity)),
+                    surfaceContactSequence,
+                    wasAirborne));
             }
         }
 
@@ -423,6 +440,7 @@ namespace SwingPop.Gameplay.Ball
         {
             isGrounded = false;
             firstLandingResponseApplied = false;
+            surfaceContactSequence = 0;
             stopDetector.Reset();
             lastFixedVerticalVelocity = velocity.y;
             hasLastHazard = false;
@@ -444,6 +462,7 @@ namespace SwingPop.Gameplay.Ball
         {
             isGrounded = true;
             firstLandingResponseApplied = true;
+            surfaceContactSequence = 0;
             backSpinRollbackApplied = true;
             stopDetector.Reset();
             lastFixedVerticalVelocity = 0f;

@@ -349,6 +349,126 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.InputSystem::UnityEngine.InputSystem.InputActionReference
   m_Asset: {fileID: 907146995}
   m_ActionId: 32b35790-4ed0-4e9a-aa41-69ac6d629449
+--- !u!1001 &174155601
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1385689832}
+    m_Modifications:
+    - target: {fileID: 1824720129184278329, guid: c35c33727acb7a34ebf11f6ecfda385a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1824720129184278329, guid: c35c33727acb7a34ebf11f6ecfda385a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1824720129184278329, guid: c35c33727acb7a34ebf11f6ecfda385a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1824720129184278329, guid: c35c33727acb7a34ebf11f6ecfda385a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1824720129184278329, guid: c35c33727acb7a34ebf11f6ecfda385a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1824720129184278329, guid: c35c33727acb7a34ebf11f6ecfda385a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1824720129184278329, guid: c35c33727acb7a34ebf11f6ecfda385a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1824720129184278329, guid: c35c33727acb7a34ebf11f6ecfda385a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1824720129184278329, guid: c35c33727acb7a34ebf11f6ecfda385a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1824720129184278329, guid: c35c33727acb7a34ebf11f6ecfda385a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3663443000822601712, guid: c35c33727acb7a34ebf11f6ecfda385a, type: 3}
+      propertyPath: ball
+      value:
+      objectReference: {fileID: 1953279982}
+    - target: {fileID: 3663443000822601712, guid: c35c33727acb7a34ebf11f6ecfda385a, type: 3}
+      propertyPath: holeFlow
+      value:
+      objectReference: {fileID: 856989767}
+    - target: {fileID: 3663443000822601712, guid: c35c33727acb7a34ebf11f6ecfda385a, type: 3}
+      propertyPath: shotFlow
+      value:
+      objectReference: {fileID: 856989763}
+    - target: {fileID: 3663443000822601712, guid: c35c33727acb7a34ebf11f6ecfda385a, type: 3}
+      propertyPath: characterAnimation
+      value:
+      objectReference: {fileID: 1958169848}
+    - target: {fileID: 3663443000822601712, guid: c35c33727acb7a34ebf11f6ecfda385a, type: 3}
+      propertyPath: characterTransform
+      value:
+      objectReference: {fileID: 1958169846}
+    - target: {fileID: 5730487777936459005, guid: c35c33727acb7a34ebf11f6ecfda385a, type: 3}
+      propertyPath: m_Name
+      value: M9 Shot Feel Presentation
+      objectReference: {fileID: 0}
+    - target: {fileID: 6031875494921832810, guid: c35c33727acb7a34ebf11f6ecfda385a, type: 3}
+      propertyPath: ball
+      value:
+      objectReference: {fileID: 1953279982}
+    - target: {fileID: 6031875494921832810, guid: c35c33727acb7a34ebf11f6ecfda385a, type: 3}
+      propertyPath: holeFlow
+      value:
+      objectReference: {fileID: 856989767}
+    - target: {fileID: 6031875494921832810, guid: c35c33727acb7a34ebf11f6ecfda385a, type: 3}
+      propertyPath: shotFlow
+      value:
+      objectReference: {fileID: 856989763}
+    - target: {fileID: 6125779479980785233, guid: c35c33727acb7a34ebf11f6ecfda385a, type: 3}
+      propertyPath: ball
+      value:
+      objectReference: {fileID: 1953279982}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c35c33727acb7a34ebf11f6ecfda385a, type: 3}
+--- !u!4 &174155602 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1824720129184278329, guid: c35c33727acb7a34ebf11f6ecfda385a, type: 3}
+  m_PrefabInstance: {fileID: 174155601}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &174155603 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 3663443000822601712, guid: c35c33727acb7a34ebf11f6ecfda385a, type: 3}
+  m_PrefabInstance: {fileID: 174155601}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 651e0381acdb8c641bc040232ae365e7, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: SwingPop.Runtime::SwingPop.AudioSystem.GameplayAudioController
+--- !u!114 &174155604 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6031875494921832810, guid: c35c33727acb7a34ebf11f6ecfda385a, type: 3}
+  m_PrefabInstance: {fileID: 174155601}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 86138de7f85a72e4c884215dd79f4a6e, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: SwingPop.Runtime::SwingPop.Presentation.ShotPresentationController
 --- !u!1 &373534822
 GameObject:
   m_ObjectHideFlags: 0
@@ -1098,7 +1218,7 @@ GameObject:
   - component: {fileID: 856989766}
   - component: {fileID: 856989767}
   m_Layer: 0
-  m_Name: M8 Gameplay Systems
+  m_Name: M9 Gameplay Systems
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1141,6 +1261,8 @@ MonoBehaviour:
   holeFlow: {fileID: 856989767}
   cameraDirector: {fileID: 621407175}
   character: {fileID: 1958169847}
+  shotPresentation: {fileID: 174155604}
+  gameplayAudio: {fileID: 174155603}
   showOverlay: 1
   showAimLine: 1
   aimLineLength: 90
@@ -2817,6 +2939,7 @@ Transform:
   - {fileID: 1958169846}
   - {fileID: 736768173}
   - {fileID: 1902102110}
+  - {fileID: 174155602}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1402614270
@@ -3695,6 +3818,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 88fad4418e9977a4c9770405fd6cd66a, type: 3}
   m_Name:
   m_EditorClassIdentifier: SwingPop.Runtime::SwingPop.CharacterSystem.CharacterGolfController
+--- !u!114 &1958169848 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2807483235131408450, guid: aafae5cd422ed734b976fe61266f8eb8, type: 3}
+  m_PrefabInstance: {fileID: 1958169845}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dc912871023a62640a54dbef4cd2cc92, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: SwingPop.Runtime::SwingPop.CharacterSystem.CharacterAnimationController
 --- !u!1 &2054416273
 GameObject:
   m_ObjectHideFlags: 0

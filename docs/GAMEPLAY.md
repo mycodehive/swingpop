@@ -324,3 +324,24 @@ HoleComplete    → timing/action 숨김 + ScoreCalculator 기반 Result panel
 - Impact 확정 시 Perfect/Great/Good/Miss popup, Water/OOB 시 +1 penalty popup, 새 정상 lie에서는 작은 lie feedback을 표시한다.
 - Result panel은 `ScoreCalculator`가 만든 `ScoreResult`만 표시한다.
 - 기존 IMGUI `ShotDebugOverlay`는 개발용으로 유지하며 정식 HUD와 독립적이다.
+
+## 21. M9 Shot Feel Flow
+
+정상 Driver shot presentation:
+
+```text
+Commit → Character Swing/Whoosh → Impact marker → Ball Launch
+       → Normal Impact VFX/Audio + Camera Impact + HUD grade
+       → speed-gated Ball Trail → first Landing puff/audio
+       → optional reduced second Bounce → Rolling(no continuous particles) → Next Shot
+```
+
+Perfect는 같은 gameplay/physics 흐름을 사용하고 `ImpactGrade.Perfect` 하나에서 brighter/larger impact, directional streak, stronger trail, layered accent audio, 기존 Perfect camera/HUD 강도를 선택한다.
+
+- Ball trail은 Airborne/Bouncing이며 최소 속도 이상일 때만 emit한다. Ready/Stopped/Holed/Hazard/Reset에서는 즉시 끄고 clear한다.
+- Top/Back/Side Spin은 최종 궤적 계산을 바꾸지 않고 기존 spin physics를 그대로 사용한다. presentation은 accent trail 색으로만 미세하게 구분한다.
+- 첫 surface contact는 impact speed threshold를 통과하면 100% 표시한다. sequence 2는 더 높은 threshold와 축소 intensity를 사용하고 이후 bounce particle은 생략한다.
+- Fairway/Green은 grass, Rough는 짙은 grass, Bunker는 sand, Water는 splash profile을 사용한다. surface 판정은 기존 `TerrainSurfaceData`가 source of truth다.
+- Hazard presentation은 기존 penalty/recovery를 계산하지 않는다. Ball/Hole flow가 계산한 Water/OOB event를 VFX/Audio/HUD가 각각 표시한다.
+- Hole-In은 기존 CupCapture/HoleFlow 완료 이후 cup sparkle/ring, success/result audio, Camera Result, HUD Result, Character celebration이 같은 완료 event에 반응한다.
+- 지속 roll particle/audio loop는 이번 단계에서 생략했다. 화면 노이즈와 source stop 문제를 피하고 impact/landing/hole의 우선순위를 유지한다.

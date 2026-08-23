@@ -125,3 +125,16 @@ Codex는 Placeholder를 만들거나 발견할 때 이 문서를 갱신한다.
 - [ ] Power/Impact bar, cursor, Perfect zone을 최종 gauge skin과 animation으로 교체
 - [ ] Primary Action, Impact/Hazard/Lie popup, Result panel을 최종 UI art로 교체
 - [ ] `LegacyRuntime.ttf` placeholder를 라이선스 확인된 영문/한글 대응 typography로 교체
+
+## M9 VFX / Audio Placeholder
+
+- [ ] cyan/white Normal Impact particle을 최종 stylized flash/burst sprite 또는 flipbook으로 교체
+- [ ] gold-accent Perfect Impact flash/streak를 최종 authored VFX로 교체
+- [ ] Normal/Perfect Trail material을 공 가독성과 URP overdraw를 검증한 최종 trail shader/texture로 교체
+- [ ] Fairway/Green landing grass/dust, Rough grass, Bunker sand, Water splash particle texture를 제작
+- [ ] Hole-In sparkle/ring을 최종 cup success VFX로 교체
+- [ ] procedural `SWING_SFX`, `PUTT_SFX`, `IMPACT_SFX`, `PERFECT_SFX`를 licensed final clip으로 교체
+- [ ] Fairway/Rough/Bunker/Green/Water/OOB surface·hazard SFX를 제작/구매 후 clip slot에 연결
+- [ ] `HOLE_IN_SFX`, `RESULT_STINGER`, `UI_CONFIRM` 최종 음원을 연결
+- [ ] Ambient course audio는 M10 이후 환경 통합 범위에서 별도 설계
+- [ ] Unity AudioMixer가 필요해질 경우 UI/Swing/Impact/Terrain/Hazard/Hole/Result group과 limiter를 추가 검토

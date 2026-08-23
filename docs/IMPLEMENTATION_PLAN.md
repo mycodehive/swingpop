@@ -413,3 +413,45 @@ Green까지 직접 이동하지 않고 Putt 구도만 확인하려면 Play Mode�
 - Power/Impact timing과 grade zone: `Assets/_Game/ScriptableObjects/M2ShotTuning.asset`
 - HUD prefab/anchors/style: `Assets/_Game/Prefabs/UI/GameplayHUD.prefab`
 - Scene wiring: `Assets/_Game/Scenes/Foundation.unity > Presentation > Gameplay HUD`
+
+## M9 VFX / Audio / Shot Feel Implementation (2026-08-23)
+
+- 실제 공 발사 이벤트 `GolfBallController.Launched`를 Impact presentation의 단일 시점으로 사용한다. Character marker가 launch를 발생시키고 Camera, HUD, VFX, Audio가 동일한 launch event 결과에 반응한다.
+- `ShotPresentationController`는 gameplay event를 관찰해 Impact, Ball Trail, Landing, Hazard, Hole-In controller로 전달한다. 물리·점수·입력은 소유하지 않는다.
+- Normal은 cyan compact flash/burst와 얇은 trail, 기본 impact cue를 사용한다. Perfect는 gold accent, 더 큰 flash/burst/streak, 더 굵고 긴 trail, layered accent cue를 사용하며 physics는 변경하지 않는다.
+- `GolfBallController.SurfaceContacted`는 surface, speed, contact sequence, first-landing 여부만 전달한다. 첫 landing은 100%, 두 번째 충분히 빠른 bounce는 data 기반 축소 강도, 이후 접촉은 생략한다.
+- Fairway/Green, Rough, Bunker, Water는 재사용 ParticleSystem의 색·형태·count profile로 구분한다. OOB는 particle 없이 HUD/audio 중심이다.
+- Swing/Putt, Normal/Perfect Impact, surface landing, Water/OOB, Hole-In/Result cue는 네 개의 category AudioSource로 분리했다. clip slot이 비어 있으면 runtime procedural placeholder tone을 한 번 생성해 재사용한다.
+- VFX Graph와 Cinemachine은 추가하지 않았다. 현재 범위는 URP Particle System, TrailRenderer, 기존 CameraDirector로 충분하다.
+- 모든 tuning과 교체 AudioClip slot은 `M9ShotPresentationTuning.asset`에 있다. Shot마다 effect GameObject를 Instantiate/Destroy하지 않는다.
+
+## M9 Automated Validation (2026-08-23)
+
+- Unity Test Framework EditMode: 117 passed, 0 failed. Impact/profile, terrain/effect, result/intensity, audio cue, trail profile, duplicate impact gate mapping을 포함한다.
+- Unity Test Framework PlayMode: 1 passed, 0 failed. Foundation Scene에서 Character marker 기반 Normal/Perfect launch, impact one-shot gate, trail 강도 차이, HUD/Camera 연동, terrain/hazard/hole audio route, reusable ParticleSystem/TrailRenderer object count를 확인했다.
+- M9 Scene/Prefab builder batch 실행은 exit 0이며 Missing serialized property 또는 compile error가 없었다.
+- 실제 speaker 출력의 음색·볼륨, Game View에서 VFX 가독성, Bunker/Water/Hole-In의 체감 품질은 수동 검증 대상이다.
+
+## M9 Manual Quality Validation
+
+1. `Assets > _Game > Scenes > Foundation`을 더블클릭한다.
+2. `Window > General > Console`을 열고 왼쪽 위 `Clear`를 클릭한다.
+3. `Game` 탭의 해상도 dropdown에서 `1920x1080`을 선택한다. 없으면 `+ > Fixed Resolution`, Width `1920`, Height `1080`으로 만든다.
+4. 상단 중앙 ▶ `Play`를 누르고 Game 화면을 한 번 클릭한 뒤 `H`로 Debug Overlay를 숨긴다.
+5. 일반 timing으로 Driver shot을 실행해 Swing whoosh → club impact → 공 출발이 한 흐름인지, cyan compact impact와 얇은 trail이 보이는지 확인한다.
+6. 다음 shot에서 Impact 단계 중 `P`를 눌러 Perfect를 강제한다. gold flash/streak, 더 굵고 긴 trail, layered impact sound, Camera kick, PERFECT HUD가 동시에 반응하는지 일반 shot과 비교한다.
+7. 숫자 `2`, `3`, `4`, `5`로 Top/Back/Left/Right Spin을 선택해 accent trail 색이 바뀌되 공을 가리지 않는지 확인한다.
+8. 공이 Fairway/Rough에 착지할 때 작은 grass puff와 첫 landing sound가 나고, 두 번째 bounce 효과가 더 작으며 반복 contact에서 particle이 계속 발생하지 않는지 본다.
+9. Bunker 방향으로 shot해 sand 색 puff와 bunker landing cue를 확인한다.
+10. Water로 shot해 splash, hazard cue, `WATER HAZARD +1 PENALTY`, recovery가 같은 사건처럼 보이는지 확인한다. OOB는 particle보다 HUD/failure cue 중심인지 확인한다.
+11. Green에서 Putter가 선택되면 Ball과 Cup이 함께 보이는지 확인하고 putt한다. Hole-In 시 upward sparkle/ring, success cue, Result HUD, Camera, Character celebration이 연결되는지 본다.
+12. 여러 shot을 반복한 뒤 Hierarchy의 `Presentation > M9 Shot Feel Presentation` 아래 effect object 수가 늘지 않는지 확인한다.
+13. Play를 종료하고 Console의 빨간 Error가 0인지 확인한다.
+
+튜닝 위치:
+
+- VFX/Trail/Landing/Hole-In/Audio volume 및 clip: `Assets/_Game/ScriptableObjects/Presentation/M9ShotPresentationTuning.asset`
+- 교체 가능한 presentation prefab: `Assets/_Game/Prefabs/VFX/ShotFeelPresentation.prefab`
+- Scene wiring: `Assets/_Game/Scenes/Foundation.unity > Presentation > M9 Shot Feel Presentation`
+- Camera impact 강도: `Assets/_Game/ScriptableObjects/Camera/M6CameraTuning.asset`
+- HUD impact pulse: `Assets/_Game/ScriptableObjects/UI/M8HudTuning.asset`

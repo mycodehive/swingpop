@@ -29,8 +29,8 @@ Primitive replaceable golfer prefab, Ball-relative Address/reposition, Aim rotat
 ### M8 HUD — Implementation Complete (2026-08-16)
 uGUI 1920×1080 scalable Canvas, Player/Hole/Wind/Aim/Distance/Height/Club/Lie/Spin HUD, gameplay-driven Power/Impact gauges, shared keyboard/mouse Primary Action, Impact/Hazard/Lie feedback, Result panel, placeholder motion, EditMode tests, M8 PlayMode validation and M1–M7 regressions are complete. Manual visual/readability and 16:9 resolution review remains.
 
-### M9 VFX / Audio
-Impact, trail, landing, basic sound.
+### M9 VFX / Audio — Implementation Complete (2026-08-23)
+Character Impact marker와 실제 Ball launch를 단일 타격 시점으로 사용하고, Normal/Perfect impact, gameplay trail, surface landing/bounce, Water/OOB, Hole-In VFX와 category별 AudioSource/event route를 연결했다. 최종 음원 대신 교체 가능한 clip slot과 procedural placeholder tone을 제공한다. EditMode 117개와 M9 PlayMode 통합 검증은 통과했으며 수동 시청각 quality review는 남아 있다.
 
 ### M10 Hole 1 Vertical Slice
 Sky Island Hole 1 full flow.

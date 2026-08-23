@@ -151,3 +151,12 @@ Perfect:
 - Player/Hole/Wind를 세 모서리 그룹으로 분리하고, Club/Spin과 Power/Impact/Primary Action을 하단에 두어 Character와 course 중앙 시야를 남긴다.
 - 기본 Unity uGUI sprite와 `LegacyRuntime.ttf`만 사용한 placeholder이며 최종 portrait/icon/gauge/button/font asset으로 교체 가능하다.
 - motion은 action breathing, active power glow, Impact popup pulse, wind 방향 smoothing, Result fade/scale에 한정한다.
+
+## M9 Placeholder VFX / Audio Direction
+
+- target-quality의 밝은 fantasy 반응성, 공 궤적 가독성, Character/UI/World effect 균형만 참고하고 고유 effect 디자인은 복제하지 않는다.
+- Normal impact는 compact cyan/white, Perfect는 cyan/white에 gold accent를 더한다. Perfect 차이는 particle 수만이 아니라 brightness, scale, streak, trail lifetime/width, audio layer, 기존 camera/HUD 강도로 만든다.
+- trail은 공을 찾기 위한 gameplay readability 요소다. Normal은 얇고 짧게, Perfect는 더 밝고 굵지만 Character와 course silhouette를 가리지 않는다.
+- landing은 최종 texture 없이 color/shape로 grass, rough, sand, water를 구분한다. rolling 중 지속 particle은 사용하지 않는다.
+- Hole-In은 대형 fireworks가 아닌 cup 중심의 짧은 upward sparkle과 ring으로 Result/Character/Camera를 보조한다.
+- 현재 procedural tone과 Unity particle material은 architecture/feel 검증용 placeholder다. 최종 licensed audio, flipbook/sprite, stylized shader로 같은 prefab/data seam에서 교체한다.

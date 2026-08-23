@@ -26,6 +26,8 @@ namespace SwingPop.UI
 
         private int displayedDistanceTenths = int.MinValue;
         private int displayedHeightTenths = int.MinValue;
+        private ShotCommand pendingImpactCommand;
+        private bool hasPendingImpactFeedback;
 
         public GameplayHudView View => view;
 
@@ -41,6 +43,7 @@ namespace SwingPop.UI
             if (ball != null)
             {
                 ball.StateChanged += OnBallStateChanged;
+                ball.Launched += OnBallLaunched;
                 ball.HazardEntered += OnHazardEntered;
                 ball.ResetPerformed += OnBallReset;
             }
@@ -112,6 +115,7 @@ namespace SwingPop.UI
             if (ball != null)
             {
                 ball.StateChanged -= OnBallStateChanged;
+                ball.Launched -= OnBallLaunched;
                 ball.HazardEntered -= OnHazardEntered;
                 ball.ResetPerformed -= OnBallReset;
             }
@@ -269,15 +273,27 @@ namespace SwingPop.UI
 
         private void OnShotCommitted(ShotCommand command)
         {
+            pendingImpactCommand = command;
+            hasPendingImpactFeedback = true;
+            RefreshPlayerAndHole();
+        }
+
+        private void OnBallLaunched()
+        {
+            if (!hasPendingImpactFeedback)
+            {
+                return;
+            }
+
+            hasPendingImpactFeedback = false;
             float duration = tuning != null ? tuning.ImpactFeedbackDuration : 1.1f;
             float fade = tuning != null ? tuning.PopupFadeDuration : 0.18f;
             view.ShowImpact(
-                command.ImpactGrade.ToString().ToUpperInvariant(),
-                GameplayHudView.ImpactColor(command.ImpactGrade),
+                pendingImpactCommand.ImpactGrade.ToString().ToUpperInvariant(),
+                GameplayHudView.ImpactColor(pendingImpactCommand.ImpactGrade),
                 duration,
                 fade,
-                command.ImpactGrade == ImpactGrade.Perfect);
-            RefreshPlayerAndHole();
+                pendingImpactCommand.ImpactGrade == ImpactGrade.Perfect);
         }
 
         private void OnClubChanged(ClubData club)
@@ -322,6 +338,7 @@ namespace SwingPop.UI
         {
             displayedDistanceTenths = int.MinValue;
             displayedHeightTenths = int.MinValue;
+            hasPendingImpactFeedback = false;
             view.HideTransientFeedback();
             RefreshAll();
         }

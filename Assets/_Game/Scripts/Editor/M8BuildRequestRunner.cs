@@ -4,6 +4,7 @@ using UnityEngine;
 
 namespace SwingPop.Editor
 {
+    /// <summary>Consumes one-shot scene build requests through the current M9 milestone.</summary>
     [InitializeOnLoad]
     public static class M8BuildRequestRunner
     {
@@ -27,6 +28,10 @@ namespace SwingPop.Editor
             if (request == "M8")
             {
                 M8HudSceneBuilder.BuildGameplayHud();
+            }
+            else if (request == "M9")
+            {
+                M9ShotFeelSceneBuilder.BuildShotFeelPresentation();
             }
         }
     }
