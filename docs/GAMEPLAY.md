@@ -369,6 +369,30 @@ Hole01_SkyIsland load → 3s HoleIntro → Address
 - 16:9 layout은 corner HUD와 lower-right Primary Action을 safe area 안에 유지한다.
 - full-hole 수동 검증은 Address→Normal/Perfect→Flight→Landing/Hazard→Green/Putter→Hole-In→Result 순서로 수행한다.
 
+## M12 Local Turn-Based Foundation
+
+```text
+Player A Ready
+-> submit ShotCommand
+-> authority approval
+-> existing shot/physics/presentation
+-> result snapshot
+-> Player B state restore
+-> simulated remote approved shot
+-> result snapshot
+-> Player A state restore
+```
+
+- `OfflineSingle`에서는 기존 입력과 즉시 commit 동작이 바뀌지 않는다.
+- `LocalTwoPlayer`에서는 현재 local player가 아니거나 approval을 기다리는 동안 shot 입력과 action button을 비활성화한다.
+- 승인 전에는 공이 발사되지 않는다. 승인된 local/remote command 모두 동일한 Character impact -> Ball launch 경로를 통과한다.
+- Bounce, roll, stop, hazard, lie, stroke, penalty, hole-in은 기존 gameplay가 계산한다.
+- 턴이 바뀌면 해당 player의 ball position, last valid position, lie, strokes, penalties를 복원한다. Green이면 Putter, 그 외 lie면 Driver를 선택한다.
+- Holed player는 이후 turn에서 제외되며 모든 player가 holed이면 match snapshot이 `HoleComplete`가 된다.
+- F2는 M12 match/turn/player/transport telemetry를 표시한다. 기존 H/F1 debug와 분리되어 있다.
+- 개발 메뉴 `SwingPop > Online > Run Local 2P Simulation`은 one-way 200 ms LocalLoopback 시뮬레이션을 시작한다.
+- 이는 같은 프로세스의 foundation 검증이며 실제 두 기기 또는 production online match가 아니다.
+
 ## 24. VFX Hero Pass Presentation Contract
 
 - shot gameplay flow와 `ImpactGrade` 판정은 변경하지 않는다. Good/Miss 계열은 restrained Normal presentation, Great는 중간 profile, Perfect는 Hero profile을 사용한다.

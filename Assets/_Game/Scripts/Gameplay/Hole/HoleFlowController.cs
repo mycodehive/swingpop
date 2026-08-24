@@ -29,6 +29,7 @@ namespace SwingPop.Gameplay.Hole
         public event Action<HoleFlowState, HoleFlowState> StateChanged;
         public event Action<int> StrokeChanged;
         public event Action<ScoreResult> HoleCompleted;
+        public event Action<HoleShotResolution> ShotResolved;
 
         public HoleData Hole => hole;
         public HoleFlowState State => progress.State;
@@ -136,6 +137,30 @@ namespace SwingPop.Gameplay.Hole
             automaticFlowSuspended = suspended;
         }
 
+        public bool RestoreMultiplayerPlayer(
+            Vector3 ballPosition,
+            Vector3 lastValidPosition,
+            TerrainSurfaceData surface,
+            int strokeCount,
+            int penaltyCount)
+        {
+            if (hole == null || ball == null || shotFlow == null || surface == null || surface.IsHazard)
+            {
+                return false;
+            }
+
+            HoleFlowState previous = progress.State;
+            progress.RestorePlaying(strokeCount, penaltyCount, lastValidPosition, surface.SurfaceType);
+            shotInProgress = false;
+            pendingNextShot = false;
+            lastValidSurface = surface;
+            ball.SetResetPose(ballPosition, Quaternion.identity, surface, true);
+            shotFlow.PrepareNextShot(hole.CupPosition - ballPosition, SelectClub(surface.SurfaceType));
+            StateChanged?.Invoke(previous, progress.State);
+            StrokeChanged?.Invoke(progress.StrokeCount);
+            return true;
+        }
+
         private void OnShotCommitted(ShotCommand command)
         {
             if (progress.State != HoleFlowState.Playing)
@@ -152,8 +177,7 @@ namespace SwingPop.Gameplay.Hole
         {
             if (nextState != BallState.Stopped
                 || !shotInProgress
-                || progress.State != HoleFlowState.Playing
-                || automaticFlowSuspended)
+                || progress.State != HoleFlowState.Playing)
             {
                 return;
             }
@@ -174,14 +198,31 @@ namespace SwingPop.Gameplay.Hole
                 pendingSurface = lastValidSurface;
             }
 
-            pendingNextShot = true;
+            HoleShotResolution resolution = new(
+                pendingPosition,
+                progress.LastValidPosition,
+                pendingSurface != null ? pendingSurface.SurfaceType : progress.LastValidLie,
+                progress.StrokeCount,
+                progress.PenaltyCount,
+                ball.HasLastHazard);
+            ShotResolved?.Invoke(resolution);
+
+            if (!automaticFlowSuspended)
+            {
+                pendingNextShot = true;
+            }
         }
 
         private void PrepareShotFromCurrentLie()
         {
-            ClubData nextClub = ball.CurrentLie == TerrainSurfaceType.Green ? putter : normalClub;
+            ClubData nextClub = SelectClub(ball.CurrentLie);
             Vector3 cupDirection = hole.CupPosition - ball.PhysicsPosition;
             shotFlow.PrepareNextShot(cupDirection, nextClub);
+        }
+
+        private ClubData SelectClub(TerrainSurfaceType lie)
+        {
+            return lie == TerrainSurfaceType.Green ? putter : normalClub;
         }
     }
 }

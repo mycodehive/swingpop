@@ -52,6 +52,20 @@ namespace SwingPop.Gameplay.Hole
             PenaltyCount++;
         }
 
+        public void RestorePlaying(
+            int strokeCount,
+            int penaltyCount,
+            Vector3 lastValidPosition,
+            TerrainSurfaceType lastValidLie)
+        {
+            StrokeCount = Mathf.Max(0, strokeCount);
+            PenaltyCount = Mathf.Clamp(penaltyCount, 0, StrokeCount);
+            LastValidPosition = lastValidPosition;
+            LastValidLie = IsHazard(lastValidLie) ? TerrainSurfaceType.Fairway : lastValidLie;
+            Result = default;
+            State = HoleFlowState.Playing;
+        }
+
         public ScoreResult Complete(int par)
         {
             if (State != HoleFlowState.HoleComplete)

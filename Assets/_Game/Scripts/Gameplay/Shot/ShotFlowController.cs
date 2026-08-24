@@ -34,6 +34,8 @@ namespace SwingPop.Gameplay.Shot
         private float fallbackImpactDelay = 0.45f;
         private bool lastBallLaunchUsedFallback;
         private int lastConfirmFrame = -1;
+        private IShotCommitGate commitGate;
+        private bool awaitingApproval;
 
         public event Action<ShotFlowState, ShotFlowState> StateChanged;
         public event Action<ShotCommand> ShotCommitted;
@@ -55,6 +57,7 @@ namespace SwingPop.Gameplay.Shot
         public ShotTuningData Tuning => shotTuning;
         public bool HasPendingBallLaunch => hasPendingBallLaunch;
         public bool LastBallLaunchUsedFallback => lastBallLaunchUsedFallback;
+        public bool IsAwaitingApproval => awaitingApproval;
 
         private void Awake()
         {
@@ -122,15 +125,30 @@ namespace SwingPop.Gameplay.Shot
             {
                 ball.ResetPerformed -= OnBallReset;
             }
+            SubscribeCommitGate(null);
+        }
+
+        public void ConfigureCommitGate(IShotCommitGate gate)
+        {
+            SubscribeCommitGate(gate);
         }
 
         public void SetAimInput(float horizontalInput)
         {
+            if (!CanUseLocalControls())
+            {
+                aimInput = 0f;
+                return;
+            }
             aimInput = Mathf.Clamp(horizontalInput, -1f, 1f);
         }
 
         public void ConfirmCurrentStep()
         {
+            if (!CanUseLocalControls())
+            {
+                return;
+            }
             if (lastConfirmFrame == Time.frameCount)
             {
                 return;
@@ -158,6 +176,10 @@ namespace SwingPop.Gameplay.Shot
 
         public void CancelToAiming()
         {
+            if (!CanUseLocalControls())
+            {
+                return;
+            }
             if (state is ShotFlowState.PowerSelecting or ShotFlowState.ImpactSelecting)
             {
                 BeginAiming();
@@ -166,6 +188,10 @@ namespace SwingPop.Gameplay.Shot
 
         public void ForcePerfectImpactAndCommit()
         {
+            if (!CanUseLocalControls())
+            {
+                return;
+            }
             if (state != ShotFlowState.ImpactSelecting)
             {
                 return;
@@ -189,6 +215,10 @@ namespace SwingPop.Gameplay.Shot
 
         public void SetSpinPreset(SpinPreset preset)
         {
+            if (!CanUseLocalControls())
+            {
+                return;
+            }
             if (ball == null || ball.State != BallState.Ready)
             {
                 return;
@@ -208,6 +238,10 @@ namespace SwingPop.Gameplay.Shot
 
         public void ResetShot()
         {
+            if (!CanUseLocalControls())
+            {
+                return;
+            }
             if (DebugResetRequested != null)
             {
                 DebugResetRequested.Invoke();
@@ -286,6 +320,30 @@ namespace SwingPop.Gameplay.Shot
             return false;
         }
 
+        public bool TryCreateShotCommand(float selectedPower01, float selectedImpactOffset, out ShotCommand command)
+        {
+            command = default;
+            if (ball == null || ball.State != BallState.Ready || ballTuning == null || shotTuning == null)
+            {
+                return false;
+            }
+
+            command = BuildShotCommand(
+                Mathf.Clamp01(selectedPower01),
+                Mathf.Clamp(selectedImpactOffset, -1f, 1f));
+            return true;
+        }
+
+        public bool TryExecuteApprovedShot(ShotCommand command)
+        {
+            if (state != ShotFlowState.Aiming || ball == null || ball.State != BallState.Ready)
+            {
+                return false;
+            }
+
+            return FinalizeCommittedShot(command);
+        }
+
         private void UpdateAim(float deltaTime)
         {
             aimAngleDegrees = ShotCalculator.ClampAimAngle(
@@ -302,11 +360,36 @@ namespace SwingPop.Gameplay.Shot
                 return false;
             }
 
+            ShotCommand command = BuildShotCommand(confirmedPower01, impactCursor);
+
+            if (commitGate != null && commitGate.RequiresApproval)
+            {
+                if (!commitGate.CanSubmitShot || awaitingApproval)
+                {
+                    return false;
+                }
+
+                awaitingApproval = true;
+                pendingShotCommand = command;
+                ChangeState(ShotFlowState.AwaitingApproval);
+                if (!commitGate.TrySubmitShot(command))
+                {
+                    HandleShotRejected();
+                    return false;
+                }
+                return true;
+            }
+
+            return FinalizeCommittedShot(command);
+        }
+
+        private ShotCommand BuildShotCommand(float selectedPower01, float selectedImpactOffset)
+        {
             ShotCommand command = ShotCalculator.CreateCommand(
                 baseAimForward,
                 aimAngleDegrees,
-                confirmedPower01,
-                impactCursor,
+                selectedPower01,
+                selectedImpactOffset,
                 shotTuning.PerfectMaximumOffset,
                 shotTuning.GreatMaximumOffset,
                 shotTuning.GoodMaximumOffset,
@@ -327,6 +410,13 @@ namespace SwingPop.Gameplay.Shot
             command = ShotCalculator.ApplySurfacePowerModifier(command, surfacePowerModifier);
             command = ShotCalculator.ApplyClub(command, CurrentClub);
 
+            return command;
+        }
+
+        private bool FinalizeCommittedShot(ShotCommand command)
+        {
+            awaitingApproval = false;
+
             lastShotCommand = command;
             hasLastShotCommand = true;
             pendingShotCommand = command;
@@ -336,6 +426,48 @@ namespace SwingPop.Gameplay.Shot
             ChangeState(ShotFlowState.ShotCommitted);
             ShotCommitted?.Invoke(command);
             return deferBallLaunchUntilImpact || TryLaunchCommittedShot();
+        }
+
+        private bool CanUseLocalControls()
+        {
+            return commitGate == null || !commitGate.RequiresApproval || commitGate.CanSubmitShot;
+        }
+
+        private void SubscribeCommitGate(IShotCommitGate nextGate)
+        {
+            if (commitGate != null)
+            {
+                commitGate.ShotApproved -= HandleShotApproved;
+                commitGate.ShotRejected -= HandleShotRejected;
+            }
+
+            commitGate = nextGate;
+            if (commitGate != null)
+            {
+                commitGate.ShotApproved += HandleShotApproved;
+                commitGate.ShotRejected += HandleShotRejected;
+            }
+        }
+
+        private void HandleShotApproved(ShotCommand approvedCommand)
+        {
+            if (!awaitingApproval || state != ShotFlowState.AwaitingApproval)
+            {
+                return;
+            }
+
+            FinalizeCommittedShot(approvedCommand);
+        }
+
+        private void HandleShotRejected()
+        {
+            if (!awaitingApproval)
+            {
+                return;
+            }
+
+            awaitingApproval = false;
+            BeginAiming();
         }
 
         private ImpactGrade EvaluateCurrentImpactGrade()
@@ -359,6 +491,7 @@ namespace SwingPop.Gameplay.Shot
 
         private void BeginAiming()
         {
+            awaitingApproval = false;
             hasPendingBallLaunch = false;
             aimInput = 0f;
             aimAngleDegrees = 0f;

@@ -6,6 +6,7 @@ namespace SwingPop.Gameplay.Shot
         Aiming,
         PowerSelecting,
         ImpactSelecting,
+        AwaitingApproval,
         ShotCommitted
     }
 }

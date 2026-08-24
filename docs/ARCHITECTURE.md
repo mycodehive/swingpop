@@ -479,6 +479,31 @@ Gameplay source events
 - Skin HUD는 Canvas 1, default shared UI material 1, layout component 0, per-frame update behaviour 1을 유지한다. Shot Button만 raycast target이다.
 - Editor builder, validator, capture tool은 runtime gameplay graph에 참여하지 않는다.
 
+## M12 Online Multiplayer Foundation Boundary
+
+```text
+Local/Remote intent
+      |
+      v
+IMatchTransport <-> IMatchAuthority
+      |
+ ApprovedShot / MatchSnapshot
+      |
+      v
+Existing ShotFlow -> Character -> Ball -> HoleFlow
+      |
+ Existing Camera / HUD / VFX / Audio events
+```
+
+- 기본 실행은 `OfflineSingle`이며 기존 Hole01 shot flow를 그대로 사용한다.
+- `LocalTwoPlayer`에서만 `IShotCommitGate`가 승인 전 발사를 차단한다.
+- Authority는 match/player/turn/sequence/version, duplicate, 수치 범위와 lie별 club을 검증한다.
+- Transform을 매 프레임 전송하지 않는다. 승인된 `ShotCommand`, gameplay가 계산한 `NetworkShotResult`, versioned `MatchSnapshot`만 동기화한다.
+- Player A/B는 각각 ball position, last valid position, lie, strokes, penalties, holed 상태를 소유한다. 하나의 visual ball은 현재 turn player 상태로 복원된다.
+- Rigidbody lockstep determinism은 보장하지 않는다. Production authority/result verification은 별도 과제다.
+- Camera, character, HUD, VFX, audio는 network DTO와 authority에 포함되지 않는다.
+- 상세 설계와 위험은 `docs/M12_ONLINE_MULTIPLAYER_ARCHITECTURE.md`, 후속 범위는 `docs/TODO_ONLINE.md`를 따른다.
+
 ## VFX Hero Pass Presentation Boundary
 
 ```text
