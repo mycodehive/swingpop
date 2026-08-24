@@ -8,6 +8,8 @@ namespace SwingPop.UI
         [SerializeField] private CanvasGroup canvasGroup;
         [SerializeField] private RectTransform panel;
         [SerializeField] private Text messageText;
+        [SerializeField] private Image panelImage;
+        [SerializeField] private Image accentImage;
 
         private float remaining;
         private float duration;
@@ -28,6 +30,11 @@ namespace SwingPop.UI
             {
                 messageText.text = message;
                 messageText.color = color;
+            }
+            if (accentImage != null) accentImage.color = color;
+            if (panelImage != null)
+            {
+                panelImage.color = new Color(0.018f, 0.105f, 0.16f, strong ? 0.94f : 0.86f);
             }
 
             duration = Mathf.Max(0.1f, visibleDuration);

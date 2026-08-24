@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 251aa6f080fb4d44d8bac62916b984bc, type: 3}
+  m_Name: ArtPass1CharacterVisualProfile
+  m_EditorClassIdentifier: SwingPop.Runtime::SwingPop.Data.CharacterVisualProfile
+  displayName: "Mira \u2014 SwingPop Placeholder Golfer"
+  portraitReference: {fileID: 0}
+  visualHeight: 3.15
+  localBoundsCenter: {x: 0, y: 1.48, z: 0}
+  localBoundsSize: {x: 1.55, y: 3.15, z: 1.15}
+  presentationOffset: {x: 0, y: 0, z: 0}
+  characterScale: 1
+  groundOffset: 0
+  addressOffset: {x: 0, y: 0, z: 0}
+  cameraFramingOffset: {x: 0, y: 1.55, z: 0.1}
+  clubSocketOffset: {x: 0.45, y: 1.15, z: 0.25}
+  impactAnchorOffset: {x: 0.62, y: 0.16, z: 0.58}
+  headLookOffset: {x: 0, y: 2.2, z: 2}

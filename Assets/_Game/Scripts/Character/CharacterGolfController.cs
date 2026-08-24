@@ -29,6 +29,12 @@ namespace SwingPop.CharacterSystem
             ? animationController.State
             : CharacterState.Idle;
         public string AnimationState => CurrentState.ToString();
+        public CharacterAnimationMode AnimationMode => animationController != null
+            ? animationController.AnimationMode
+            : CharacterAnimationMode.ProceduralFallback;
+        public CharacterImpactSource ImpactSource => animationController != null
+            ? animationController.LastImpactSource
+            : CharacterImpactSource.None;
         public bool ImpactEventFired => impactEventFired;
         public string CurrentClubVisual => presentation != null ? presentation.CurrentClubVisual : "None";
         public float CharacterAimAngle => Vector3.SignedAngle(Vector3.forward, desiredRotation * Vector3.forward, Vector3.up);

@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fdd97e3b3b56c674da9eb50ce3c1436e, type: 3}
-  m_Name: M6CameraTuning
+  m_Name: M11CameraTuning
   m_EditorClassIdentifier: SwingPop.Runtime::SwingPop.Data.CameraTuningData
   holeIntroDuration: 3
   introTeeOffset: {x: -14, y: 11, z: -16}
@@ -41,18 +41,19 @@ MonoBehaviour:
   landingFieldOfView: 46
   nextShotOffset: {x: 7, y: 4.2, z: -9}
   nextShotHoldDuration: 0.55
-  puttOffset: {x: 4.2, y: 2.25, z: -5.4}
-  puttFieldOfView: 43
-  puttDistanceScale: 0.42
+  puttOffset: {x: 5.2, y: 2.75, z: -6.8}
+  puttFieldOfView: 48
+  puttDistanceScale: 0.5
   puttMaximumDistanceExtension: 12
-  puttHeightScale: 0.08
-  puttFovPerMeter: 0.55
-  puttMaximumFieldOfView: 60
+  puttHeightScale: 0.1
+  puttFovPerMeter: 0.62
+  puttMaximumFieldOfView: 64
   holeCompleteOffset: {x: 4.5, y: 2.6, z: -4.5}
   holeCompleteFieldOfView: 42
   holeCompleteHoldDuration: 1.1
-  resultOffset: {x: 8, y: 5.5, z: -8}
-  resultFieldOfView: 52
+  resultOffset: {x: 9.2, y: 6.1, z: -10}
+  resultLookOffset: {x: 3.2, y: 0.75, z: 0}
+  resultFieldOfView: 56
   holeCompleteShake: 0.04
   defaultTransitionDuration: 0.45
   introTransitionDuration: 0.8

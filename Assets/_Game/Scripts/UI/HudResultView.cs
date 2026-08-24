@@ -1,3 +1,4 @@
+using SwingPop.Data;
 using SwingPop.Gameplay.Hole;
 using UnityEngine;
 using UnityEngine.UI;
@@ -6,6 +7,7 @@ namespace SwingPop.UI
 {
     public sealed class HudResultView : MonoBehaviour
     {
+        [SerializeField] private HudSkinData skin;
         [SerializeField] private GameObject root;
         [SerializeField] private CanvasGroup canvasGroup;
         [SerializeField] private RectTransform panel;
@@ -13,6 +15,8 @@ namespace SwingPop.UI
         [SerializeField] private Text parText;
         [SerializeField] private Text strokesText;
         [SerializeField] private Text resultText;
+        [SerializeField] private Image accentImage;
+        [SerializeField] private Image emblemImage;
 
         private float elapsed;
         private float showDuration = 0.42f;
@@ -32,6 +36,16 @@ namespace SwingPop.UI
             parText.text = $"PAR {result.Par}";
             strokesText.text = $"STROKES {result.Strokes}";
             resultText.text = HudPresentationMapper.FormatResultRelative(result);
+            if (skin != null)
+            {
+                Color accent = skin.Resolve(HudSkinStyleMapper.ForResult(result));
+                resultText.color = accent;
+                if (accentImage != null) accentImage.color = accent;
+                if (emblemImage != null)
+                {
+                    emblemImage.color = new Color(accent.r, accent.g, accent.b, 0.2f);
+                }
+            }
             showDuration = Mathf.Max(0.05f, animationDuration);
             elapsed = 0f;
             showing = true;

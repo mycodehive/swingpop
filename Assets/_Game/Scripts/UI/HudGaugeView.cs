@@ -1,3 +1,4 @@
+using SwingPop.Data;
 using SwingPop.Gameplay.Shot;
 using UnityEngine;
 using UnityEngine.UI;
@@ -6,12 +7,16 @@ namespace SwingPop.UI
 {
     public sealed class HudGaugeView : MonoBehaviour
     {
+        [Header("Skin")]
+        [SerializeField] private HudSkinData skin;
+
         [Header("Power")]
         [SerializeField] private GameObject powerRoot;
         [SerializeField] private Image powerFill;
         [SerializeField] private RectTransform powerCursor;
         [SerializeField] private Text powerPercentText;
         [SerializeField] private CanvasGroup powerGlow;
+        [SerializeField] private Image powerCursorImage;
 
         [Header("Impact")]
         [SerializeField] private GameObject impactRoot;
@@ -20,6 +25,8 @@ namespace SwingPop.UI
         [SerializeField] private RectTransform greatZone;
         [SerializeField] private RectTransform perfectZone;
         [SerializeField] private Text impactPreviewText;
+        [SerializeField] private Image impactCursorImage;
+        [SerializeField] private Image perfectZoneImage;
 
         private int displayedPowerPercent = -1;
 
@@ -49,6 +56,13 @@ namespace SwingPop.UI
             if (powerFill != null)
             {
                 powerFill.fillAmount = normalized;
+                if (skin != null)
+                {
+                    powerFill.color = normalized < 0.82f
+                        ? Color.Lerp(skin.Cyan, skin.Mint, normalized / 0.82f)
+                        : Color.Lerp(skin.Mint, skin.Gold, (normalized - 0.82f) / 0.18f);
+                    if (powerCursorImage != null) powerCursorImage.color = powerFill.color;
+                }
             }
             SetHorizontalCursor(powerCursor, normalized);
 
@@ -66,6 +80,14 @@ namespace SwingPop.UI
             if (impactPreviewText != null)
             {
                 impactPreviewText.text = grade.ToString().ToUpperInvariant();
+                if (skin != null)
+                {
+                    impactPreviewText.color = skin.Resolve(HudSkinStyleMapper.ForImpact(grade));
+                }
+            }
+            if (impactCursorImage != null && skin != null)
+            {
+                impactCursorImage.color = skin.Resolve(HudSkinStyleMapper.ForImpact(grade));
             }
         }
 
@@ -74,6 +96,12 @@ namespace SwingPop.UI
             if (powerGlow != null && IsPowerVisible)
             {
                 powerGlow.alpha = 0.68f + Mathf.Sin(unscaledTime * 4f) * 0.18f;
+            }
+            if (perfectZoneImage != null && IsImpactVisible && skin != null)
+            {
+                Color color = skin.Gold;
+                color.a = 0.78f + Mathf.Sin(unscaledTime * 5.5f) * 0.14f;
+                perfectZoneImage.color = color;
             }
         }
 

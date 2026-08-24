@@ -190,9 +190,10 @@ namespace SwingPop.CameraSystem
             Vector3 resetPosition,
             Vector3 cupPosition)
         {
+            Vector3 courseForward = cupPosition - resetPosition;
             return new CameraFraming(
-                CameraMath.LocalOffset(cupPosition, cupPosition - resetPosition, tuning.ResultOffset),
-                cupPosition + Vector3.up * 0.75f,
+                CameraMath.LocalOffset(cupPosition, courseForward, tuning.ResultOffset),
+                CameraMath.LocalOffset(cupPosition, courseForward, tuning.ResultLookOffset),
                 tuning.ResultFieldOfView,
                 "Hole Result");
         }

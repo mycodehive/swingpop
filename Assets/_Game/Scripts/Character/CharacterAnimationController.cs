@@ -19,6 +19,9 @@ namespace SwingPop.CharacterSystem
         private float stateElapsed;
         private float stateDuration;
         private bool completionRaised;
+        private bool impactArmed;
+        private CharacterAnimationMode animationMode;
+        private CharacterImpactSource lastImpactSource;
 
         public event Action<CharacterState, CharacterState> StateChanged;
         public event Action ImpactReached;
@@ -27,23 +30,36 @@ namespace SwingPop.CharacterSystem
         public CharacterState State => state;
         public float StateElapsed => stateElapsed;
         public bool ImpactEventFired => impactGate.HasFired;
-        public bool UsesAnimator => animator != null && animator.runtimeAnimatorController != null;
+        public CharacterAnimationMode AnimationMode => animationMode;
+        public CharacterImpactSource LastImpactSource => lastImpactSource;
+        public bool UsesAnimator => animationMode == CharacterAnimationMode.HumanoidAnimator;
 
         private void Awake()
         {
             presentation ??= GetComponent<CharacterPresentation>();
+            animator ??= presentation != null && presentation.VisualAdapter != null
+                ? presentation.VisualAdapter.Animator
+                : null;
+            animationMode = ResolveAnimationMode(animator);
         }
 
         private void Update()
         {
             stateElapsed += Time.deltaTime;
-            if ((state is CharacterState.Swing or CharacterState.PuttSwing) && impactGate.Tick(Time.deltaTime))
+            if (impactArmed
+                && (state is CharacterState.Swing or CharacterState.PuttSwing)
+                && impactGate.Tick(Time.deltaTime))
             {
+                impactArmed = false;
+                lastImpactSource = CharacterImpactSource.NormalizedFallback;
                 ImpactReached?.Invoke();
             }
 
             float normalized = stateDuration > 0f ? Mathf.Clamp01(stateElapsed / stateDuration) : 0f;
-            presentation?.ApplyProceduralPose(state, normalized, stateElapsed);
+            if (!UsesAnimator)
+            {
+                presentation?.ApplyProceduralPose(state, normalized, stateElapsed);
+            }
             if (!completionRaised && stateDuration > 0f && stateElapsed >= stateDuration)
             {
                 completionRaised = true;
@@ -68,7 +84,9 @@ namespace SwingPop.CharacterSystem
             float duration = isPutter ? tuning.PuttSwingDuration : tuning.SwingDuration;
             float impactTime = isPutter ? tuning.PuttImpactNormalizedTime : tuning.SwingImpactNormalizedTime;
             Play(isPutter ? CharacterState.PuttSwing : CharacterState.Swing, duration);
+            lastImpactSource = CharacterImpactSource.None;
             impactGate.Begin(duration, impactTime);
+            impactArmed = true;
         }
 
         public void PlayFollowThrough(bool isPutter)
@@ -91,10 +109,20 @@ namespace SwingPop.CharacterSystem
         /// <summary>Future Animation Clips can call this method from a single Animation Event.</summary>
         public void NotifyImpactAnimationEvent()
         {
-            if (impactGate.TryFire())
+            if (impactArmed && impactGate.TryFire())
             {
+                impactArmed = false;
+                lastImpactSource = CharacterImpactSource.AnimationEvent;
                 ImpactReached?.Invoke();
             }
+        }
+
+        /// <summary>Editor preview 전용. Gameplay command나 Ball launch를 요청하지 않습니다.</summary>
+        public void PreviewState(CharacterState previewState)
+        {
+            impactArmed = false;
+            lastImpactSource = CharacterImpactSource.None;
+            Play(previewState, ResolvePreviewDuration(previewState));
         }
 
         private void Play(CharacterState next, float duration)
@@ -118,11 +146,50 @@ namespace SwingPop.CharacterSystem
                 return;
             }
 
-            int stateHash = Animator.StringToHash(next.ToString());
+            int stateHash = CharacterAnimatorContract.GetStateHash(next);
             if (animator.HasState(0, stateHash))
             {
                 animator.CrossFade(stateHash, 0.08f, 0, 0f);
             }
+        }
+
+        public static CharacterAnimationMode ResolveAnimationMode(Animator candidate)
+        {
+            if (candidate == null || candidate.runtimeAnimatorController == null)
+            {
+                return CharacterAnimationMode.ProceduralFallback;
+            }
+
+            Avatar candidateAvatar = candidate.avatar;
+            if (candidateAvatar == null || !candidateAvatar.isValid || !candidateAvatar.isHuman)
+            {
+                Debug.LogWarning(
+                    "Character Animator Controller is assigned, but its Avatar is missing, invalid, or not Humanoid. " +
+                    "SwingPop will use the procedural fallback until a valid Humanoid Avatar is assigned.",
+                    candidate);
+                return CharacterAnimationMode.ProceduralFallback;
+            }
+
+            return CharacterAnimationMode.HumanoidAnimator;
+        }
+
+        private float ResolvePreviewDuration(CharacterState previewState)
+        {
+            if (tuning == null)
+            {
+                return 0f;
+            }
+
+            return previewState switch
+            {
+                CharacterState.BackSwing => tuning.BackSwingDuration,
+                CharacterState.Swing => tuning.SwingDuration,
+                CharacterState.FollowThrough => tuning.FollowThroughDuration,
+                CharacterState.PuttBackSwing => tuning.PuttBackSwingDuration,
+                CharacterState.PuttSwing => tuning.PuttSwingDuration,
+                CharacterState.PuttFollowThrough => tuning.PuttFollowThroughDuration,
+                _ => 0f
+            };
         }
     }
 }

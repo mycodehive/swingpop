@@ -125,10 +125,10 @@ namespace SwingPop.Debugging
             if (character != null)
             {
                 GUILayout.Label(
-                    $"Character: {character.CurrentState}  Animation: {character.AnimationState}  Aim: {character.CharacterAimAngle:+0.0;-0.0;0.0}°",
+                    $"Character: {character.CurrentState}  Animation: {character.AnimationMode}/{character.AnimationState}  Aim: {character.CharacterAimAngle:+0.0;-0.0;0.0}°",
                     labelStyle);
                 GUILayout.Label(
-                    $"Impact Event: {(character.ImpactEventFired ? "Fired" : "Waiting/Idle")}  Pending Launch: {shotFlow.HasPendingBallLaunch}  Club Visual: {character.CurrentClubVisual}",
+                    $"Impact Event: {(character.ImpactEventFired ? "Fired" : "Waiting/Idle")} ({character.ImpactSource})  Pending Launch: {shotFlow.HasPendingBallLaunch}  Club Visual: {character.CurrentClubVisual}",
                     labelStyle);
                 GUILayout.Label(
                     $"Fallback Launch Used: {shotFlow.LastBallLaunchUsedFallback}",

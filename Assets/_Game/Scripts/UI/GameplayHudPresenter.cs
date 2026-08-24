@@ -199,7 +199,10 @@ namespace SwingPop.UI
                 clubName,
                 HudPresentationMapper.FormatLie(ball.CurrentLie),
                 HudPresentationMapper.FormatSpin(shotFlow.SelectedSpinPreset, spinEnabled),
-                spinEnabled);
+                spinEnabled,
+                ball.CurrentLie,
+                shotFlow.SelectedSpinPreset,
+                club != null && club.IsPutter);
         }
 
         private void RefreshState()
@@ -214,7 +217,9 @@ namespace SwingPop.UI
             view.SetAimVisible(!complete && shotFlow.State is ShotFlowState.Aiming
                 or ShotFlowState.PowerSelecting
                 or ShotFlowState.ImpactSelecting);
-            view.SetPrimaryAction(HudPresentationMapper.MapPrimaryAction(shotFlow.State, holeFlow.State));
+            view.SetPrimaryAction(
+                HudPresentationMapper.MapPrimaryAction(shotFlow.State, holeFlow.State),
+                shotFlow.State);
         }
 
         private void RefreshAimData(bool force)
@@ -294,7 +299,7 @@ namespace SwingPop.UI
             float fade = tuning != null ? tuning.PopupFadeDuration : 0.18f;
             view.ShowImpact(
                 pendingImpactCommand.ImpactGrade.ToString().ToUpperInvariant(),
-                GameplayHudView.ImpactColor(pendingImpactCommand.ImpactGrade),
+                view.ResolveTone(HudSkinStyleMapper.ForImpact(pendingImpactCommand.ImpactGrade)),
                 duration,
                 fade,
                 pendingImpactCommand.ImpactGrade == ImpactGrade.Perfect);
@@ -319,8 +324,8 @@ namespace SwingPop.UI
                 float duration = tuning != null ? tuning.LieFeedbackDuration : 1.2f;
                 float fade = tuning != null ? tuning.PopupFadeDuration : 0.18f;
                 view.ShowLie(
-                    HudPresentationMapper.FormatLie(ball.CurrentLie),
-                    new Color(0.45f, 1f, 0.78f),
+                HudPresentationMapper.FormatLie(ball.CurrentLie),
+                    view.ResolveTone(HudSkinStyleMapper.ForLie(ball.CurrentLie)),
                     duration,
                     fade);
             }
@@ -333,7 +338,7 @@ namespace SwingPop.UI
             float fade = tuning != null ? tuning.PopupFadeDuration : 0.18f;
             view.ShowHazard(
                 HudPresentationMapper.FormatHazard(hazard),
-                new Color(1f, 0.4f, 0.22f),
+                view.ResolveTone(HudSkinTone.Coral),
                 duration,
                 fade);
         }

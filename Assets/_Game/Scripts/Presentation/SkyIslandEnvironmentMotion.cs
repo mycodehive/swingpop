@@ -8,12 +8,15 @@ namespace SwingPop.Presentation
         [SerializeField] private SkyIslandEnvironmentTuningData tuning;
         [SerializeField] private Transform windmillRotor;
         [SerializeField] private Transform[] driftingClouds;
+        [SerializeField] private Transform waterHighlight;
 
         private Vector3[] cloudOrigins;
+        private Vector3 waterHighlightOrigin;
 
         public bool HasTuning => tuning != null;
         public bool HasWindmillRotor => windmillRotor != null;
         public int DriftingCloudCount => driftingClouds?.Length ?? 0;
+        public bool HasWaterHighlight => waterHighlight != null;
 
         private void Awake()
         {
@@ -25,6 +28,10 @@ namespace SwingPop.Presentation
                 {
                     cloudOrigins[index] = driftingClouds[index].position;
                 }
+            }
+            if (waterHighlight != null)
+            {
+                waterHighlightOrigin = waterHighlight.localPosition;
             }
         }
 
@@ -52,6 +59,12 @@ namespace SwingPop.Presentation
                 float stagger = loopDistance * index / Mathf.Max(1, driftingClouds.Length);
                 float offset = Mathf.Repeat(Time.time * tuning.CloudDriftSpeed + stagger, loopDistance) - loopDistance * 0.5f;
                 cloud.position = cloudOrigins[index] + Vector3.right * offset;
+            }
+
+            if (waterHighlight != null)
+            {
+                float offset = Mathf.Sin(Time.time * tuning.WaterHighlightSpeed) * tuning.WaterHighlightDistance;
+                waterHighlight.localPosition = waterHighlightOrigin + Vector3.right * offset;
             }
         }
     }

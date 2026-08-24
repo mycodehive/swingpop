@@ -294,6 +294,15 @@ namespace SwingPop.Editor
             SetFloat(serialized, "swingFieldOfView", 43f);
             SetFloat(serialized, "followFieldOfView", 54f);
             SetFloat(serialized, "landingFieldOfView", 46f);
+            SetVector(serialized, "puttOffset", new Vector3(5.2f, 2.75f, -6.8f));
+            SetFloat(serialized, "puttFieldOfView", 48f);
+            SetFloat(serialized, "puttDistanceScale", 0.5f);
+            SetFloat(serialized, "puttHeightScale", 0.1f);
+            SetFloat(serialized, "puttFovPerMeter", 0.62f);
+            SetFloat(serialized, "puttMaximumFieldOfView", 64f);
+            SetVector(serialized, "resultOffset", new Vector3(9.2f, 6.1f, -10f));
+            SetVector(serialized, "resultLookOffset", new Vector3(3.2f, 0.75f, 0f));
+            SetFloat(serialized, "resultFieldOfView", 56f);
             serialized.ApplyModifiedPropertiesWithoutUndo();
             SetObjectReference(Object.FindAnyObjectByType<CameraDirector>(), "tuning", tuning);
         }

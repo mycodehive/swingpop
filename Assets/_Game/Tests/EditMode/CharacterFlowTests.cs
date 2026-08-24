@@ -1,4 +1,6 @@
 using NUnit.Framework;
+using System;
+using System.Collections.Generic;
 using SwingPop.CharacterSystem;
 using SwingPop.Gameplay.Club;
 using SwingPop.Gameplay.Hole;
@@ -100,6 +102,26 @@ namespace SwingPop.Tests
             Vector3 forward = CharacterPlacementCalculator.ResolvePlanarForward(Vector3.up, Vector3.left);
 
             Assert.That(forward, Is.EqualTo(Vector3.left).Using(Vector3ComparerWithEqualsOperator.Instance));
+        }
+
+        [Test]
+        public void AnimatorContract_MapsEveryCharacterStateToUniqueStableNameAndHash()
+        {
+            HashSet<string> names = new();
+            HashSet<int> hashes = new();
+            foreach (CharacterState state in Enum.GetValues(typeof(CharacterState)))
+            {
+                Assert.That(names.Add(CharacterAnimatorContract.GetStateName(state)), Is.True, state.ToString());
+                Assert.That(hashes.Add(CharacterAnimatorContract.GetStateHash(state)), Is.True, state.ToString());
+            }
+        }
+
+        [Test]
+        public void MissingAnimator_UsesProceduralFallback()
+        {
+            Assert.That(
+                CharacterAnimationController.ResolveAnimationMode(null),
+                Is.EqualTo(CharacterAnimationMode.ProceduralFallback));
         }
     }
 }

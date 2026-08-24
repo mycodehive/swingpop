@@ -178,3 +178,23 @@ Perfect:
 - HUD는 dark teal/cyan의 compact corner grouping과 lower-right action을 유지하고 중앙 Ball/Aim/Distance를 가리지 않는다.
 - foreground/midground/background의 value와 saturation 차이, restrained fog, selective soft shadow로 깊이를 만든다.
 - M11 결과는 authored final art가 아니라 reference와 비교 가능한 polished placeholder다. 최종 asset gap은 `TODO_ART.md`에 숨김없이 유지한다.
+
+## Character Identity Pass Direction
+
+- SwingPop 골퍼는 Bright / Friendly / Energetic한 original stylized anime character로 정의한다.
+- 약 1:6–1:7 비율, slightly oversized head, compact torso, slim limbs, readable hands/shoes와 큰 hair silhouette를 사용한다.
+- dark navy hair, warm skin, cyan/blue top, pink/white accent, deep navy bottom, white accent shoes를 기본 palette로 한다.
+- 골프 fashion과 fantasy casual을 결합하되 타 IP의 얼굴, 의상, emblem, club design을 복제하지 않는다.
+- Address에서 full character, Ball, Club, Aim line, face/hair와 fairway가 함께 읽히는 것을 우선한다.
+- 현재 `Mira` 호칭과 primitive face/hair/outfit은 pipeline 확인용 placeholder이며 final character asset이 아니다.
+- 세부 silhouette, rig, animation, delivery 규격은 `CHARACTER_IDENTITY_GUIDE.md`를 source of truth로 사용한다.
+
+## HUD Skin Pass Direction
+
+- Bright / Casual / Fantasy / Sporty / Rounded / Lightweight를 공통 keyword로 사용한다.
+- deep navy/teal translucent panel을 base로 하고 cyan/aqua와 white를 주 정보, pink를 활력 accent, gold를 Perfect/positive score, coral을 hazard/miss에 제한적으로 사용한다.
+- Player/Hole/Wind/Club은 compact corner widget으로 묶고 Character, Ball, Aim, course horizon이 있는 중앙 시야는 비운다.
+- Power와 Impact는 같은 arcade timing family를 사용하고 Shot Button은 lower-right hero interaction으로 읽히게 한다.
+- panel radius, 얇은 rim, opacity, icon silhouette, uppercase hierarchy를 공유해 HUD가 하나의 product family처럼 보이게 한다.
+- 현재 generated sprite와 `LegacyRuntime.ttf`는 project-safe placeholder다. final authored 9-slice, portrait, icon, localized font로 `HudSkinData`와 prefab seam에서 교체한다.
+- 특정 게임의 UI shape, logo, icon, ornament를 복제하지 않고 target-quality는 정보 밀도, 상호작용 존재감, world visibility 기준으로만 사용한다.

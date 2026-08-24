@@ -1,3 +1,5 @@
+using SwingPop.Data;
+using SwingPop.Gameplay.Course;
 using SwingPop.Gameplay.Shot;
 using UnityEngine;
 using UnityEngine.UI;
@@ -6,6 +8,15 @@ namespace SwingPop.UI
 {
     public sealed class GameplayHudView : MonoBehaviour
     {
+        [Header("Skin")]
+        [SerializeField] private HudSkinData skin;
+        [SerializeField] private Image playerPortraitImage;
+        [SerializeField] private Image clubIconImage;
+        [SerializeField] private Image lieAccentImage;
+        [SerializeField] private Image spinIconImage;
+        [SerializeField] private Image actionButtonImage;
+        [SerializeField] private Image actionAccentImage;
+
         [Header("Player")]
         [SerializeField] private Text playerNameText;
         [SerializeField] private Text strokeText;
@@ -64,12 +75,19 @@ namespace SwingPop.UI
         public string HeightLabel => heightText != null ? heightText.text : string.Empty;
         public string HazardMessage => hazardPopup != null ? hazardPopup.Message : string.Empty;
         public string ImpactMessage => impactPopup != null ? impactPopup.Message : string.Empty;
+        public HudSkinData Skin => skin;
 
         private void Awake()
         {
             if (actionRoot != null)
             {
                 actionBaseScale = actionRoot.transform.localScale;
+            }
+
+            if (skin != null && playerPortraitImage != null)
+            {
+                playerPortraitImage.sprite = skin.PlayerIcon;
+                playerPortraitImage.color = skin.Cyan;
             }
         }
 
@@ -106,17 +124,46 @@ namespace SwingPop.UI
             aimRoot?.SetActive(visible);
         }
 
-        public void SetClub(string clubName, string lie, string spin, bool spinEnabled)
+        public void SetClub(
+            string clubName,
+            string lie,
+            string spin,
+            bool spinEnabled,
+            TerrainSurfaceType lieType,
+            SpinPreset spinPreset,
+            bool isPutter)
         {
             clubText.text = clubName;
             lieText.text = lie;
             spinRoot?.SetActive(true);
             spinText.text = spin;
-            spinText.color = spinEnabled ? Color.white : new Color(0.68f, 0.76f, 0.8f, 1f);
+            spinText.color = spinEnabled
+                ? ResolveTone(HudSkinTone.PrimaryText)
+                : ResolveTone(HudSkinTone.Disabled);
             clubInitialText.text = string.IsNullOrEmpty(clubName) ? "?" : clubName.Substring(0, 1);
+
+            if (lieAccentImage != null)
+            {
+                lieAccentImage.color = ResolveTone(HudSkinStyleMapper.ForLie(lieType));
+            }
+            if (lieText != null)
+            {
+                lieText.color = ResolveTone(HudSkinStyleMapper.ForLie(lieType));
+            }
+            if (clubIconImage != null && skin != null)
+            {
+                clubIconImage.sprite = isPutter ? skin.PutterIcon : skin.DriverIcon;
+                clubIconImage.color = skin.PrimaryText;
+                if (clubInitialText != null) clubInitialText.gameObject.SetActive(clubIconImage.sprite == null);
+            }
+            if (spinIconImage != null && skin != null)
+            {
+                spinIconImage.sprite = ResolveSpinSprite(spinPreset, spinEnabled);
+                spinIconImage.color = spinEnabled ? skin.Cyan : skin.Disabled;
+            }
         }
 
-        public void SetPrimaryAction(HudActionPresentation presentation)
+        public void SetPrimaryAction(HudActionPresentation presentation, ShotFlowState state)
         {
             actionRoot?.SetActive(presentation.Visible);
             if (actionButton != null)
@@ -126,6 +173,15 @@ namespace SwingPop.UI
             if (actionText != null)
             {
                 actionText.text = presentation.Label;
+            }
+
+            Color accent = ResolveTone(HudSkinStyleMapper.ForAction(state));
+            if (actionAccentImage != null) actionAccentImage.color = accent;
+            if (actionButtonImage != null)
+            {
+                actionButtonImage.color = presentation.Interactable
+                    ? new Color(accent.r * 0.62f, accent.g * 0.72f, accent.b * 0.78f, 0.98f)
+                    : ResolveTone(HudSkinTone.Disabled);
             }
         }
 
@@ -181,6 +237,31 @@ namespace SwingPop.UI
                 ImpactGrade.Great => new Color(0.28f, 1f, 0.9f),
                 ImpactGrade.Good => new Color(0.45f, 0.82f, 1f),
                 _ => new Color(1f, 0.38f, 0.24f)
+            };
+        }
+
+        public Color ResolveTone(HudSkinTone tone)
+        {
+            return skin != null ? skin.Resolve(tone) : tone switch
+            {
+                HudSkinTone.Gold => new Color(1f, 0.86f, 0.2f),
+                HudSkinTone.Mint => new Color(0.28f, 1f, 0.72f),
+                HudSkinTone.Coral => new Color(1f, 0.38f, 0.24f),
+                HudSkinTone.Disabled => new Color(0.68f, 0.76f, 0.8f),
+                _ => new Color(0.2f, 0.9f, 1f)
+            };
+        }
+
+        private Sprite ResolveSpinSprite(SpinPreset preset, bool enabled)
+        {
+            if (!enabled) return skin.SpinNoneIcon;
+            return preset switch
+            {
+                SpinPreset.TopSpin => skin.SpinTopIcon,
+                SpinPreset.BackSpin => skin.SpinBackIcon,
+                SpinPreset.LeftSideSpin => skin.SpinLeftIcon,
+                SpinPreset.RightSideSpin => skin.SpinRightIcon,
+                _ => skin.SpinNoneIcon
             };
         }
     }

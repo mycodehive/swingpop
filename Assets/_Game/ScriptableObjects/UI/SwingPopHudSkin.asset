@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3971f2b506dc9c74e9e2ac762dd43755, type: 3}
+  m_Name: SwingPopHudSkin
+  m_EditorClassIdentifier: SwingPop.Runtime::SwingPop.Data.HudSkinData
+  panelColor: {r: 0.018, g: 0.105, b: 0.16, a: 0.88}
+  raisedPanelColor: {r: 0.025, g: 0.2, b: 0.27, a: 0.94}
+  borderColor: {r: 0.18, g: 0.92, b: 1, a: 0.72}
+  shadowColor: {r: 0.005, g: 0.025, b: 0.055, a: 0.5}
+  cyan: {r: 0.18, g: 0.92, b: 1, a: 1}
+  mint: {r: 0.33, g: 1, b: 0.72, a: 1}
+  pink: {r: 1, g: 0.27, b: 0.62, a: 1}
+  gold: {r: 1, g: 0.79, b: 0.16, a: 1}
+  coral: {r: 1, g: 0.34, b: 0.26, a: 1}
+  disabled: {r: 0.43, g: 0.57, b: 0.66, a: 1}
+  primaryText: {r: 0.96, g: 0.99, b: 1, a: 1}
+  secondaryText: {r: 0.67, g: 0.9, b: 0.96, a: 1}
+  fairway: {r: 0.33, g: 0.95, b: 0.57, a: 1}
+  rough: {r: 0.18, g: 0.65, b: 0.39, a: 1}
+  bunker: {r: 1, g: 0.72, b: 0.3, a: 1}
+  green: {r: 0.42, g: 1, b: 0.78, a: 1}
+  roundedPanel: {fileID: 21300000, guid: 431309bfc25378f41a40f67abbcd25c2, type: 3}
+  capsule: {fileID: 21300000, guid: ad671137202988a4cb09b20dcc70b0ef, type: 3}
+  circle: {fileID: 21300000, guid: 3e5917cb8ada7414ca44140e844cd994, type: 3}
+  diamond: {fileID: 21300000, guid: cae48058ac614c34b85e499f3cefb351, type: 3}
+  triangle: {fileID: 21300000, guid: fa5ebac229913b742ac130302715789a, type: 3}
+  playerIcon: {fileID: 21300000, guid: 1c42fc67c74e91642818a962dcf59321, type: 3}
+  windIcon: {fileID: 21300000, guid: c00e6015a9068ff4aaeab8cf35308acf, type: 3}
+  driverIcon: {fileID: 21300000, guid: f04621294d9a1ff4ba18f2b91b1e530a, type: 3}
+  putterIcon: {fileID: 21300000, guid: 03410946a040a0d4ba3fd99434e0ef83, type: 3}
+  spinNoneIcon: {fileID: 21300000, guid: 580bab1bfecb00247984ff32f05a7c6f, type: 3}
+  spinTopIcon: {fileID: 21300000, guid: 9b9fdf5c777e87946a624bad072bd9ea, type: 3}
+  spinBackIcon: {fileID: 21300000, guid: 0cddce06c79a872408024c7cf0006e2d, type: 3}
+  spinLeftIcon: {fileID: 21300000, guid: 3566353a888c1284bb9b8006546f08cd, type: 3}
+  spinRightIcon: {fileID: 21300000, guid: 6ade5d3d0ca5c5d45a4ee92d8b488497, type: 3}
+  targetIcon: {fileID: 21300000, guid: 916cd4cae47f4c6458e9515428e2e515, type: 3}

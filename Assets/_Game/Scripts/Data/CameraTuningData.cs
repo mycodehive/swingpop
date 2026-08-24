@@ -60,6 +60,8 @@ namespace SwingPop.Data
         [SerializeField, Range(20f, 90f)] private float holeCompleteFieldOfView = 42f;
         [SerializeField, Min(0f)] private float holeCompleteHoldDuration = 1.1f;
         [SerializeField] private Vector3 resultOffset = new(8f, 5.5f, -8f);
+        [Tooltip("Cup 기준 Result look target의 side / height / forward offset입니다.")]
+        [SerializeField] private Vector3 resultLookOffset = new(0f, 0.75f, 0f);
         [SerializeField, Range(20f, 90f)] private float resultFieldOfView = 52f;
         [SerializeField, Min(0f)] private float holeCompleteShake = 0.04f;
 
@@ -118,6 +120,7 @@ namespace SwingPop.Data
         public float HoleCompleteFieldOfView => holeCompleteFieldOfView;
         public float HoleCompleteHoldDuration => holeCompleteHoldDuration;
         public Vector3 ResultOffset => resultOffset;
+        public Vector3 ResultLookOffset => resultLookOffset;
         public float ResultFieldOfView => resultFieldOfView;
         public float HoleCompleteShake => holeCompleteShake;
         public float FollowPositionSharpness => followPositionSharpness;

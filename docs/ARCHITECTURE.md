@@ -431,3 +431,50 @@ M1–M10 gameplay/data/event graph (unchanged)
 - 기존 rectangular gameplay collider와 hazard volume만 physics source of truth로 유지한다.
 - M11 builder는 Hole01 instance override와 교체 가능한 asset을 생성하며 Foundation scene/tuning을 변경하지 않는다.
 - capture/quality validation 도구는 Editor assembly에만 있고 runtime build의 game flow에 참여하지 않는다.
+
+## Character Identity Presentation Boundary
+
+```text
+Final Humanoid FBX / Avatar / Animator
+                  |
+          CharacterVisualAdapter
+          /       |        \
+ CharacterVisualProfile  Sockets  CharacterAnimationController
+          |                   |                |
+ bounds/scale/ground/       ClubVisual     hashed state contract
+ framing metadata                           + single Impact gate
+```
+
+- `CharacterVisualAdapter`가 visual root, Animator/Avatar, left/right hand, ClubSocket, ImpactAnchor, HeadLookTarget를 Inspector reference로 받는다. vendor bone name/path 탐색은 하지 않는다.
+- `CharacterVisualProfile`은 visual height/bounds, scale, ground/address/camera/socket offset과 portrait hook만 보유한다. gameplay 수치는 포함하지 않는다.
+- `CharacterAnimatorContract`가 모든 CharacterState 이름과 hash를 중앙 관리한다. Shot/Ball/Camera code는 clip 이름을 알지 않는다.
+- valid Humanoid Avatar와 Controller가 모두 있을 때 Animator mode, 없거나 invalid하면 procedural fallback을 사용한다.
+- Swing/Putt Impact는 Animation Event가 우선이며 normalized fallback과 Shot guard가 누락을 보완한다. 모든 경로는 기존 single-fire gate를 거쳐 Ball을 한 번만 launch한다.
+- `HumanoidGolferTemplate.prefab`은 최종 mesh 없이 integration hierarchy와 socket seam만 제공한다. `PlaceholderGolfer.prefab`의 gameplay root/controller는 보존한다.
+- profile의 camera metadata와 M11 tuning 조정은 framing reference일 뿐 Camera state machine을 변경하지 않는다.
+
+## HUD Skin Presentation Boundary
+
+```text
+Gameplay source events
+  ShotFlow / Ball / Wind / Hole
+              |
+              v
+    GameplayHudPresenter
+              |
+              v
+      GameplayHudView
+       /      |      \
+ HudGauge  HudPopup  HudResult
+       \      |      /
+          HudSkinData
+              |
+      shared sprites/colors
+```
+
+- `GameplayHudPresenter`, `GameplayHudView`, `HudGaugeView`, `HudPopupView`, `HudResultView`, `HudPresentationMapper`, `M8HudTuning`, Safe Area, CanvasScaler와 Shot Button command path를 보존한다.
+- `HudSkinStyleMapper`는 기존 ImpactGrade, TerrainSurfaceType, ScoreResult, ShotFlowState를 presentation tone으로만 변환한다. gameplay value, threshold, score, physics를 계산하지 않는다.
+- `HudSkinData`는 palette와 shared sprite reference만 소유하며 gameplay data를 포함하지 않는다.
+- `GameplayHUD_SwingPopSkin.prefab`은 Hole01 전용 isolated visual prefab이다. 기존 `GameplayHUD.prefab`과 `Foundation.unity`는 변경하지 않는다.
+- Skin HUD는 Canvas 1, default shared UI material 1, layout component 0, per-frame update behaviour 1을 유지한다. Shot Button만 raycast target이다.
+- Editor builder, validator, capture tool은 runtime gameplay graph에 참여하지 않는다.

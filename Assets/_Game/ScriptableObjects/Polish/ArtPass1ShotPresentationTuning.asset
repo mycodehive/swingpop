@@ -1,0 +1,64 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 63bd582b06992a849927d73729a74fad, type: 3}
+  m_Name: ArtPass1ShotPresentationTuning
+  m_EditorClassIdentifier: SwingPop.Runtime::SwingPop.Data.ShotPresentationTuningData
+  normalImpactColor: {r: 0.35, g: 0.95, b: 1, a: 1}
+  perfectImpactColor: {r: 1, g: 0.84, b: 0.2, a: 1}
+  normalImpactScale: 0.7
+  perfectImpactScale: 1.38
+  normalImpactParticles: 10
+  perfectImpactParticles: 24
+  normalTrailTime: 0.5
+  normalTrailWidth: 0.085
+  perfectTrailTime: 0.72
+  perfectTrailWidth: 0.095
+  normalTrailColor: {r: 0.35, g: 0.95, b: 1, a: 0.88}
+  perfectTrailColor: {r: 1, g: 0.92, b: 0.56, a: 0.92}
+  minimumTrailSpeed: 0.35
+  minimumLandingSpeed: 1.4
+  secondaryBounceIntensity: 0.3
+  minimumSecondaryBounceSpeed: 3
+  grassParticleCount: 8
+  roughParticleCount: 13
+  sandParticleCount: 20
+  waterParticleCount: 28
+  grassColor: {r: 0.45, g: 0.88, b: 0.34, a: 1}
+  roughColor: {r: 0.28, g: 0.62, b: 0.2, a: 1}
+  sandColor: {r: 1, g: 0.78, b: 0.35, a: 1}
+  waterColor: {r: 0.25, g: 0.78, b: 1, a: 1}
+  holeSparkleCount: 18
+  subduedCelebrationScale: 0.75
+  normalCelebrationScale: 1
+  strongCelebrationScale: 1.25
+  strongestCelebrationScale: 1.55
+  uiVolume: 0.35
+  swingVolume: 0.55
+  impactVolume: 0.72
+  perfectAccentVolume: 0.6
+  terrainVolume: 0.48
+  hazardVolume: 0.65
+  holeVolume: 0.7
+  resultVolume: 0.6
+  uiConfirmClip: {fileID: 0}
+  swingClip: {fileID: 0}
+  puttSwingClip: {fileID: 0}
+  normalImpactClip: {fileID: 0}
+  perfectImpactClip: {fileID: 0}
+  fairwayLandingClip: {fileID: 0}
+  roughLandingClip: {fileID: 0}
+  bunkerLandingClip: {fileID: 0}
+  greenLandingClip: {fileID: 0}
+  waterHazardClip: {fileID: 0}
+  outOfBoundsClip: {fileID: 0}
+  holeInClip: {fileID: 0}
+  resultClip: {fileID: 0}

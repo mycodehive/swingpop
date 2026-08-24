@@ -56,7 +56,8 @@ namespace SwingPop.Tests
             Assert.That(environmentMotion, Is.Not.Null);
             Assert.That(environmentMotion.HasTuning, Is.True);
             Assert.That(environmentMotion.HasWindmillRotor, Is.True);
-            Assert.That(environmentMotion.DriftingCloudCount, Is.EqualTo(5));
+            Assert.That(environmentMotion.DriftingCloudCount, Is.GreaterThanOrEqualTo(5),
+                "The presentation pass may add centrally animated clouds, but must preserve the established sky depth.");
             Assert.That(ambience, Is.Not.Null);
             Assert.That(ambience.HasTuning, Is.True);
             Assert.That(ambience.HasAmbientSource, Is.True);

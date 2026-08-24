@@ -7,6 +7,7 @@ namespace SwingPop.CharacterSystem
     public sealed class CharacterPresentation : MonoBehaviour
     {
         [Header("Placeholder Rig")]
+        [SerializeField] private CharacterVisualAdapter visualAdapter;
         [SerializeField] private Transform visualRoot;
         [SerializeField] private Transform bodyPivot;
         [SerializeField] private Transform headPivot;
@@ -30,9 +31,17 @@ namespace SwingPop.CharacterSystem
         private Quaternion clubSocketBaseRotation;
 
         public string CurrentClubVisual { get; private set; } = "None";
+        public CharacterVisualAdapter VisualAdapter => visualAdapter;
 
         private void Awake()
         {
+            visualAdapter ??= GetComponent<CharacterVisualAdapter>();
+            if (visualAdapter != null)
+            {
+                visualRoot ??= visualAdapter.VisualRoot;
+                clubSocket ??= visualAdapter.ClubSocket;
+                visualAdapter.ApplyProfileToVisualRoot();
+            }
             CaptureNeutralPose();
         }
 
