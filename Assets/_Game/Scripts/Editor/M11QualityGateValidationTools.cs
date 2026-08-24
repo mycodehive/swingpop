@@ -36,8 +36,11 @@ namespace SwingPop.Editor
             Require(cameraDirector != null, "CameraDirector is missing.");
             SerializedObject cameraSerialized = new(cameraDirector);
             Object cameraTuning = cameraSerialized.FindProperty("tuning")?.objectReferenceValue;
-            Require(AssetDatabase.GetAssetPath(cameraTuning) == "Assets/_Game/ScriptableObjects/Polish/M11CameraTuning.asset",
-                "CameraDirector is not using M11CameraTuning.");
+            string cameraTuningPath = AssetDatabase.GetAssetPath(cameraTuning);
+            Require(
+                cameraTuningPath == "Assets/_Game/ScriptableObjects/Polish/M11CameraTuning.asset" ||
+                cameraTuningPath == "Assets/_Game/ScriptableObjects/Presentation/PuttResultCameraTuning.asset",
+                "CameraDirector is not using an approved M11-or-later camera tuning asset.");
 
             GameplayHudPresenter hud = Object.FindAnyObjectByType<GameplayHudPresenter>();
             Require(hud != null, "GameplayHudPresenter is missing.");

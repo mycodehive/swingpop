@@ -179,6 +179,67 @@ Putt / Result Cinematic Pass 이후에도 다음은 최종 상용 presentation �
 
 이 완료 목록은 presentation foundation 완료를 뜻하며 최종 art/audio 승인을 뜻하지 않는다. 상세 평가는 `PUTT_RESULT_CINEMATIC_PASS_REVIEW.md`를 따른다.
 
+## Final Graphics Quality Gate Backlog
+
+이 구역은 2026-08-24 Final Graphics Quality Gate 이후의 최종 source of truth다. 이미 완료된 placeholder pass 기록은 아래에 보존하지만, 추가 primitive/generated-asset polish는 수동 검증에서 새 P0/P1이 발견될 때만 수행한다.
+
+### Must Fix Before Next Stage
+
+- [ ] `Hole01_SkyIsland`을 1920x1080에서 처음부터 Result까지 수동 3회 플레이하고 camera cut/occlusion/motion comfort를 승인
+- [ ] Unity Console Error 0, Missing Script 0, Missing Reference 0을 GUI Editor에서 최종 확인
+- [ ] Normal/Perfect, Water, Bunker, Green/Putter, Hole-In/Reaction/Result 연속 흐름을 직접 확인
+- [ ] 1600x900과 1280x720에서 Address/Power/Putt/Result clipping과 overflow를 수동 확인
+- [ ] Profiler 10초 이상과 PC 1080p Development Build 60 FPS 근거를 기록
+
+### Final Character Asset
+
+- [ ] original SwingPop female golfer final FBX, Avatar, skin weights, LOD
+- [ ] final face/hair/hands/outfit/shoes/glove/belt/accessory materials와 textures
+- [ ] Driver/Putter final model과 grip/contact alignment
+- [ ] authored Idle, Address, Aim, Swing, Putt, BallWatching, Celebration, Disappointed animation set
+- [ ] final Character proportions 기준 Address/Putt/Cup/Result camera retune
+
+### Final Environment Asset
+
+- [ ] authored Tee/Fairway/Rough/Green/Bunker terrain mesh와 stylized material set
+- [ ] cliff breakup, shoreline, water/waterfall shader와 foam treatment
+- [ ] Tree/grass/flower/stone reusable variants와 LOD/mobile fallback
+- [ ] final Windmill, floating island, Waterfall landmark models
+- [ ] gameplay collider를 변경하지 않는 visual-only replacement와 Ball/Aim/Cup readability 확인
+
+### Final UI Asset
+
+- [ ] licensed/localization-safe final font와 한글/영문 glyph/overflow test
+- [ ] final original character portrait와 portrait frame
+- [ ] authored scalable 9-slice panel/capsule set
+- [ ] Wind/Club/Spin/Aim/Stroke/Penalty icon set
+- [ ] final Power/Impact gauge, cursor, Shot Button, Result emblem/badge
+- [ ] color sensitivity, contrast, hover/press feedback 검증
+
+### Final VFX / Audio
+
+- [ ] authored Normal/Great/Perfect impact sprite, flipbook 또는 stylized shader
+- [ ] final tapered flight trail과 sky/terrain contrast profile
+- [ ] authored grass/sand/water landing particle set
+- [ ] score별 Hole-In ring/sparkle/celebration variation
+- [ ] licensed UI/swing/putt/impact/landing/hazard/Hole-In/result SFX
+- [ ] wind/water/course ambience, AudioMixer groups, limiter, speaker/headphone mastering
+
+### Performance
+
+- [ ] Unity Profiler CPU/GPU frame time, GC Alloc, Batches, SetPass, memory 기록
+- [ ] PC 1920x1080 Development Build에서 60 FPS target 검증
+- [ ] transparent overdraw, particle peak, shadow caster budget 재검증
+- [ ] final Character/Environment LOD와 low-quality/mobile fallback 검증
+
+### Commercial Polish
+
+- [ ] final asset 적용 후 19장 master capture before/after 비교
+- [ ] final animation/VFX/audio 적용 후 camera timing과 shake comfort 재승인
+- [ ] localization, safe area, flash safety, color accessibility 검증
+- [ ] store/marketing capture는 `COMMERCIAL ART: GO` 재판정 후에만 제작
+- [ ] online 작업 전 Rigidbody authority/determinism/reconciliation 정책 별도 설계
+
 ## VFX Hero Pass Completed Placeholders
 
 - [x] Normal / Great / Perfect의 명시적 impact presentation profile

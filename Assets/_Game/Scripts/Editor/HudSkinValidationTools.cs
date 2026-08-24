@@ -16,6 +16,7 @@ namespace SwingPop.Editor
     {
         private const string ScenePath = "Assets/_Game/Scenes/Hole01_SkyIsland.unity";
         private const string ExpectedPrefabPath = "Assets/_Game/Prefabs/UI/GameplayHUD_SwingPopSkin.prefab";
+        private const string PuttResultPrefabPath = "Assets/_Game/Prefabs/UI/GameplayHUD_PuttResult.prefab";
         private const string BaselinePrefabPath = "Assets/_Game/Prefabs/UI/GameplayHUD.prefab";
 
         [MenuItem("SwingPop/UI/Validate Gameplay HUD")]
@@ -37,7 +38,8 @@ namespace SwingPop.Editor
             Require(raycaster != null, "Gameplay HUD has no GraphicRaycaster.");
 
             string prefabPath = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(hud);
-            Require(prefabPath == ExpectedPrefabPath, $"Hole01 uses unexpected HUD prefab: {prefabPath}");
+            Require(prefabPath == ExpectedPrefabPath || prefabPath == PuttResultPrefabPath,
+                $"Hole01 uses unexpected HUD prefab: {prefabPath}");
             Require(view.Skin != null, "GameplayHudView is missing HudSkinData.");
             RequireAllSkinSprites(view.Skin);
 
