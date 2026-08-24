@@ -51,14 +51,17 @@ namespace SwingPop.Editor
             GameObject root = new(RootName);
             LocalMatchAuthority authority = root.AddComponent<LocalMatchAuthority>();
             LocalLoopbackTransport transport = root.AddComponent<LocalLoopbackTransport>();
+            UnityTransportMatchTransport networkTransport = root.AddComponent<UnityTransportMatchTransport>();
             MatchSessionController session = root.AddComponent<MatchSessionController>();
             MultiplayerTurnPresenter presenter = root.AddComponent<MultiplayerTurnPresenter>();
             MultiplayerDebugOverlay debug = root.AddComponent<MultiplayerDebugOverlay>();
 
             SetReference(transport, "authority", authority);
+            SetReference(networkTransport, "authority", authority);
             SetReference(session, "settings", settings);
             SetReference(session, "authority", authority);
             SetReference(session, "transport", transport);
+            SetReference(session, "networkTransport", networkTransport);
             SetReference(session, "shotFlow", shotFlow);
             SetReference(session, "ball", ball);
             SetReference(session, "holeFlow", holeFlow);

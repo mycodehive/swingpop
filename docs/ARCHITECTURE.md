@@ -523,3 +523,9 @@ HoleFlow.HoleCompleted ───────────────────
 - Hole01은 `ShotFeelPresentation_Hero.prefab`과 전용 tuning asset을 사용한다. 기존 M9 prefab과 `Foundation.unity`는 변경하지 않는다.
 - 15개 ParticleSystem, 3개 TrailRenderer, 6개 shared VFX material은 scene에 한 번 생성되어 재사용된다. shot마다 effect object 또는 material을 만들지 않는다.
 - Editor builder, preview, validator, capture/telemetry 도구는 runtime gameplay graph와 분리한다.
+
+## M13 Real Network Transport Boundary
+
+`UnityTransportMatchTransport` is a second `IMatchTransport` adapter beside M12's `LocalLoopbackTransport`. `NetworkHost` alone owns `LocalMatchAuthority` and the authoritative gameplay result. `NetworkClient` submits commands, waits for approval, plays approved commands for presentation, and accepts versioned host snapshots at the settle boundary.
+
+No network dependency was added to Camera, Character, HUD, VFX, or Audio cores. See `docs/M13_REAL_NETWORK_TRANSPORT_ARCHITECTURE.md`.

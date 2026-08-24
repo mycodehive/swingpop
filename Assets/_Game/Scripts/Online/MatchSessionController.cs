@@ -21,6 +21,7 @@ namespace SwingPop.Online
         [Header("Foundation")]
         [SerializeField] private LocalMatchAuthority authority;
         [SerializeField] private LocalLoopbackTransport transport;
+        [SerializeField] private UnityTransportMatchTransport networkTransport;
 
         [Header("Existing Gameplay")]
         [SerializeField] private ShotFlowController shotFlow;
@@ -43,18 +44,21 @@ namespace SwingPop.Online
         public event Action<MatchSnapshot> SnapshotChanged;
         public event Action<ShotRejection> SubmissionRejected;
 
-        public bool RequiresApproval => activeMode == MultiplayerDevelopmentMode.LocalTwoPlayer;
-        public bool CanSubmitShot => RequiresApproval && !localSubmissionPending
+        public bool RequiresApproval => activeMode != MultiplayerDevelopmentMode.OfflineSingle;
+        public bool CanSubmitShot => RequiresApproval && IsActiveTransportReady && !localSubmissionPending
                                      && snapshotStore.Current != null
                                      && snapshotStore.Current.Phase == MatchPhase.Playing
                                      && snapshotStore.Current.TurnState == TurnState.PreparingShot
                                      && snapshotStore.Current.CurrentTurnPlayer == localPlayerId;
+        public bool CanResetShot => activeMode is not MultiplayerDevelopmentMode.NetworkHost
+            and not MultiplayerDevelopmentMode.NetworkClient;
         public MultiplayerDevelopmentMode ActiveMode => activeMode;
         public MatchPlayerId LocalPlayerId => localPlayerId;
         public MatchSnapshot CurrentSnapshot => snapshotStore.Current;
         public LocalLoopbackTransport Transport => transport;
+        public UnityTransportMatchTransport NetworkTransport => networkTransport;
         public LocalMatchAuthority Authority => authority;
-        public bool IsConfigured => settings != null && authority != null && transport != null
+        public bool IsConfigured => settings != null && authority != null && transport != null && networkTransport != null
                                     && shotFlow != null && ball != null && holeFlow != null
                                     && surfaces != null && surfaces.Length > 0;
 
@@ -65,6 +69,15 @@ namespace SwingPop.Online
                 transport.ShotApprovedReceived += OnShotApprovedReceived;
                 transport.ShotRejectedReceived += OnShotRejectedReceived;
                 transport.SnapshotReceived += OnSnapshotReceived;
+            }
+            if (networkTransport != null)
+            {
+                networkTransport.ShotApprovedReceived += OnShotApprovedReceived;
+                networkTransport.ShotRejectedReceived += OnShotRejectedReceived;
+                networkTransport.SnapshotReceived += OnSnapshotReceived;
+                networkTransport.PlayerAssigned += OnPlayerAssigned;
+                networkTransport.RemotePlayerReady += OnRemotePlayerReady;
+                networkTransport.Disconnected += OnNetworkDisconnected;
             }
             if (holeFlow != null)
             {
@@ -79,6 +92,15 @@ namespace SwingPop.Online
             MultiplayerDevelopmentMode mode = settings != null
                 ? settings.Mode
                 : MultiplayerDevelopmentMode.OfflineSingle;
+            NetworkLaunchOptions launch = NetworkLaunchOptions.Parse(
+                Environment.GetCommandLineArgs(),
+                settings != null ? settings.HostAddress : "127.0.0.1",
+                settings != null ? settings.Port : (ushort)7777);
+            if (launch.HasNetworkOverride)
+            {
+                StartNetworkMatch(launch.Mode, launch.Address, launch.Port);
+                return;
+            }
             int latency = settings != null ? settings.SimulatedLatencyMs : 0;
             StartDevelopmentMatch(mode, latency);
         }
@@ -116,6 +138,16 @@ namespace SwingPop.Online
                 transport.SnapshotReceived -= OnSnapshotReceived;
                 transport.CancelPending();
             }
+            if (networkTransport != null)
+            {
+                networkTransport.ShotApprovedReceived -= OnShotApprovedReceived;
+                networkTransport.ShotRejectedReceived -= OnShotRejectedReceived;
+                networkTransport.SnapshotReceived -= OnSnapshotReceived;
+                networkTransport.PlayerAssigned -= OnPlayerAssigned;
+                networkTransport.RemotePlayerReady -= OnRemotePlayerReady;
+                networkTransport.Disconnected -= OnNetworkDisconnected;
+                networkTransport.CancelPending();
+            }
             if (holeFlow != null)
             {
                 holeFlow.ShotResolved -= OnGameplayShotResolved;
@@ -139,10 +171,19 @@ namespace SwingPop.Online
             remoteSubmissionPending = false;
             remoteTurnElapsed = 0f;
             snapshotStore.Reset();
+            networkTransport.CancelPending();
             transport.CancelPending();
             transport.Configure(authority, latencyMs, settings != null && settings.VerboseLogging);
             shotFlow.ConfigureCommitGate(this);
             holeFlow.SetAutomaticFlowSuspended(mode == MultiplayerDevelopmentMode.LocalTwoPlayer);
+
+            if (mode is MultiplayerDevelopmentMode.NetworkHost or MultiplayerDevelopmentMode.NetworkClient)
+            {
+                string networkAddress = settings != null ? settings.HostAddress : "127.0.0.1";
+                ushort networkPort = settings != null ? settings.Port : (ushort)7777;
+                StartNetworkMatch(mode, networkAddress, networkPort);
+                return;
+            }
 
             Vector3 tee = holeFlow.Hole.TeePosition;
             PlayerSnapshot[] players = mode == MultiplayerDevelopmentMode.LocalTwoPlayer
@@ -152,6 +193,38 @@ namespace SwingPop.Online
             transport.PublishSnapshot(initial);
         }
 
+        public void StartNetworkMatch(MultiplayerDevelopmentMode mode, string address, ushort port)
+        {
+            if (mode is not MultiplayerDevelopmentMode.NetworkHost and not MultiplayerDevelopmentMode.NetworkClient)
+                throw new ArgumentOutOfRangeException(nameof(mode), mode, "Network mode is required.");
+            if (!IsConfigured)
+            {
+                Debug.LogError("[M13][Match] MatchSessionController dependencies are incomplete.", this);
+                return;
+            }
+
+            matchStarted = true;
+            activeMode = mode;
+            localPlayerId = mode == MultiplayerDevelopmentMode.NetworkHost ? PlayerA : default;
+            hasActiveApprovedShot = false;
+            localSubmissionPending = false;
+            remoteSubmissionPending = false;
+            remoteTurnElapsed = 0f;
+            snapshotStore.Reset();
+            transport.CancelPending();
+            networkTransport.CancelPending();
+            networkTransport.Configure(mode == MultiplayerDevelopmentMode.NetworkHost ? authority : null,
+                settings != null && settings.VerboseLogging);
+            shotFlow.ConfigureCommitGate(this);
+            holeFlow.SetAutomaticFlowSuspended(true);
+            float timeout = settings != null ? settings.ConnectionTimeoutSeconds : 8f;
+            bool started = mode == MultiplayerDevelopmentMode.NetworkHost
+                ? networkTransport.StartHost(address, port, timeout)
+                : networkTransport.StartClient(address, port, timeout);
+            if (!started)
+                Debug.LogError($"[M13][Match] Could not start {mode} at {address}:{port}.", this);
+        }
+
         public bool TrySubmitShot(ShotCommand command)
         {
             if (!CanSubmitShot) return false;
@@ -159,7 +232,7 @@ namespace SwingPop.Online
             localSubmissionPending = true;
             ShotSubmission submission = new(snapshot.MatchId, localPlayerId, snapshot.TurnIndex,
                 snapshot.ShotSequence + 1, OnlineProtocol.CurrentVersion, command);
-            if (transport.SubmitShot(submission)) return true;
+            if (ActiveTransport.SubmitShot(submission)) return true;
             localSubmissionPending = false;
             return false;
         }
@@ -185,7 +258,7 @@ namespace SwingPop.Online
 
         public bool ApplyAuthoritativeShotResult(NetworkShotResult result)
         {
-            return transport != null && transport.SubmitShotResult(result);
+            return ActiveTransport != null && ActiveTransport.SubmitShotResult(result);
         }
 
         private void OnShotApprovedReceived(ApprovedShot approved)
@@ -240,7 +313,7 @@ namespace SwingPop.Online
                 resolution.PenaltyCount,
                 false,
                 false);
-            transport.SubmitShotResult(result);
+            ActiveTransport.SubmitShotResult(result);
         }
 
         private void OnGameplayHoleCompleted(ScoreResult score)
@@ -261,19 +334,52 @@ namespace SwingPop.Online
                 true,
                 score.RelativeToPar,
                 score.Label);
-            transport.SubmitShotResult(result);
+            ActiveTransport.SubmitShotResult(result);
         }
 
         private void OnSnapshotReceived(MatchSnapshot snapshot)
         {
             if (!snapshotStore.TryApply(snapshot)) return;
             SnapshotChanged?.Invoke(snapshot);
-            if (activeMode == MultiplayerDevelopmentMode.LocalTwoPlayer
+            if (RequiresApproval
                 && snapshot.Phase == MatchPhase.Playing
                 && snapshot.TurnState == TurnState.PreparingShot)
             {
                 RestoreCurrentPlayer(snapshot);
             }
+        }
+
+        private IMatchTransport ActiveTransport => activeMode is MultiplayerDevelopmentMode.NetworkHost
+            or MultiplayerDevelopmentMode.NetworkClient ? networkTransport : transport;
+        private bool IsActiveTransportReady => activeMode is MultiplayerDevelopmentMode.NetworkHost
+            or MultiplayerDevelopmentMode.NetworkClient ? networkTransport != null && networkTransport.IsReady : true;
+
+        private void OnPlayerAssigned(MatchPlayerId playerId)
+        {
+            localPlayerId = playerId;
+        }
+
+        private void OnRemotePlayerReady()
+        {
+            if (activeMode != MultiplayerDevelopmentMode.NetworkHost || authority == null || holeFlow == null) return;
+            Vector3 tee = holeFlow.Hole.TeePosition;
+            PlayerSnapshot[] players =
+            {
+                CreateInitialPlayer(PlayerA, "PLAYER A", 0, true, tee),
+                CreateInitialPlayer(PlayerB, "PLAYER B", 1, false, tee)
+            };
+            MatchId matchId = new($"host-hole01-{DateTime.UtcNow:yyyyMMddHHmmss}");
+            MatchSnapshot initial = authority.StartMatch(matchId, "hole-01", players);
+            networkTransport.BeginHostedMatch(initial);
+        }
+
+        private void OnNetworkDisconnected(string reason)
+        {
+            bool rejectedPendingLocalShot = localSubmissionPending;
+            localSubmissionPending = false;
+            remoteSubmissionPending = false;
+            if (rejectedPendingLocalShot) ShotRejected?.Invoke();
+            Debug.LogWarning($"[M13][Match] Network disconnected: {reason}", this);
         }
 
         private void RestoreCurrentPlayer(MatchSnapshot snapshot)

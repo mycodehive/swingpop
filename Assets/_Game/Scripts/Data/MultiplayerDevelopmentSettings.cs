@@ -11,12 +11,19 @@ namespace SwingPop.Data
         [SerializeField] private bool verboseLogging;
         [SerializeField, Min(0.1f)] private float simulatedRemoteShotDelay = 1.2f;
         [SerializeField, Range(0.1f, 1f)] private float simulatedRemotePower = 0.62f;
+        [Header("M13 Network Prototype")]
+        [SerializeField] private string hostAddress = "127.0.0.1";
+        [SerializeField, Range(1024, 65535)] private int port = 7777;
+        [SerializeField, Range(5f, 10f)] private float connectionTimeoutSeconds = 8f;
 
         public MultiplayerDevelopmentMode Mode => mode;
         public int SimulatedLatencyMs => simulatedLatencyMs;
         public bool VerboseLogging => verboseLogging;
         public float SimulatedRemoteShotDelay => simulatedRemoteShotDelay;
         public float SimulatedRemotePower => simulatedRemotePower;
+        public string HostAddress => string.IsNullOrWhiteSpace(hostAddress) ? "127.0.0.1" : hostAddress;
+        public ushort Port => (ushort)Mathf.Clamp(port, 1, 65535);
+        public float ConnectionTimeoutSeconds => connectionTimeoutSeconds;
 
         public void ConfigureForDevelopment(
             MultiplayerDevelopmentMode developmentMode,
@@ -30,6 +37,13 @@ namespace SwingPop.Data
             verboseLogging = verbose;
             simulatedRemoteShotDelay = Mathf.Max(0.1f, remoteDelay);
             simulatedRemotePower = Mathf.Clamp(remotePower, 0.1f, 1f);
+        }
+
+        public void ConfigureNetwork(string address, ushort networkPort, float timeoutSeconds = 8f)
+        {
+            hostAddress = string.IsNullOrWhiteSpace(address) ? "127.0.0.1" : address.Trim();
+            port = networkPort < 1024 ? 7777 : networkPort;
+            connectionTimeoutSeconds = Mathf.Clamp(timeoutSeconds, 5f, 10f);
         }
     }
 }

@@ -1,68 +1,72 @@
 # SwingPop Online TODO
 
-### M12 Foundation
+## Completed Foundations
 
-- [x] `IMatchAuthority` / `IMatchTransport` 경계
-- [x] protocol version 1 command/result/snapshot DTO
-- [x] 승인 전 launch 차단
-- [x] LocalLoopback와 simulated latency
-- [x] Local 2P A -> B -> A turn flow
-- [x] player별 ball/lie/stroke/penalty/holed snapshot
-- [x] OfflineSingle 기본값과 기존 Hole01 호환
+### M12 Online Foundation
 
-### Production Transport
+- [x] `IMatchAuthority` / `IMatchTransport` boundary
+- [x] Serializable shot/result/snapshot DTOs
+- [x] Approval-before-launch input gate
+- [x] LocalLoopback transport and LocalTwoPlayer simulation
+- [x] Turn, duplicate, snapshot-version, and player-state rules
+- [x] OfflineSingle remains the default
 
-- [ ] 실제 networking SDK/transport 선정
-- [ ] reliable delivery, ordering, retry, timeout 구현
-- [ ] server telemetry와 protocol observability
+### M13 Real Network Prototype
+
+- [x] Official Unity Transport adapter under `IMatchTransport`
+- [x] Independent localhost Host/Client processes
+- [x] Server-assigned Player B connection binding and spoof rejection
+- [x] Protocol-2 envelope, reliable ordering, fragmentation, and 64KB cap
+- [x] Host-authoritative approval, simulation result, snapshot, and turn
+- [x] Client approved playback and settle-boundary correction
+- [x] Snapshot hash and predicted-result desync telemetry
+- [x] Timeout, disconnect cleanup, and listener restart
+- [x] Development build, command-line roles, validator, tests, and captures
+
+## Future Production Work
+
+### Relay / NAT
+
+- [ ] Choose Relay/provider topology and NAT traversal policy
+- [ ] Region selection, allocation lifecycle, failure/expiry handling
 
 ### Lobby
 
-- [ ] room create/join/leave와 readiness model
-- [ ] invite와 party UX
+- [ ] Create/join/leave, readiness, invite, and room ownership model
+- [ ] Late-join and spectator policy
 
 ### Matchmaking
 
-- [ ] queue, region, skill/rule filters
-- [ ] cancellation과 timeout policy
-
-### Reconnect
-
-- [ ] latest snapshot resync
-- [ ] pending shot reconciliation과 grace period
-- [ ] disconnect/forfeit UX
+- [ ] Queue, region, rule/skill filters, cancellation, timeout
+- [ ] Backfill and service availability behavior
 
 ### Authentication
 
-- [ ] account identity와 `MatchPlayerId` binding
-- [ ] token lifecycle과 secure storage
+- [ ] Account identity to `MatchPlayerId` binding
+- [ ] Session token lifecycle, secure storage, expiry, revocation
 
-### Security
+### Reconnect
 
-- [ ] server-authoritative result verification/simulation
-- [ ] rate limit, replay protection, payload limits
-- [ ] abuse, audit, privacy policy
+- [ ] Grace period, latest-snapshot request, pending-shot reconciliation
+- [ ] Rejoin identity proof, timeout, forfeit, and user-facing UX
 
-### Match Result
+### Dedicated Authority
 
-- [ ] multiplayer winner/tie/forfeit resolution
-- [ ] result persistence와 signed receipt
+- [ ] Move host authority/gameplay simulation to a trusted dedicated process
+- [ ] Headless simulation validation, deployment, monitoring, host migration policy
 
 ### Multi-Hole
 
-- [ ] hole rotation, aggregate score, between-hole snapshot
-- [ ] course/version compatibility
+- [ ] Hole rotation, between-hole state, aggregate score, match completion
+- [ ] Course/content/protocol compatibility and result persistence
 
-### Spectator
+### Security
 
-- [ ] read-only snapshot stream와 delayed view
-
-### Replay
-
-- [ ] approved command/result log
-- [ ] physics-independent presentation replay policy
+- [ ] TLS/encryption policy and hardened anti-replay
+- [ ] Production rate limiting, validation, audit, privacy, abuse, DDoS response
+- [ ] Signed result receipt and server-side integrity checks
 
 ### Deployment
 
-- [ ] server topology, region, scaling, monitoring
-- [ ] staging/load/chaos/security test gates
+- [ ] Staging/production environments, regions, scaling, observability
+- [ ] Load, packet-loss/jitter, soak, chaos, penetration, LAN, and WAN gates

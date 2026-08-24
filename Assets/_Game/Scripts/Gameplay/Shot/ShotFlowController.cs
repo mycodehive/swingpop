@@ -238,7 +238,7 @@ namespace SwingPop.Gameplay.Shot
 
         public void ResetShot()
         {
-            if (!CanUseLocalControls())
+            if (!CanUseLocalControls() || (commitGate != null && !commitGate.CanResetShot))
             {
                 return;
             }

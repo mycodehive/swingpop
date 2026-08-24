@@ -9,6 +9,7 @@ namespace SwingPop.Gameplay.Shot
     {
         bool RequiresApproval { get; }
         bool CanSubmitShot { get; }
+        bool CanResetShot { get; }
         event Action<ShotCommand> ShotApproved;
         event Action ShotRejected;
         bool TrySubmitShot(ShotCommand command);

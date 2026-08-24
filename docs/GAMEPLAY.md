@@ -402,3 +402,12 @@ Player A Ready
 - 첫 landing과 제한된 secondary bounce만 표시한다. Fairway/Rough/Bunker/Water profile 선택은 기존 terrain event를 그대로 따른다.
 - Hole-In presentation은 기존 `HoleCompleted` event 이후 한 번만 실행되며 score, cup capture, result flow를 소유하지 않는다.
 - Normal/Great/Perfect, landing surface, Putter, Hole-In preview는 Editor menu 전용이며 gameplay input을 추가하지 않는다.
+
+## 25. M13 Network Gameplay Contract
+
+- OfflineSingle remains immediate and unchanged; LocalTwoPlayer continues to use LocalLoopback.
+- NetworkHost is Player A and NetworkClient receives Player B from the host. A client-supplied player identity is not trusted.
+- A local network shot stays in `AwaitingApproval` until `ApprovedShot`; the approved command enters existing ShotFlow once on both processes.
+- The host simulates and resolves every approved shot through existing Ball/HoleFlow. Client prediction cannot change match state.
+- Host snapshots restore ball position, last valid position, lie, strokes, penalties, holed state, club selection, current turn, and sequence.
+- Network-mode debug reset is blocked. F2 telemetry is presentation-only.

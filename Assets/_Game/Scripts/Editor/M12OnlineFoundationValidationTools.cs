@@ -61,7 +61,7 @@ namespace SwingPop.Editor
             MultiplayerDevelopmentSettings settings = AssetDatabase.LoadAssetAtPath<MultiplayerDevelopmentSettings>(SettingsPath);
             Require(settings != null, "M12 development settings asset is missing.");
             Require(settings.Mode == MultiplayerDevelopmentMode.OfflineSingle, "M12 default mode must remain OfflineSingle.");
-            Require(OnlineProtocol.CurrentVersion == 1, "Unexpected M12 protocol version.");
+            Require(OnlineProtocol.CurrentVersion >= 1, "Online protocol version must be positive.");
 
             Require(Object.FindObjectsByType<ShotFlowController>(FindObjectsInactive.Include).Length == 1,
                 "Duplicate ShotFlowController found.");

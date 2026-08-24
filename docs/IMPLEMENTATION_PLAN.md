@@ -495,3 +495,14 @@ Green까지 직접 이동하지 않고 Putt 구도만 확인하려면 Play Mode�
 - M11 material/skybox: `Assets/_Game/Materials/Polish/`
 - M11 course mesh: `Assets/_Game/Art/Courses/M11/`
 - scene/composition builder: `Assets/_Game/Scripts/Editor/M11PolishSceneBuilder.cs`
+
+## M13 Real Network Transport Prototype (2026-08-25)
+
+- [x] Add official Unity Transport 6.5.0 as a real `IMatchTransport` adapter.
+- [x] Add `OfflineSingle`, `LocalTwoPlayer`, `NetworkHost`, and `NetworkClient` modes while keeping OfflineSingle default.
+- [x] Add protocol-2 envelope, reliable/fragmented delivery, host player binding, timeout, payload/rate guards, and disconnect cleanup.
+- [x] Keep host approval and host gameplay result authoritative; client result remains telemetry only.
+- [x] Sync versioned snapshots/turns and restore per-player ball, lie, stroke, penalty, and holed state.
+- [x] Add command-line launch, Development build, F2 telemetry, validator, tests, localhost two-process evidence, and captures.
+- [x] Preserve OfflineSingle/LocalTwoPlayer and graphics validation baselines.
+- [ ] Do not start M14 in this milestone.

@@ -1,9 +1,11 @@
 {
   "name": "SwingPop.Runtime",
   "rootNamespace": "SwingPop",
-  "references": [
+    "references": [
     "Unity.InputSystem",
-    "Unity.ugui"
+    "Unity.ugui",
+    "Unity.Networking.Transport",
+    "Unity.Collections"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

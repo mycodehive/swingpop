@@ -17,3 +17,6 @@ MonoBehaviour:
   verboseLogging: 0
   simulatedRemoteShotDelay: 1.2
   simulatedRemotePower: 0.62
+  hostAddress: 127.0.0.1
+  port: 7777
+  connectionTimeoutSeconds: 8

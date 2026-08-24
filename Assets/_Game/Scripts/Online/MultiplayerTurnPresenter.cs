@@ -29,7 +29,7 @@ namespace SwingPop.Online
 
         private void LateUpdate()
         {
-            if (session == null || session.ActiveMode != MultiplayerDevelopmentMode.LocalTwoPlayer) return;
+            if (session == null || session.ActiveMode == MultiplayerDevelopmentMode.OfflineSingle) return;
             if (gameplayActionButton != null) gameplayActionButton.interactable = session.CanSubmitShot;
         }
 
@@ -45,9 +45,18 @@ namespace SwingPop.Online
 
         private void Refresh(MatchSnapshot snapshot)
         {
-            bool visible = session != null && session.ActiveMode == MultiplayerDevelopmentMode.LocalTwoPlayer;
+            bool visible = session != null && session.ActiveMode != MultiplayerDevelopmentMode.OfflineSingle;
             root?.SetActive(visible);
-            if (!visible || snapshot == null) return;
+            if (!visible) return;
+            if (snapshot == null)
+            {
+                if (turnLabel != null)
+                    turnLabel.text = session.ActiveMode == MultiplayerDevelopmentMode.NetworkHost
+                        ? "HOST WAITING" : "CONNECTING";
+                if (playerAScore != null) playerAScore.text = "WAITING FOR MATCH";
+                if (playerBScore != null) playerBScore.text = string.Empty;
+                return;
+            }
 
             if (turnLabel != null)
             {
@@ -55,7 +64,7 @@ namespace SwingPop.Online
                     ? "MATCH COMPLETE"
                     : snapshot.CurrentTurnPlayer == session.LocalPlayerId
                         ? snapshot.TurnState == TurnState.PreparingShot ? "YOUR TURN" : "COMMITTED"
-                        : "PLAYER B TURN";
+                        : "OPPONENT TURN";
             }
 
             if (snapshot.PlayerCount > 0 && playerAScore != null)
