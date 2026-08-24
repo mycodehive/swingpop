@@ -155,3 +155,31 @@ HUD Skin Pass 이후에도 다음은 최종 상용 UI 미완료 항목이다.
 - [ ] Unity Profiler CPU/UI/Rendering/Memory, GC Alloc, Batches/SetPass 기록
 
 위 완료 목록은 상용 HUD 승인이나 final authored UI asset 완료를 뜻하지 않는다. 상세 판정은 `HUD_SKIN_PASS_REVIEW.md`를 따른다.
+
+## VFX Hero Pass Completed Placeholders
+
+- [x] Normal / Great / Perfect의 명시적 impact presentation profile
+- [x] core flash, radial ring/burst, directional streak, accent sparkle의 layered impact
+- [x] bright core, soft outer fade, tapered tail, Perfect gold accent를 갖는 3-layer trail
+- [x] speed-gated streak와 Ready/Stopped/Holed/Hazard/Reset cleanup
+- [x] Fairway/Green/Rough/Bunker 및 Water splash/ring/droplet surface mapping
+- [x] reduced Putter contact와 Putter trail disable
+- [x] cup flash/upward sparkle/ring/celebration Hole-In graph와 duplicate event guard
+- [x] soft glow/streak/ring/sparkle/dust/splash generated sprite family와 shared URP materials
+- [x] `SwingPop > VFX > Validate Hero VFX` validator와 Editor preview/capture set
+- [x] N/G/P/D/B/W/F/H 1920×1080 review capture
+
+VFX Hero Pass 이후에도 다음은 최종 상용 VFX 미완료 항목이다.
+
+- [ ] authored Normal/Great/Perfect impact sprite, flipbook 또는 stylized shader
+- [ ] final tapered Trail texture/shader와 sky/terrain별 contrast tuning
+- [ ] authored grass blade/leaf landing particle
+- [ ] authored sand dust/grain particle와 secondary puff tuning
+- [ ] authored water splash sheet, droplet shape와 water shader interaction
+- [ ] Hole-In score별 authored ring/sparkle/celebration effect
+- [ ] subtle spin-specific secondary accent art
+- [ ] licensed final swing/putt/impact/landing/hazard/Hole-In/result audio와 AudioMixer
+- [ ] PC Development Build Profiler CPU/GPU/GC/Batches/SetPass/overdraw 검증
+- [ ] color sensitivity, flash safety, low-quality/mobile profile 검증
+
+위 완료 목록은 commercial VFX 승인이나 최종 audio 승인을 뜻하지 않는다. 상세 판정은 `VFX_HERO_PASS_REVIEW.md`를 따른다.

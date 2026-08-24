@@ -1,0 +1,96 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 63bd582b06992a849927d73729a74fad, type: 3}
+  m_Name: VfxHeroShotPresentationTuning
+  m_EditorClassIdentifier: SwingPop.Runtime::SwingPop.Data.ShotPresentationTuningData
+  normalImpactColor: {r: 0.28, g: 0.9, b: 1, a: 1}
+  greatImpactColor: {r: 0.5, g: 1, b: 0.86, a: 1}
+  perfectImpactColor: {r: 0.82, g: 1, b: 1, a: 1}
+  normalImpactAccentColor: {r: 0.2, g: 0.65, b: 1, a: 1}
+  greatImpactAccentColor: {r: 0.96, g: 0.86, b: 0.38, a: 1}
+  perfectImpactAccentColor: {r: 1, g: 0.74, b: 0.14, a: 1}
+  normalImpactScale: 0.72
+  greatImpactScale: 1.08
+  perfectImpactScale: 1.55
+  normalImpactParticles: 9
+  greatImpactParticles: 15
+  perfectImpactParticles: 24
+  putterImpactScaleMultiplier: 0.28
+  putterImpactParticleMultiplier: 0.22
+  coreFlashSizeMultiplier: 0.58
+  radialRingSizeMultiplier: 1.05
+  radialBurstSizeMultiplier: 0.1
+  directionalStreakSizeMultiplier: 0.085
+  accentSparkSizeMultiplier: 0.06
+  directionalParticleRatio: 0.45
+  accentParticleRatio: 0.35
+  normalTrailTime: 0.42
+  normalTrailWidth: 0.08
+  greatTrailTime: 0.53
+  greatTrailWidth: 0.105
+  perfectTrailTime: 0.65
+  perfectTrailWidth: 0.13
+  normalTrailColor: {r: 0.2, g: 0.88, b: 1, a: 0.88}
+  greatTrailColor: {r: 0.48, g: 1, b: 0.88, a: 0.92}
+  perfectTrailColor: {r: 0.72, g: 1, b: 1, a: 0.96}
+  perfectTrailAccentColor: {r: 1, g: 0.8, b: 0.25, a: 0.9}
+  trailCoreWidthMultiplier: 0.42
+  trailSpinWidthMultiplier: 0.24
+  trailOuterAlpha: 0.4
+  trailCoreAlpha: 0.96
+  trailSpinAlpha: 0.54
+  minimumTrailSpeed: 0.45
+  speedStreakMinimumSpeed: 18
+  speedStreakEmissionRate: 14
+  minimumLandingSpeed: 1.4
+  secondaryBounceIntensity: 0.28
+  minimumSecondaryBounceSpeed: 3.2
+  grassParticleCount: 9
+  roughParticleCount: 14
+  sandParticleCount: 24
+  waterParticleCount: 30
+  grassColor: {r: 0.48, g: 0.94, b: 0.42, a: 0.9}
+  roughColor: {r: 0.2, g: 0.58, b: 0.18, a: 0.92}
+  sandColor: {r: 1, g: 0.76, b: 0.3, a: 0.94}
+  waterColor: {r: 0.2, g: 0.82, b: 1, a: 0.94}
+  grassLandingSize: 0.12
+  roughLandingSize: 0.16
+  sandLandingSize: 0.28
+  waterLandingSize: 0.3
+  holeSparkleCount: 22
+  subduedCelebrationScale: 0.72
+  normalCelebrationScale: 1
+  strongCelebrationScale: 1.28
+  strongestCelebrationScale: 1.55
+  uiVolume: 0.35
+  swingVolume: 0.55
+  impactVolume: 0.72
+  perfectAccentVolume: 0.64
+  greatImpactVolumeMultiplier: 1.08
+  putterImpactVolumeMultiplier: 0.34
+  terrainVolume: 0.46
+  hazardVolume: 0.64
+  holeVolume: 0.72
+  resultVolume: 0.58
+  uiConfirmClip: {fileID: 0}
+  swingClip: {fileID: 0}
+  puttSwingClip: {fileID: 0}
+  normalImpactClip: {fileID: 0}
+  perfectImpactClip: {fileID: 0}
+  fairwayLandingClip: {fileID: 0}
+  roughLandingClip: {fileID: 0}
+  bunkerLandingClip: {fileID: 0}
+  greenLandingClip: {fileID: 0}
+  waterHazardClip: {fileID: 0}
+  outOfBoundsClip: {fileID: 0}
+  holeInClip: {fileID: 0}
+  resultClip: {fileID: 0}

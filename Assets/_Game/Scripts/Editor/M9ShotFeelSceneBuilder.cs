@@ -135,7 +135,7 @@ namespace SwingPop.Editor
             ParticleSystem.ShapeModule streakShape = streak.shape;
             streakShape.angle = 13f;
             SetObjectReference(impact, "tuning", tuning);
-            SetObjectReference(impact, "flash", flash);
+            SetObjectReference(impact, "coreFlash", flash);
             SetObjectReference(impact, "radialBurst", burst);
             SetObjectReference(impact, "directionalStreak", streak);
 

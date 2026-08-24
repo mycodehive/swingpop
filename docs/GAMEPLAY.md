@@ -368,3 +368,13 @@ Hole01_SkyIsland load → 3s HoleIntro → Address
 - debug overlay/trajectory는 기본 숨김이고 개발자가 H/F1로만 켠다.
 - 16:9 layout은 corner HUD와 lower-right Primary Action을 safe area 안에 유지한다.
 - full-hole 수동 검증은 Address→Normal/Perfect→Flight→Landing/Hazard→Green/Putter→Hole-In→Result 순서로 수행한다.
+
+## 24. VFX Hero Pass Presentation Contract
+
+- shot gameplay flow와 `ImpactGrade` 판정은 변경하지 않는다. Good/Miss 계열은 restrained Normal presentation, Great는 중간 profile, Perfect는 Hero profile을 사용한다.
+- Character impact marker 이후 실제 `Ball.Launched`에서 Impact VFX, HUD grade, Camera kick, Audio가 함께 시작된다.
+- Driver의 launch 방향은 확정된 `ShotCommand.FinalDirection`과 Ball velocity를 사용한다. VFX가 Aim 또는 shot calculation을 다시 수행하지 않는다.
+- Ball trail은 Airborne/Bouncing의 속도 조건에서만 보이며 Ready/Stopped/Holed/Hazard/Reset에서 clear된다. Putter는 ground trail을 사용하지 않는다.
+- 첫 landing과 제한된 secondary bounce만 표시한다. Fairway/Rough/Bunker/Water profile 선택은 기존 terrain event를 그대로 따른다.
+- Hole-In presentation은 기존 `HoleCompleted` event 이후 한 번만 실행되며 score, cup capture, result flow를 소유하지 않는다.
+- Normal/Great/Perfect, landing surface, Putter, Hole-In preview는 Editor menu 전용이며 gameplay input을 추가하지 않는다.

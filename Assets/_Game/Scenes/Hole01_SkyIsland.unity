@@ -1183,146 +1183,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.InputSystem::UnityEngine.InputSystem.InputActionReference
   m_Asset: {fileID: 907146995}
   m_ActionId: 32b35790-4ed0-4e9a-aa41-69ac6d629449
---- !u!1001 &174155601
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 1385689832}
-    m_Modifications:
-    - target: {fileID: 1180349651732881941, guid: c35c33727acb7a34ebf11f6ecfda385a, type: 3}
-      propertyPath: tuning
-      value: 
-      objectReference: {fileID: 11400000, guid: d9f83ac3320ff1d40ab04c1d2a7a62d7, type: 2}
-    - target: {fileID: 1824720129184278329, guid: c35c33727acb7a34ebf11f6ecfda385a, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1824720129184278329, guid: c35c33727acb7a34ebf11f6ecfda385a, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1824720129184278329, guid: c35c33727acb7a34ebf11f6ecfda385a, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1824720129184278329, guid: c35c33727acb7a34ebf11f6ecfda385a, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 1824720129184278329, guid: c35c33727acb7a34ebf11f6ecfda385a, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1824720129184278329, guid: c35c33727acb7a34ebf11f6ecfda385a, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1824720129184278329, guid: c35c33727acb7a34ebf11f6ecfda385a, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1824720129184278329, guid: c35c33727acb7a34ebf11f6ecfda385a, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1824720129184278329, guid: c35c33727acb7a34ebf11f6ecfda385a, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1824720129184278329, guid: c35c33727acb7a34ebf11f6ecfda385a, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3067891145532804290, guid: c35c33727acb7a34ebf11f6ecfda385a, type: 3}
-      propertyPath: tuning
-      value: 
-      objectReference: {fileID: 11400000, guid: d9f83ac3320ff1d40ab04c1d2a7a62d7, type: 2}
-    - target: {fileID: 3663443000822601712, guid: c35c33727acb7a34ebf11f6ecfda385a, type: 3}
-      propertyPath: ball
-      value: 
-      objectReference: {fileID: 1953279982}
-    - target: {fileID: 3663443000822601712, guid: c35c33727acb7a34ebf11f6ecfda385a, type: 3}
-      propertyPath: tuning
-      value: 
-      objectReference: {fileID: 11400000, guid: d9f83ac3320ff1d40ab04c1d2a7a62d7, type: 2}
-    - target: {fileID: 3663443000822601712, guid: c35c33727acb7a34ebf11f6ecfda385a, type: 3}
-      propertyPath: holeFlow
-      value: 
-      objectReference: {fileID: 856989767}
-    - target: {fileID: 3663443000822601712, guid: c35c33727acb7a34ebf11f6ecfda385a, type: 3}
-      propertyPath: shotFlow
-      value: 
-      objectReference: {fileID: 856989763}
-    - target: {fileID: 3663443000822601712, guid: c35c33727acb7a34ebf11f6ecfda385a, type: 3}
-      propertyPath: characterAnimation
-      value: 
-      objectReference: {fileID: 1958169848}
-    - target: {fileID: 3663443000822601712, guid: c35c33727acb7a34ebf11f6ecfda385a, type: 3}
-      propertyPath: characterTransform
-      value: 
-      objectReference: {fileID: 1958169846}
-    - target: {fileID: 5730487777936459005, guid: c35c33727acb7a34ebf11f6ecfda385a, type: 3}
-      propertyPath: m_Name
-      value: M9 Shot Feel Presentation
-      objectReference: {fileID: 0}
-    - target: {fileID: 6031875494921832810, guid: c35c33727acb7a34ebf11f6ecfda385a, type: 3}
-      propertyPath: ball
-      value: 
-      objectReference: {fileID: 1953279982}
-    - target: {fileID: 6031875494921832810, guid: c35c33727acb7a34ebf11f6ecfda385a, type: 3}
-      propertyPath: holeFlow
-      value: 
-      objectReference: {fileID: 856989767}
-    - target: {fileID: 6031875494921832810, guid: c35c33727acb7a34ebf11f6ecfda385a, type: 3}
-      propertyPath: shotFlow
-      value: 
-      objectReference: {fileID: 856989763}
-    - target: {fileID: 6125779479980785233, guid: c35c33727acb7a34ebf11f6ecfda385a, type: 3}
-      propertyPath: ball
-      value: 
-      objectReference: {fileID: 1953279982}
-    - target: {fileID: 6125779479980785233, guid: c35c33727acb7a34ebf11f6ecfda385a, type: 3}
-      propertyPath: tuning
-      value: 
-      objectReference: {fileID: 11400000, guid: d9f83ac3320ff1d40ab04c1d2a7a62d7, type: 2}
-    - target: {fileID: 6682220538929933588, guid: c35c33727acb7a34ebf11f6ecfda385a, type: 3}
-      propertyPath: tuning
-      value: 
-      objectReference: {fileID: 11400000, guid: d9f83ac3320ff1d40ab04c1d2a7a62d7, type: 2}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: c35c33727acb7a34ebf11f6ecfda385a, type: 3}
---- !u!4 &174155602 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 1824720129184278329, guid: c35c33727acb7a34ebf11f6ecfda385a, type: 3}
-  m_PrefabInstance: {fileID: 174155601}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &174155603 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 3663443000822601712, guid: c35c33727acb7a34ebf11f6ecfda385a, type: 3}
-  m_PrefabInstance: {fileID: 174155601}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 651e0381acdb8c641bc040232ae365e7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: SwingPop.Runtime::SwingPop.AudioSystem.GameplayAudioController
---- !u!114 &174155604 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 6031875494921832810, guid: c35c33727acb7a34ebf11f6ecfda385a, type: 3}
-  m_PrefabInstance: {fileID: 174155601}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 86138de7f85a72e4c884215dd79f4a6e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: SwingPop.Runtime::SwingPop.Presentation.ShotPresentationController
 --- !u!1 &190708427
 GameObject:
   m_ObjectHideFlags: 0
@@ -3497,6 +3357,126 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 9163220895714075392, guid: 19bc0377a43002046b07406079998f5a, type: 3}
   m_PrefabInstance: {fileID: 441604159}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &449955293
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1385689832}
+    m_Modifications:
+    - target: {fileID: 1297741289341004053, guid: 161f91552c71d2046b7adab69005fd80, type: 3}
+      propertyPath: ball
+      value: 
+      objectReference: {fileID: 1953279982}
+    - target: {fileID: 1297741289341004053, guid: 161f91552c71d2046b7adab69005fd80, type: 3}
+      propertyPath: holeFlow
+      value: 
+      objectReference: {fileID: 856989767}
+    - target: {fileID: 1297741289341004053, guid: 161f91552c71d2046b7adab69005fd80, type: 3}
+      propertyPath: shotFlow
+      value: 
+      objectReference: {fileID: 856989763}
+    - target: {fileID: 4014517116178182246, guid: 161f91552c71d2046b7adab69005fd80, type: 3}
+      propertyPath: ball
+      value: 
+      objectReference: {fileID: 1953279982}
+    - target: {fileID: 4014517116178182246, guid: 161f91552c71d2046b7adab69005fd80, type: 3}
+      propertyPath: holeFlow
+      value: 
+      objectReference: {fileID: 856989767}
+    - target: {fileID: 4014517116178182246, guid: 161f91552c71d2046b7adab69005fd80, type: 3}
+      propertyPath: shotFlow
+      value: 
+      objectReference: {fileID: 856989763}
+    - target: {fileID: 4014517116178182246, guid: 161f91552c71d2046b7adab69005fd80, type: 3}
+      propertyPath: characterAnimation
+      value: 
+      objectReference: {fileID: 1958169848}
+    - target: {fileID: 4014517116178182246, guid: 161f91552c71d2046b7adab69005fd80, type: 3}
+      propertyPath: characterTransform
+      value: 
+      objectReference: {fileID: 1958169846}
+    - target: {fileID: 6340913784931288812, guid: 161f91552c71d2046b7adab69005fd80, type: 3}
+      propertyPath: ball
+      value: 
+      objectReference: {fileID: 1953279982}
+    - target: {fileID: 6545643642295982083, guid: 161f91552c71d2046b7adab69005fd80, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6545643642295982083, guid: 161f91552c71d2046b7adab69005fd80, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6545643642295982083, guid: 161f91552c71d2046b7adab69005fd80, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6545643642295982083, guid: 161f91552c71d2046b7adab69005fd80, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6545643642295982083, guid: 161f91552c71d2046b7adab69005fd80, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6545643642295982083, guid: 161f91552c71d2046b7adab69005fd80, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6545643642295982083, guid: 161f91552c71d2046b7adab69005fd80, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6545643642295982083, guid: 161f91552c71d2046b7adab69005fd80, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6545643642295982083, guid: 161f91552c71d2046b7adab69005fd80, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6545643642295982083, guid: 161f91552c71d2046b7adab69005fd80, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8675883956397069579, guid: 161f91552c71d2046b7adab69005fd80, type: 3}
+      propertyPath: m_Name
+      value: VFX Hero Presentation
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 161f91552c71d2046b7adab69005fd80, type: 3}
+--- !u!4 &449955294 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 6545643642295982083, guid: 161f91552c71d2046b7adab69005fd80, type: 3}
+  m_PrefabInstance: {fileID: 449955293}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &449955295 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4014517116178182246, guid: 161f91552c71d2046b7adab69005fd80, type: 3}
+  m_PrefabInstance: {fileID: 449955293}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 651e0381acdb8c641bc040232ae365e7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: SwingPop.Runtime::SwingPop.AudioSystem.GameplayAudioController
+--- !u!114 &449955296 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1297741289341004053, guid: 161f91552c71d2046b7adab69005fd80, type: 3}
+  m_PrefabInstance: {fileID: 449955293}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 86138de7f85a72e4c884215dd79f4a6e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: SwingPop.Runtime::SwingPop.Presentation.ShotPresentationController
 --- !u!1 &463500709
 GameObject:
   m_ObjectHideFlags: 0
@@ -6439,8 +6419,8 @@ MonoBehaviour:
   holeFlow: {fileID: 856989767}
   cameraDirector: {fileID: 621407175}
   character: {fileID: 1958169847}
-  shotPresentation: {fileID: 174155604}
-  gameplayAudio: {fileID: 174155603}
+  shotPresentation: {fileID: 449955296}
+  gameplayAudio: {fileID: 449955295}
   trajectoryDebug: {fileID: 856989764}
   showOverlay: 0
   startHidden: 1
@@ -11292,8 +11272,8 @@ Transform:
   - {fileID: 621407171}
   - {fileID: 1958169846}
   - {fileID: 1902102110}
-  - {fileID: 174155602}
   - {fileID: 1490670551}
+  - {fileID: 449955294}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1402614270

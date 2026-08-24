@@ -130,9 +130,18 @@ namespace SwingPop.AudioSystem
                 return;
             }
 
+            ShotCommand command = shotFlow.LastShotCommand;
             float volume = tuning != null ? tuning.ImpactVolume : 0.72f;
+            if (tuning != null && command.ImpactGrade == ImpactGrade.Great)
+            {
+                volume *= tuning.GreatImpactVolumeMultiplier;
+            }
+            if (tuning != null && command.IsPutter)
+            {
+                volume *= tuning.PutterImpactVolumeMultiplier;
+            }
             PlayCue(GameplayAudioCue.NormalImpact, ball.PhysicsPosition, volume);
-            if (shotFlow.LastShotCommand.ImpactGrade == ImpactGrade.Perfect)
+            if (command.ImpactGrade == ImpactGrade.Perfect && !command.IsPutter)
             {
                 PlayCue(
                     GameplayAudioCue.PerfectImpact,

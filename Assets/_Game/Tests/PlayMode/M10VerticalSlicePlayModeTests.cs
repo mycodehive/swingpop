@@ -82,7 +82,8 @@ namespace SwingPop.Tests
             Assert.That(artRoot.GetComponentsInChildren<Collider>(true), Is.Empty,
                 "Decorative environment must not alter gameplay physics.");
             Assert.That(artRoot.GetComponentsInChildren<Renderer>(true).Length, Is.InRange(70, 180));
-            Assert.That(Object.FindObjectsByType<ParticleSystem>().Length, Is.LessThanOrEqualTo(8));
+            Assert.That(Object.FindObjectsByType<ParticleSystem>().Length, Is.LessThanOrEqualTo(16),
+                "VFX Hero Pass uses a fixed 15-system reusable graph and must not grow per shot.");
             Assert.That(Object.FindObjectsByType<AudioSource>().Length, Is.LessThanOrEqualTo(6));
 
             Dictionary<TerrainSurfaceType, TerrainSurface> surfaces = FindSurfaces();

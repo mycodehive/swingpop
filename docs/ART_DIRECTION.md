@@ -198,3 +198,14 @@ Perfect:
 - panel radius, 얇은 rim, opacity, icon silhouette, uppercase hierarchy를 공유해 HUD가 하나의 product family처럼 보이게 한다.
 - 현재 generated sprite와 `LegacyRuntime.ttf`는 project-safe placeholder다. final authored 9-slice, portrait, icon, localized font로 `HudSkinData`와 prefab seam에서 교체한다.
 - 특정 게임의 UI shape, logo, icon, ornament를 복제하지 않고 target-quality는 정보 밀도, 상호작용 존재감, world visibility 기준으로만 사용한다.
+
+## VFX Hero Pass Direction
+
+- Bright Fantasy / Sporty Energy / Clean / Directional / Compact를 공통 언어로 사용한다.
+- Normal은 cyan/white의 작은 contact flash, Great는 밝기·크기·trail을 한 단계 올리고, Perfect만 pale gold accent와 가장 강한 directional layer를 사용한다.
+- impact는 core flash, ring/radial burst, launch 방향 streak, sparkle, trail transition의 시간차로 읽히며 full-screen white-out은 사용하지 않는다.
+- trail은 밝은 core, 부드러운 outer fade, zero로 좁아지는 tail을 사용한다. 공 silhouette와 sky/course horizon을 덮지 않는 것을 우선한다.
+- Fairway/Green은 작은 mint grass, Rough는 더 짙고 무거운 green, Bunker는 warm sand dust, Water는 cyan/white vertical splash·ring·droplet으로 구분한다.
+- Putter는 driver VFX를 축소 복제하지 않고 tiny clean contact만 남기며 지속 ground trail은 끈다.
+- Hole-In은 cup flash, upward sparkle, soft ring, 제한된 celebration sparkle로 Result/Camera/Character를 보조한다. 대형 fireworks는 사용하지 않는다.
+- 현재 6종 generated sprite와 URP particle material은 project-safe authored-placeholder다. 최종 flipbook, trail shader, surface particle, audio asset은 같은 prefab/data seam에서 교체한다.

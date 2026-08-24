@@ -478,3 +478,23 @@ Gameplay source events
 - `GameplayHUD_SwingPopSkin.prefab`은 Hole01 전용 isolated visual prefab이다. 기존 `GameplayHUD.prefab`과 `Foundation.unity`는 변경하지 않는다.
 - Skin HUD는 Canvas 1, default shared UI material 1, layout component 0, per-frame update behaviour 1을 유지한다. Shot Button만 raycast target이다.
 - Editor builder, validator, capture tool은 runtime gameplay graph에 참여하지 않는다.
+
+## VFX Hero Pass Presentation Boundary
+
+```text
+ShotCommand / ImpactGrade ──prepare──> ShotPresentationController
+Ball.Launched ───────────────single sync point──────────────┐
+Ball.SurfaceContact / Hazard ───────────────────────────────┼─> reusable VFX controllers
+HoleFlow.HoleCompleted ─────────────────────────────────────┘
+                                                            |
+                    Impact / Trail / Landing / Hole-In / Audio
+                                                            |
+                             VfxHeroShotPresentationTuning.asset
+```
+
+- `ImpactGrade`의 기존 Normal/Great/Perfect 결과만 presentation profile로 매핑한다. threshold, shot command, launch velocity, spin, terrain, score는 재계산하지 않는다.
+- `Ball.Launched`는 Camera kick, HUD popup, impact VFX, impact audio가 공유하는 실제 동기화 지점이다. VFX가 Aim 또는 physics를 다시 계산하지 않는다.
+- `ImpactVfxController`, `BallTrailController`, `LandingVfxController`, `HoleInVfxController`, `GameplayAudioController`의 책임 분리를 유지한다.
+- Hole01은 `ShotFeelPresentation_Hero.prefab`과 전용 tuning asset을 사용한다. 기존 M9 prefab과 `Foundation.unity`는 변경하지 않는다.
+- 15개 ParticleSystem, 3개 TrailRenderer, 6개 shared VFX material은 scene에 한 번 생성되어 재사용된다. shot마다 effect object 또는 material을 만들지 않는다.
+- Editor builder, preview, validator, capture/telemetry 도구는 runtime gameplay graph와 분리한다.

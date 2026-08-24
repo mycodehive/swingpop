@@ -9,21 +9,29 @@ namespace SwingPop.Presentation
     {
         public static ShotPresentationLevel ResolveImpact(ImpactGrade grade)
         {
-            return grade == ImpactGrade.Perfect
-                ? ShotPresentationLevel.Perfect
-                : ShotPresentationLevel.Normal;
+            return grade switch
+            {
+                ImpactGrade.Perfect => ShotPresentationLevel.Perfect,
+                ImpactGrade.Great => ShotPresentationLevel.Great,
+                _ => ShotPresentationLevel.Normal
+            };
         }
 
         public static TrailPresentationProfile ResolveTrail(
             ShotPresentationLevel level,
             float normalLifetime,
             float normalWidth,
+            float greatLifetime,
+            float greatWidth,
             float perfectLifetime,
             float perfectWidth)
         {
-            return level == ShotPresentationLevel.Perfect
-                ? new TrailPresentationProfile(perfectLifetime, perfectWidth)
-                : new TrailPresentationProfile(normalLifetime, normalWidth);
+            return level switch
+            {
+                ShotPresentationLevel.Perfect => new TrailPresentationProfile(perfectLifetime, perfectWidth),
+                ShotPresentationLevel.Great => new TrailPresentationProfile(greatLifetime, greatWidth),
+                _ => new TrailPresentationProfile(normalLifetime, normalWidth)
+            };
         }
 
         public static LandingEffectType ResolveLanding(TerrainSurfaceType surface)

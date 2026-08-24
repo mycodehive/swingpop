@@ -28,8 +28,9 @@ namespace SwingPop.Editor
             GameObject oldCourseVisuals = FindInScene(scene, "Course Visual Layers");
             Require(oldCourseVisuals != null && !oldCourseVisuals.activeSelf,
                 "The superseded rectangular course visual layer must stay disabled.");
-            Require(AssetDatabase.GetAssetPath(RenderSettings.skybox) == "Assets/_Game/Materials/Polish/M11Skybox.mat",
-                "Hole01 must use its isolated M11 skybox material.");
+            Require(AssetDatabase.GetAssetPath(RenderSettings.skybox) ==
+                    "Assets/_Game/Materials/Environment/CourseEnvironmentPass/CEP_Skybox.mat",
+                "Hole01 must use the isolated Course Environment Pass skybox material.");
 
             CameraDirector cameraDirector = Object.FindAnyObjectByType<CameraDirector>();
             Require(cameraDirector != null, "CameraDirector is missing.");
@@ -103,7 +104,8 @@ namespace SwingPop.Editor
             }
 
             Require(shadowCasters <= 145, $"Shadow caster count regressed above the M10 baseline: {shadowCasters}.");
-            Require(Object.FindObjectsByType<ParticleSystem>(FindObjectsInactive.Include).Length <= 8,
+            // The VFX Hero Pass replaces the old minimal graph with 15 fixed reusable systems.
+            Require(Object.FindObjectsByType<ParticleSystem>(FindObjectsInactive.Include).Length <= 16,
                 "Particle system count exceeds the vertical-slice budget.");
             Require(Object.FindObjectsByType<AudioSource>(FindObjectsInactive.Include).Length <= 6,
                 "Audio source count exceeds the vertical-slice budget.");

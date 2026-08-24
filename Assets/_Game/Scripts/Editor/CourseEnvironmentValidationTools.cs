@@ -182,7 +182,9 @@ namespace SwingPop.Editor
             int particleSystems = Object.FindObjectsByType<ParticleSystem>(FindObjectsInactive.Include).Length;
             int audioSources = Object.FindObjectsByType<AudioSource>(FindObjectsInactive.Include).Length;
             Require(colliders == 10, $"Gameplay collider count changed from the established baseline: {colliders}.");
-            Require(particleSystems <= 8, $"Particle system budget exceeded: {particleSystems}.");
+            // The VFX Hero Pass uses a fixed, reusable 15-system graph. This budget guards
+            // against accidental scene growth while allowing the authored impact/landing/hole layers.
+            Require(particleSystems <= 16, $"Particle system budget exceeded: {particleSystems}.");
             Require(audioSources <= 6, $"Audio source budget exceeded: {audioSources}.");
             Require(activeShadowCasters <= 100, $"Active shadow caster budget exceeded: {activeShadowCasters}.");
 

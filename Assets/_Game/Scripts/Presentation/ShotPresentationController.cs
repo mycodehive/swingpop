@@ -19,11 +19,13 @@ namespace SwingPop.Presentation
         [SerializeField] private HoleInVfxController holeInVfx;
 
         private readonly ImpactPresentationGate impactGate = new();
+        private bool holePresentationPlayed;
 
         public int ImpactPresentationCount { get; private set; }
         public int SurfacePresentationCount => landingVfx != null ? landingVfx.PlayCount : 0;
         public int HolePresentationCount => holeInVfx != null ? holeInVfx.PlayCount : 0;
         public ShotPresentationLevel LastImpactLevel { get; private set; }
+        public bool LastImpactWasPutter { get; private set; }
         public LandingEffectType LastLandingEffect => landingVfx != null
             ? landingVfx.LastEffect
             : LandingEffectType.Grass;
@@ -84,9 +86,12 @@ namespace SwingPop.Presentation
 
             ShotCommand command = shotFlow.LastShotCommand;
             LastImpactLevel = ShotPresentationResolver.ResolveImpact(command.ImpactGrade);
+            LastImpactWasPutter = command.IsPutter;
             ImpactPresentationCount++;
-            impactVfx?.Play(ball.PhysicsPosition, command.FinalDirection, LastImpactLevel);
-            ballTrail?.Begin(LastImpactLevel, command.Spin);
+            // Ball position at the authoritative launch event is the contact anchor. Presentation never
+            // reconstructs aim or samples the camera/character root for impact placement or direction.
+            impactVfx?.Play(ball.PhysicsPosition, command.FinalDirection, LastImpactLevel, command.IsPutter);
+            ballTrail?.Begin(LastImpactLevel, command.Spin, command.IsPutter);
         }
 
         private void OnSurfaceContacted(BallSurfaceContact contact)
@@ -111,11 +116,17 @@ namespace SwingPop.Presentation
         private void OnBallReset()
         {
             impactGate.Reset();
+            holePresentationPlayed = false;
             ballTrail?.StopAndClear();
         }
 
         private void OnHoleCompleted(ScoreResult result)
         {
+            if (holePresentationPlayed)
+            {
+                return;
+            }
+            holePresentationPlayed = true;
             holeInVfx?.Play(
                 holeFlow.Hole.CupPosition,
                 ShotPresentationResolver.ResolveCelebration(result));

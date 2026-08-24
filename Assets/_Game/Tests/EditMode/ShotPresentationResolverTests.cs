@@ -12,10 +12,10 @@ namespace SwingPop.Tests
     public sealed class ShotPresentationResolverTests
     {
         [TestCase(ImpactGrade.Perfect, ShotPresentationLevel.Perfect)]
-        [TestCase(ImpactGrade.Great, ShotPresentationLevel.Normal)]
+        [TestCase(ImpactGrade.Great, ShotPresentationLevel.Great)]
         [TestCase(ImpactGrade.Good, ShotPresentationLevel.Normal)]
         [TestCase(ImpactGrade.Miss, ShotPresentationLevel.Normal)]
-        public void ResolveImpact_OnlyPerfectUsesPerfectPresentation(
+        public void ResolveImpact_MapsExistingGameplayGradeToPresentationLevel(
             ImpactGrade grade,
             ShotPresentationLevel expected)
         {
@@ -49,10 +49,16 @@ namespace SwingPop.Tests
         public void ResolveTrail_PerfectProfileIsDistinctAndStronger()
         {
             TrailPresentationProfile normal = ShotPresentationResolver.ResolveTrail(
-                ShotPresentationLevel.Normal, 0.4f, 0.07f, 0.7f, 0.14f);
+                ShotPresentationLevel.Normal, 0.4f, 0.07f, 0.52f, 0.1f, 0.7f, 0.14f);
+            TrailPresentationProfile great = ShotPresentationResolver.ResolveTrail(
+                ShotPresentationLevel.Great, 0.4f, 0.07f, 0.52f, 0.1f, 0.7f, 0.14f);
             TrailPresentationProfile perfect = ShotPresentationResolver.ResolveTrail(
-                ShotPresentationLevel.Perfect, 0.4f, 0.07f, 0.7f, 0.14f);
+                ShotPresentationLevel.Perfect, 0.4f, 0.07f, 0.52f, 0.1f, 0.7f, 0.14f);
 
+            Assert.That(great.Lifetime, Is.GreaterThan(normal.Lifetime));
+            Assert.That(great.Width, Is.GreaterThan(normal.Width));
+            Assert.That(perfect.Lifetime, Is.GreaterThan(great.Lifetime));
+            Assert.That(perfect.Width, Is.GreaterThan(great.Width));
             Assert.That(perfect.Lifetime, Is.GreaterThan(normal.Lifetime));
             Assert.That(perfect.Width, Is.GreaterThan(normal.Width));
         }

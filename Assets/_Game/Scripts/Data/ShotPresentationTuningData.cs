@@ -7,20 +7,48 @@ namespace SwingPop.Data
     {
         [Header("Impact VFX")]
         [SerializeField] private Color normalImpactColor = new(0.35f, 0.95f, 1f, 1f);
-        [SerializeField] private Color perfectImpactColor = new(1f, 0.82f, 0.2f, 1f);
+        [SerializeField] private Color greatImpactColor = new(0.55f, 1f, 0.92f, 1f);
+        [SerializeField] private Color perfectImpactColor = new(0.82f, 1f, 1f, 1f);
+        [SerializeField] private Color normalImpactAccentColor = new(0.3f, 0.82f, 1f, 1f);
+        [SerializeField] private Color greatImpactAccentColor = new(0.92f, 0.88f, 0.42f, 1f);
+        [SerializeField] private Color perfectImpactAccentColor = new(1f, 0.78f, 0.18f, 1f);
         [SerializeField, Min(0.01f)] private float normalImpactScale = 0.7f;
+        [SerializeField, Min(0.01f)] private float greatImpactScale = 0.98f;
         [SerializeField, Min(0.01f)] private float perfectImpactScale = 1.25f;
         [SerializeField, Min(1)] private int normalImpactParticles = 10;
+        [SerializeField, Min(1)] private int greatImpactParticles = 16;
         [SerializeField, Min(1)] private int perfectImpactParticles = 22;
+        [SerializeField, Range(0.05f, 1f)] private float putterImpactScaleMultiplier = 0.32f;
+        [SerializeField, Range(0.05f, 1f)] private float putterImpactParticleMultiplier = 0.25f;
+
+        [Header("Impact Layers")]
+        [SerializeField, Min(0.01f)] private float coreFlashSizeMultiplier = 0.58f;
+        [SerializeField, Min(0.01f)] private float radialRingSizeMultiplier = 1.05f;
+        [SerializeField, Min(0.01f)] private float radialBurstSizeMultiplier = 0.1f;
+        [SerializeField, Min(0.01f)] private float directionalStreakSizeMultiplier = 0.085f;
+        [SerializeField, Min(0.01f)] private float accentSparkSizeMultiplier = 0.06f;
+        [SerializeField, Range(0.05f, 1f)] private float directionalParticleRatio = 0.45f;
+        [SerializeField, Range(0.05f, 1f)] private float accentParticleRatio = 0.35f;
 
         [Header("Ball Trail")]
         [SerializeField, Min(0.01f)] private float normalTrailTime = 0.42f;
         [SerializeField, Min(0.001f)] private float normalTrailWidth = 0.075f;
+        [SerializeField, Min(0.01f)] private float greatTrailTime = 0.56f;
+        [SerializeField, Min(0.001f)] private float greatTrailWidth = 0.1f;
         [SerializeField, Min(0.01f)] private float perfectTrailTime = 0.72f;
         [SerializeField, Min(0.001f)] private float perfectTrailWidth = 0.14f;
         [SerializeField] private Color normalTrailColor = new(0.35f, 0.95f, 1f, 0.88f);
-        [SerializeField] private Color perfectTrailColor = new(1f, 0.85f, 0.2f, 1f);
+        [SerializeField] private Color greatTrailColor = new(0.55f, 1f, 0.9f, 0.92f);
+        [SerializeField] private Color perfectTrailColor = new(0.78f, 1f, 1f, 0.96f);
+        [SerializeField] private Color perfectTrailAccentColor = new(1f, 0.82f, 0.3f, 0.9f);
+        [SerializeField, Range(0.1f, 1f)] private float trailCoreWidthMultiplier = 0.42f;
+        [SerializeField, Range(0.1f, 1f)] private float trailSpinWidthMultiplier = 0.24f;
+        [SerializeField, Range(0f, 1f)] private float trailOuterAlpha = 0.42f;
+        [SerializeField, Range(0f, 1f)] private float trailCoreAlpha = 0.95f;
+        [SerializeField, Range(0f, 1f)] private float trailSpinAlpha = 0.55f;
         [SerializeField, Min(0f)] private float minimumTrailSpeed = 0.35f;
+        [SerializeField, Min(0f)] private float speedStreakMinimumSpeed = 18f;
+        [SerializeField, Min(0f)] private float speedStreakEmissionRate = 14f;
 
         [Header("Landing VFX")]
         [SerializeField, Min(0f)] private float minimumLandingSpeed = 1.4f;
@@ -34,6 +62,10 @@ namespace SwingPop.Data
         [SerializeField] private Color roughColor = new(0.28f, 0.62f, 0.2f, 1f);
         [SerializeField] private Color sandColor = new(1f, 0.78f, 0.35f, 1f);
         [SerializeField] private Color waterColor = new(0.25f, 0.78f, 1f, 1f);
+        [SerializeField, Min(0.01f)] private float grassLandingSize = 0.13f;
+        [SerializeField, Min(0.01f)] private float roughLandingSize = 0.17f;
+        [SerializeField, Min(0.01f)] private float sandLandingSize = 0.22f;
+        [SerializeField, Min(0.01f)] private float waterLandingSize = 0.24f;
 
         [Header("Hole In")]
         [SerializeField, Min(1)] private int holeSparkleCount = 18;
@@ -47,6 +79,8 @@ namespace SwingPop.Data
         [SerializeField, Range(0f, 1f)] private float swingVolume = 0.55f;
         [SerializeField, Range(0f, 1f)] private float impactVolume = 0.72f;
         [SerializeField, Range(0f, 1f)] private float perfectAccentVolume = 0.6f;
+        [SerializeField, Range(0f, 2f)] private float greatImpactVolumeMultiplier = 1.08f;
+        [SerializeField, Range(0f, 1f)] private float putterImpactVolumeMultiplier = 0.34f;
         [SerializeField, Range(0f, 1f)] private float terrainVolume = 0.48f;
         [SerializeField, Range(0f, 1f)] private float hazardVolume = 0.65f;
         [SerializeField, Range(0f, 1f)] private float holeVolume = 0.7f;
@@ -68,18 +102,44 @@ namespace SwingPop.Data
         [SerializeField] private AudioClip resultClip;
 
         public Color NormalImpactColor => normalImpactColor;
+        public Color GreatImpactColor => greatImpactColor;
         public Color PerfectImpactColor => perfectImpactColor;
+        public Color NormalImpactAccentColor => normalImpactAccentColor;
+        public Color GreatImpactAccentColor => greatImpactAccentColor;
+        public Color PerfectImpactAccentColor => perfectImpactAccentColor;
         public float NormalImpactScale => normalImpactScale;
+        public float GreatImpactScale => greatImpactScale;
         public float PerfectImpactScale => perfectImpactScale;
         public int NormalImpactParticles => normalImpactParticles;
+        public int GreatImpactParticles => greatImpactParticles;
         public int PerfectImpactParticles => perfectImpactParticles;
+        public float PutterImpactScaleMultiplier => putterImpactScaleMultiplier;
+        public float PutterImpactParticleMultiplier => putterImpactParticleMultiplier;
+        public float CoreFlashSizeMultiplier => coreFlashSizeMultiplier;
+        public float RadialRingSizeMultiplier => radialRingSizeMultiplier;
+        public float RadialBurstSizeMultiplier => radialBurstSizeMultiplier;
+        public float DirectionalStreakSizeMultiplier => directionalStreakSizeMultiplier;
+        public float AccentSparkSizeMultiplier => accentSparkSizeMultiplier;
+        public float DirectionalParticleRatio => directionalParticleRatio;
+        public float AccentParticleRatio => accentParticleRatio;
         public float NormalTrailTime => normalTrailTime;
         public float NormalTrailWidth => normalTrailWidth;
+        public float GreatTrailTime => greatTrailTime;
+        public float GreatTrailWidth => greatTrailWidth;
         public float PerfectTrailTime => perfectTrailTime;
         public float PerfectTrailWidth => perfectTrailWidth;
         public Color NormalTrailColor => normalTrailColor;
+        public Color GreatTrailColor => greatTrailColor;
         public Color PerfectTrailColor => perfectTrailColor;
+        public Color PerfectTrailAccentColor => perfectTrailAccentColor;
+        public float TrailCoreWidthMultiplier => trailCoreWidthMultiplier;
+        public float TrailSpinWidthMultiplier => trailSpinWidthMultiplier;
+        public float TrailOuterAlpha => trailOuterAlpha;
+        public float TrailCoreAlpha => trailCoreAlpha;
+        public float TrailSpinAlpha => trailSpinAlpha;
         public float MinimumTrailSpeed => minimumTrailSpeed;
+        public float SpeedStreakMinimumSpeed => speedStreakMinimumSpeed;
+        public float SpeedStreakEmissionRate => speedStreakEmissionRate;
         public float MinimumLandingSpeed => minimumLandingSpeed;
         public float SecondaryBounceIntensity => secondaryBounceIntensity;
         public float MinimumSecondaryBounceSpeed => minimumSecondaryBounceSpeed;
@@ -91,11 +151,17 @@ namespace SwingPop.Data
         public Color RoughColor => roughColor;
         public Color SandColor => sandColor;
         public Color WaterColor => waterColor;
+        public float GrassLandingSize => grassLandingSize;
+        public float RoughLandingSize => roughLandingSize;
+        public float SandLandingSize => sandLandingSize;
+        public float WaterLandingSize => waterLandingSize;
         public int HoleSparkleCount => holeSparkleCount;
         public float UiVolume => uiVolume;
         public float SwingVolume => swingVolume;
         public float ImpactVolume => impactVolume;
         public float PerfectAccentVolume => perfectAccentVolume;
+        public float GreatImpactVolumeMultiplier => greatImpactVolumeMultiplier;
+        public float PutterImpactVolumeMultiplier => putterImpactVolumeMultiplier;
         public float TerrainVolume => terrainVolume;
         public float HazardVolume => hazardVolume;
         public float HoleVolume => holeVolume;
