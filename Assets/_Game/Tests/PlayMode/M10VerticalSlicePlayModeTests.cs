@@ -138,7 +138,7 @@ namespace SwingPop.Tests
             int holeVfxBefore = holeInVfx.PlayCount;
             Assert.That(shotFlow.TryCommitShot(0.45f, 0f), Is.True);
             yield return WaitUntilOrFail(() => holeFlow.State == HoleFlowState.HoleComplete, 12f, "Hole-In flow");
-            yield return null;
+            yield return WaitUntilOrFail(() => hud.View.ResultView.IsVisible, 2f, "Cinematic result reveal");
 
             Assert.That(holeInVfx.PlayCount, Is.EqualTo(holeVfxBefore + 1));
             Assert.That(hud.View.ResultView.IsVisible, Is.True);

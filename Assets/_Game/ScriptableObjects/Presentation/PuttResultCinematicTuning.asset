@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a26ec5568b8ec6849ad6908f1e55f03b, type: 3}
+  m_Name: PuttResultCinematicTuning
+  m_EditorClassIdentifier: SwingPop.Runtime::SwingPop.Data.PuttResultCinematicTuningData
+  puttAddressOffset: {x: 5.4, y: 3.15, z: -7.2}
+  puttAddressCupBias: 0.48
+  puttAddressLookHeight: 0.65
+  puttAddressFieldOfView: 47
+  puttRollingOffset: {x: 4.8, y: 2.55, z: -6.2}
+  puttRollingCupBias: 0.58
+  puttRollingLookHeight: 0.24
+  puttRollingFieldOfView: 43
+  approachDistance: 1.6
+  approachOffset: {x: 4.5, y: 2.2, z: -5.6}
+  approachLookHeight: 0.18
+  approachFieldOfView: 42
+  holeInOffset: {x: 4.7, y: 2.8, z: -5.8}
+  holeInLookHeight: 0.28
+  holeInFieldOfView: 43
+  resultOffset: {x: 7.2, y: 4.45, z: -7.4}
+  resultCupBias: 0.56
+  resultLookHeight: 0.95
+  resultFieldOfView: 49
+  celebrationDelay: 0.34
+  resultRevealDelay: 0.74
+  resultFrameDuration: 0.28
+  resultScoreDelay: 0.09
+  resultDetailDelay: 0.2
+  holeRingDelay: 0.06
+  holeCelebrationDelay: 0.22
+  holeVfxIntensity: 1.2
+  resultPanelOffset: {x: 335, y: -8}

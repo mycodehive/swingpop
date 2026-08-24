@@ -18,6 +18,8 @@ namespace SwingPop.CameraSystem
         [SerializeField] private ShotFlowController shotFlow;
         [SerializeField] private HoleFlowController holeFlow;
         [SerializeField] private CameraTuningData tuning;
+        [SerializeField] private Transform characterTransform;
+        [SerializeField] private PuttResultCinematicTuningData cinematicTuning;
 
         [Header("Debug")]
         [SerializeField] private bool drawCompositionGizmos = true;
@@ -30,6 +32,7 @@ namespace SwingPop.CameraSystem
         private float modeElapsed;
         private float impactShakeStrength;
         private bool hasStarted;
+        private bool cupApproachPresentation;
 
         public event Action<CameraMode, CameraMode> ModeChanged;
 
@@ -40,6 +43,7 @@ namespace SwingPop.CameraSystem
         public Vector3 CurrentTarget => currentTarget;
         public float CurrentFieldOfView => controlledCamera != null ? controlledCamera.fieldOfView : 0f;
         public float CurrentFollowDistance => ball != null ? Vector3.Distance(transform.position, ball.PhysicsPosition) : 0f;
+        public PuttResultCinematicTuningData CinematicTuning => cinematicTuning;
 
         private void Awake()
         {
@@ -121,7 +125,8 @@ namespace SwingPop.CameraSystem
                 case CameraMode.NextShot when modeElapsed >= tuning.NextShotHoldDuration && ball.State == BallState.Ready:
                     RequestReadyCamera();
                     break;
-                case CameraMode.HoleComplete when modeElapsed >= tuning.HoleCompleteHoldDuration:
+                case CameraMode.HoleComplete when cinematicTuning == null
+                                                  && modeElapsed >= tuning.HoleCompleteHoldDuration:
                     RequestMode(CameraMode.Result);
                     break;
             }
@@ -161,6 +166,16 @@ namespace SwingPop.CameraSystem
         public bool RequestDebugMode(CameraMode mode)
         {
             return RequestMode(mode);
+        }
+
+        public bool RequestPresentationMode(CameraMode mode)
+        {
+            return RequestMode(mode);
+        }
+
+        public void SetCupApproachPresentation(bool active)
+        {
+            cupApproachPresentation = active;
         }
 
         private bool HasDependencies()
@@ -270,6 +285,7 @@ namespace SwingPop.CameraSystem
 
         private void OnBallReset()
         {
+            cupApproachPresentation = false;
             if (hasStarted && holeFlow.State == HoleFlowState.Playing)
             {
                 BeginHoleIntro(false);
@@ -299,18 +315,39 @@ namespace SwingPop.CameraSystem
             {
                 lastPlanarDirection = velocityForward;
             }
-            CameraFraming framing = CameraFramingSolver.Resolve(
-                CurrentMode,
-                tuning,
-                ballPosition,
-                ball.ResetPosition,
-                cupPosition,
-                aimForward,
-                ball.Velocity,
-                ball.LaunchForward,
-                lastPlanarDirection,
-                ball.Speed,
-                modeElapsed);
+            Vector3 characterPosition = characterTransform != null ? characterTransform.position : ballPosition;
+            CameraFraming framing = cinematicTuning != null && CurrentMode == CameraMode.Putt
+                ? PuttResultFramingSolver.ResolvePutt(
+                    cinematicTuning,
+                    ballPosition,
+                    cupPosition,
+                    characterPosition,
+                    aimForward,
+                    ball.State == BallState.Rolling,
+                    cupApproachPresentation)
+                : cinematicTuning != null && CurrentMode == CameraMode.HoleComplete
+                    ? PuttResultFramingSolver.ResolveHoleIn(
+                        cinematicTuning,
+                        cupPosition,
+                        cupPosition - ball.ResetPosition)
+                    : cinematicTuning != null && CurrentMode == CameraMode.Result
+                        ? PuttResultFramingSolver.ResolveResult(
+                            cinematicTuning,
+                            characterPosition,
+                            cupPosition,
+                            cupPosition - ball.ResetPosition)
+                        : CameraFramingSolver.Resolve(
+                            CurrentMode,
+                            tuning,
+                            ballPosition,
+                            ball.ResetPosition,
+                            cupPosition,
+                            aimForward,
+                            ball.Velocity,
+                            ball.LaunchForward,
+                            lastPlanarDirection,
+                            ball.Speed,
+                            modeElapsed);
             currentTarget = framing.Target;
             currentTargetName = framing.TargetName;
             Vector3 position = ResolveCollision(currentTarget, framing.Position);

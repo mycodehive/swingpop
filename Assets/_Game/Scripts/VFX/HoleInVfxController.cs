@@ -7,10 +7,17 @@ namespace SwingPop.VfxSystem
     public sealed class HoleInVfxController : MonoBehaviour
     {
         [SerializeField] private ShotPresentationTuningData tuning;
+        [SerializeField] private PuttResultCinematicTuningData cinematicTuning;
         [SerializeField] private ParticleSystem cupFlash;
         [SerializeField] private ParticleSystem upwardSparkles;
         [SerializeField] private ParticleSystem ringBurst;
         [SerializeField] private ParticleSystem celebrationSparkles;
+
+        private float sequenceElapsed;
+        private float pendingScale;
+        private int pendingSparkleCount;
+        private bool ringPending;
+        private bool celebrationPending;
 
         public int PlayCount { get; private set; }
         public CelebrationPresentationLevel LastLevel { get; private set; }
@@ -18,6 +25,29 @@ namespace SwingPop.VfxSystem
                                  + CountReference(ringBurst) + CountReference(celebrationSparkles);
         public int ActiveParticleCount => Count(cupFlash) + Count(upwardSparkles) + Count(ringBurst)
                                           + Count(celebrationSparkles);
+        public int RingSequenceCount { get; private set; }
+        public int CelebrationSequenceCount { get; private set; }
+        public PuttResultCinematicTuningData CinematicTuning => cinematicTuning;
+
+        private void Update()
+        {
+            if (!ringPending && !celebrationPending)
+            {
+                return;
+            }
+
+            sequenceElapsed += Time.deltaTime;
+            if (ringPending && sequenceElapsed >= cinematicTuning.HoleRingDelay)
+            {
+                ringPending = false;
+                EmitRingAndSparkles(pendingScale, pendingSparkleCount);
+            }
+            if (celebrationPending && sequenceElapsed >= cinematicTuning.HoleCelebrationDelay)
+            {
+                celebrationPending = false;
+                EmitCelebration(pendingScale, pendingSparkleCount);
+            }
+        }
 
         public void Play(Vector3 cupPosition, CelebrationPresentationLevel level)
         {
@@ -29,11 +59,33 @@ namespace SwingPop.VfxSystem
             PlayCount++;
             LastLevel = level;
             transform.position = cupPosition + Vector3.up * 0.08f;
-            float scale = tuning.GetCelebrationScale(level);
+            float scale = tuning.GetCelebrationScale(level)
+                          * (cinematicTuning != null ? cinematicTuning.HoleVfxIntensity : 1f);
             int sparkleCount = Mathf.Max(1, Mathf.RoundToInt(tuning.HoleSparkleCount * scale));
             ConfigureAndEmit(cupFlash, new Color(0.82f, 1f, 1f, 1f), 0.42f * scale, 1);
+            sequenceElapsed = 0f;
+            pendingScale = scale;
+            pendingSparkleCount = sparkleCount;
+            if (cinematicTuning != null)
+            {
+                ringPending = true;
+                celebrationPending = true;
+                return;
+            }
+            EmitRingAndSparkles(scale, sparkleCount);
+            EmitCelebration(scale, sparkleCount);
+        }
+
+        private void EmitRingAndSparkles(float scale, int sparkleCount)
+        {
+            RingSequenceCount++;
             ConfigureAndEmit(upwardSparkles, new Color(0.35f, 1f, 0.85f, 1f), 0.1f * scale, sparkleCount);
             ConfigureAndEmit(ringBurst, new Color(1f, 0.84f, 0.2f, 1f), 0.08f * scale, Mathf.Max(6, sparkleCount / 2));
+        }
+
+        private void EmitCelebration(float scale, int sparkleCount)
+        {
+            CelebrationSequenceCount++;
             ConfigureAndEmit(celebrationSparkles, new Color(0.86f, 1f, 1f, 1f), 0.07f * scale,
                 Mathf.Max(4, sparkleCount / 2));
         }

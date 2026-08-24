@@ -179,7 +179,9 @@ namespace SwingPop.Debugging
                 return;
             }
 
-            bool shouldShow = showAimLine && shotFlow.State != ShotFlowState.ShotCommitted;
+            bool shouldShow = showAimLine
+                              && shotFlow.State != ShotFlowState.ShotCommitted
+                              && (holeFlow == null || holeFlow.State != HoleFlowState.HoleComplete);
             aimLine.enabled = shouldShow;
             if (!shouldShow)
             {
@@ -188,9 +190,12 @@ namespace SwingPop.Debugging
 
             Vector3 origin = ball.transform.position + Vector3.up * 0.08f;
             Vector3 direction = shotFlow.AimDirection.normalized;
+            float displayLength = shotFlow.CurrentClub != null && shotFlow.CurrentClub.IsPutter && holeFlow != null
+                ? Mathf.Min(aimLineLength, Mathf.Max(0.35f, holeFlow.RemainingDistance))
+                : aimLineLength;
             aimLine.SetPosition(0, origin);
-            aimLine.SetPosition(1, origin + direction * aimLineLength);
-            Debug.DrawRay(origin, direction * aimLineLength, Color.cyan);
+            aimLine.SetPosition(1, origin + direction * displayLength);
+            Debug.DrawRay(origin, direction * displayLength, Color.cyan);
         }
 
         private void DrawMeter(string label, float value01, Color fillColor)

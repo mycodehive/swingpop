@@ -18,6 +18,7 @@ namespace SwingPop.CharacterSystem
         [SerializeField] private CharacterAnimationController animationController;
         [SerializeField] private CharacterPresentation presentation;
         [SerializeField] private CharacterTuningData tuning;
+        [SerializeField] private PuttResultCinematicTuningData cinematicTuning;
 
         private Vector3 desiredPosition;
         private Quaternion desiredRotation = Quaternion.identity;
@@ -38,6 +39,7 @@ namespace SwingPop.CharacterSystem
         public bool ImpactEventFired => impactEventFired;
         public string CurrentClubVisual => presentation != null ? presentation.CurrentClubVisual : "None";
         public float CharacterAimAngle => Vector3.SignedAngle(Vector3.forward, desiredRotation * Vector3.forward, Vector3.up);
+        public PuttResultCinematicTuningData CinematicTuning => cinematicTuning;
 
         private void OnEnable()
         {
@@ -212,7 +214,15 @@ namespace SwingPop.CharacterSystem
 
         private void OnHoleCompleted(ScoreResult result)
         {
-            animationController.PlayCelebration(CharacterFlowResolver.ResolveCelebration(result));
+            if (cinematicTuning == null)
+            {
+                PlayCelebrationForResult(result);
+            }
+        }
+
+        public void PlayCelebrationForResult(ScoreResult result)
+        {
+            animationController?.PlayCelebration(CharacterFlowResolver.ResolveCelebration(result));
         }
 
         private void PrepareAddress(bool snap)

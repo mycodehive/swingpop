@@ -20,6 +20,7 @@ namespace SwingPop.AudioSystem
 
         [Header("Audio")]
         [SerializeField] private ShotPresentationTuningData tuning;
+        [SerializeField] private PuttResultCinematicTuningData cinematicTuning;
         [SerializeField] private AudioSource swingSource;
         [SerializeField] private AudioSource impactSource;
         [SerializeField] private AudioSource terrainSource;
@@ -31,6 +32,7 @@ namespace SwingPop.AudioSystem
         public int TotalCueCount { get; private set; }
         public int GeneratedFallbackCount { get; private set; }
         public GameplayAudioCue LastCue { get; private set; }
+        public PuttResultCinematicTuningData CinematicTuning => cinematicTuning;
 
         private void Awake()
         {
@@ -177,8 +179,22 @@ namespace SwingPop.AudioSystem
 
         private void OnHoleCompleted(ScoreResult result)
         {
+            if (cinematicTuning != null)
+            {
+                return;
+            }
             Vector3 cupPosition = holeFlow.Hole.CupPosition;
+            PlayHoleInCue(cupPosition);
+            PlayResultCue(cupPosition);
+        }
+
+        public void PlayHoleInCue(Vector3 cupPosition)
+        {
             PlayCue(GameplayAudioCue.HoleIn, cupPosition, tuning != null ? tuning.HoleVolume : 0.7f);
+        }
+
+        public void PlayResultCue(Vector3 cupPosition)
+        {
             PlayCue(GameplayAudioCue.Result, cupPosition, tuning != null ? tuning.ResultVolume : 0.6f);
         }
 

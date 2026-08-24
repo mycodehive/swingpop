@@ -19,6 +19,7 @@ namespace SwingPop.UI
         [Header("Presentation")]
         [SerializeField] private GameplayHudView view;
         [SerializeField] private HudTuningData tuning;
+        [SerializeField] private PuttResultCinematicTuningData cinematicTuning;
         [SerializeField] private Canvas hudCanvas;
         [SerializeField] private RectTransform safeArea;
         [SerializeField] private Camera worldCamera;
@@ -30,6 +31,7 @@ namespace SwingPop.UI
         private bool hasPendingImpactFeedback;
 
         public GameplayHudView View => view;
+        public PuttResultCinematicTuningData CinematicTuning => cinematicTuning;
 
         private void OnEnable()
         {
@@ -374,8 +376,25 @@ namespace SwingPop.UI
         private void OnHoleCompleted(ScoreResult result)
         {
             RefreshState();
-            float duration = tuning != null ? tuning.ResultShowDuration : 0.42f;
-            view.ResultView?.Show(holeFlow.Hole.HoleNumber, result, duration);
+            if (cinematicTuning == null)
+            {
+                ShowHoleResult(result);
+            }
+        }
+
+        public void ShowHoleResult(ScoreResult result)
+        {
+            if (view == null || holeFlow == null)
+            {
+                return;
+            }
+
+            float duration = cinematicTuning != null
+                ? cinematicTuning.ResultFrameDuration
+                : tuning != null ? tuning.ResultShowDuration : 0.42f;
+            float scoreDelay = cinematicTuning != null ? cinematicTuning.ResultScoreDelay : 0f;
+            float detailDelay = cinematicTuning != null ? cinematicTuning.ResultDetailDelay : 0f;
+            view.ResultView?.Show(holeFlow.Hole.HoleNumber, result, duration, scoreDelay, detailDelay);
         }
     }
 }

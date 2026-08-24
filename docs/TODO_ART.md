@@ -156,6 +156,29 @@ HUD Skin Pass 이후에도 다음은 최종 상용 UI 미완료 항목이다.
 
 위 완료 목록은 상용 HUD 승인이나 final authored UI asset 완료를 뜻하지 않는다. 상세 판정은 `HUD_SKIN_PASS_REVIEW.md`를 따른다.
 
+## Putt / Result Cinematic Pass Completed Placeholders
+
+- [x] Character/Ball/Cup/Flag/Green을 함께 읽는 Putt Address framing
+- [x] Ball/Cup 중심 Rolling framing과 presentation-only Cup Approach threshold
+- [x] Hole-In cup flash → ring/upward sparkle → celebration sparkle timing
+- [x] Hole-In → Character reaction → Result reveal/hold coordinator와 duplicate guard
+- [x] Character-left / Result-right composition과 score-first 3-step Result reveal
+- [x] 기존 ScoreResult, Character celebration mapping, CameraDirector, HUD, VFX, Audio 경로 재사용
+- [x] Putt aim line의 Cup 거리 제한과 HoleComplete visibility 정리
+- [x] `SwingPop > Presentation > Validate Putt Result Cinematic` validator
+- [x] F1/F2/F3/H1/H2/H3 1920×1080 review capture set
+
+Putt / Result Cinematic Pass 이후에도 다음은 최종 상용 presentation 미완료 항목이다.
+
+- [ ] final Putt/celebration authored animation과 final Character FBX 기준 camera retune
+- [ ] authored Result badge/emblem, localization-safe font, typography polish
+- [ ] Hole-In score별 authored VFX variation
+- [ ] licensed Cup drop/success/result audio와 AudioMixer mastering
+- [ ] 1280×720/1600×900 safe-area와 여러 Green 경사/거리 camera collision 검증
+- [ ] PC Development Build Profiler CPU/GPU/GC/Batches/SetPass 기록
+
+이 완료 목록은 presentation foundation 완료를 뜻하며 최종 art/audio 승인을 뜻하지 않는다. 상세 평가는 `PUTT_RESULT_CINEMATIC_PASS_REVIEW.md`를 따른다.
+
 ## VFX Hero Pass Completed Placeholders
 
 - [x] Normal / Great / Perfect의 명시적 impact presentation profile
