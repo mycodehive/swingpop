@@ -187,6 +187,18 @@ namespace SwingPop.Online
             return true;
         }
 
+        public bool AbortForDisconnect(MatchPlayerId playerId)
+        {
+            if (!TryFindPlayer(playerId, out int playerIndex)) return false;
+            if (players[playerIndex].ConnectionState == PlayerConnectionState.Disconnected) return false;
+
+            players[playerIndex] = players[playerIndex].WithConnectionState(PlayerConnectionState.Disconnected);
+            phase = MatchPhase.Aborted;
+            turnState = TurnState.TurnComplete;
+            snapshotVersion++;
+            return true;
+        }
+
         private MatchSnapshot CreateSnapshot()
         {
             MatchPlayerId current = currentPlayerIndex >= 0 && currentPlayerIndex < players.Length

@@ -29,6 +29,11 @@ namespace SwingPop.Online
             return EnsureCore().ResolveShot(result);
         }
 
+        public bool AbortForDisconnect(MatchPlayerId playerId)
+        {
+            return EnsureCore().AbortForDisconnect(playerId);
+        }
+
         private MatchAuthorityCore EnsureCore()
         {
             return core ??= new MatchAuthorityCore(new RoundRobinTurnOrderPolicy());

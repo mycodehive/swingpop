@@ -28,14 +28,17 @@ namespace SwingPop.Debugging
             MatchSnapshot snapshot = session.CurrentSnapshot;
             Rect expandedRect = new(panelRect.x, panelRect.y, Mathf.Max(panelRect.width, 430f), Mathf.Max(panelRect.height, 420f));
             GUILayout.BeginArea(expandedRect, GUI.skin.box);
-            GUILayout.Label("M13 REAL NETWORK PROTOTYPE");
+            bool dedicatedMatch = session.ActiveMode == MultiplayerDevelopmentMode.DedicatedServer
+                                  || snapshot != null && snapshot.MatchId.Value.StartsWith("server-", System.StringComparison.Ordinal);
+            GUILayout.Label(dedicatedMatch ? "M14 DEDICATED AUTHORITY" : "M13 REAL NETWORK PROTOTYPE");
             GUILayout.Label($"Mode: {session.ActiveMode}");
             GUILayout.Label($"Local: {session.LocalPlayerId}");
             UnityTransportMatchTransport network = session.NetworkTransport;
             if (network != null && session.ActiveMode is MultiplayerDevelopmentMode.NetworkHost or MultiplayerDevelopmentMode.NetworkClient)
             {
                 GUILayout.Label($"Role / Connection: {network.Role} / {network.ConnectionState}");
-                string remoteId = session.ActiveMode == MultiplayerDevelopmentMode.NetworkHost ? "player-b" : "player-a";
+                string remoteId = session.ActiveMode == MultiplayerDevelopmentMode.NetworkHost
+                    ? "player-b" : dedicatedMatch ? "authority-server" : "player-a";
                 GUILayout.Label($"Endpoint: {network.Address}:{network.Port} | Remote: {(network.IsReady ? remoteId : "WAITING")}");
                 GUILayout.Label($"RTT: {network.RoundTripTimeMilliseconds:F0} ms | Msg: {network.MessageCount}");
                 GUILayout.Label($"Envelope Seq: TX {network.OutboundSequence} / RX {network.InboundSequence}");
@@ -43,6 +46,15 @@ namespace SwingPop.Debugging
                 GUILayout.Label($"Reject: {network.RejectedMessageCount} ({network.LastRejectionReason})");
                 GUILayout.Label($"Hash: {network.LocalSnapshotHash} | Remote v{network.RemoteSnapshotVersion} | Desync: {network.DesyncCount}");
                 GUILayout.Label($"Predicted error: {network.LastDesyncReport.PositionError:F3} m");
+            }
+            DedicatedServerMatchTransport server = session.DedicatedServerTransport;
+            if (server != null && session.ActiveMode == MultiplayerDevelopmentMode.DedicatedServer)
+            {
+                GUILayout.Label($"Server: {server.ConnectionState} / {server.LifecycleState}");
+                GUILayout.Label($"Players: {server.ConnectedPlayerCount}/{server.MaxPlayers} | Endpoint: {server.Address}:{server.Port}");
+                GUILayout.Label($"Bytes: TX {server.SentBytes} / RX {server.ReceivedBytes} | Msg: {server.MessageCount}");
+                GUILayout.Label($"Seq: {server.OutboundSequence} | Reject: {server.RejectedMessageCount} ({server.LastRejectionReason})");
+                GUILayout.Label($"Hash: {server.LocalSnapshotHash} | Desync: {server.DesyncCount}");
             }
             if (snapshot == null)
             {

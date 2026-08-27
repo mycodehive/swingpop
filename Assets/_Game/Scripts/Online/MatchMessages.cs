@@ -88,6 +88,25 @@ namespace SwingPop.Online
                 result.RelativeToPar,
                 result.ScoreLabel);
         }
+
+        public PlayerSnapshot WithConnectionState(PlayerConnectionState nextState)
+        {
+            return new PlayerSnapshot(
+                playerId,
+                displayName,
+                displayOrder,
+                slotIndex,
+                localPresentationHint,
+                nextState,
+                strokeCount,
+                penaltyCount,
+                ballPosition,
+                lastValidPosition,
+                lie,
+                holed,
+                relativeToPar,
+                scoreLabel);
+        }
     }
 
     [Serializable]

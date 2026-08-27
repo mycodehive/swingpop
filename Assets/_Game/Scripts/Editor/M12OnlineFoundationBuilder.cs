@@ -52,6 +52,8 @@ namespace SwingPop.Editor
             LocalMatchAuthority authority = root.AddComponent<LocalMatchAuthority>();
             LocalLoopbackTransport transport = root.AddComponent<LocalLoopbackTransport>();
             UnityTransportMatchTransport networkTransport = root.AddComponent<UnityTransportMatchTransport>();
+            DedicatedServerMatchTransport dedicatedServerTransport = root.AddComponent<DedicatedServerMatchTransport>();
+            DedicatedServerBootstrap dedicatedServerBootstrap = root.AddComponent<DedicatedServerBootstrap>();
             MatchSessionController session = root.AddComponent<MatchSessionController>();
             MultiplayerTurnPresenter presenter = root.AddComponent<MultiplayerTurnPresenter>();
             MultiplayerDebugOverlay debug = root.AddComponent<MultiplayerDebugOverlay>();
@@ -62,10 +64,12 @@ namespace SwingPop.Editor
             SetReference(session, "authority", authority);
             SetReference(session, "transport", transport);
             SetReference(session, "networkTransport", networkTransport);
+            SetReference(session, "dedicatedServerTransport", dedicatedServerTransport);
             SetReference(session, "shotFlow", shotFlow);
             SetReference(session, "ball", ball);
             SetReference(session, "holeFlow", holeFlow);
             SetObjectArray(session, "surfaces", CollectSurfaceData());
+            SetReference(dedicatedServerBootstrap, "settings", settings);
 
             RectTransform safeArea = FindInScene(scene, "Safe Area")?.GetComponent<RectTransform>();
             if (safeArea == null) throw new InvalidOperationException("Gameplay HUD Safe Area is missing.");

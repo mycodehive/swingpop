@@ -35,13 +35,16 @@ namespace SwingPop.Online
     public struct ClientHelloMessage
     {
         [SerializeField] private string clientBuild;
+        [SerializeField] private ClientRequestedRole requestedRole;
 
-        public ClientHelloMessage(string clientBuild)
+        public ClientHelloMessage(string clientBuild, ClientRequestedRole requestedRole = ClientRequestedRole.Player)
         {
             this.clientBuild = clientBuild ?? string.Empty;
+            this.requestedRole = requestedRole;
         }
 
         public string ClientBuild => clientBuild ?? string.Empty;
+        public ClientRequestedRole RequestedRole => requestedRole;
     }
 
     [Serializable]
@@ -104,6 +107,22 @@ namespace SwingPop.Online
         public string Reason => reason ?? string.Empty;
     }
 
+    [Serializable]
+    public struct ConnectionRejectedMessage
+    {
+        [SerializeField] private ShotRejectReason reason;
+        [SerializeField] private string detail;
+
+        public ConnectionRejectedMessage(ShotRejectReason reason, string detail)
+        {
+            this.reason = reason;
+            this.detail = detail ?? string.Empty;
+        }
+
+        public ShotRejectReason Reason => reason;
+        public string Detail => detail ?? string.Empty;
+    }
+
     public readonly struct NetworkLaunchOptions
     {
         public NetworkLaunchOptions(MultiplayerDevelopmentMode mode, string address, ushort port)
@@ -116,7 +135,8 @@ namespace SwingPop.Online
         public MultiplayerDevelopmentMode Mode { get; }
         public string Address { get; }
         public ushort Port { get; }
-        public bool HasNetworkOverride => Mode is MultiplayerDevelopmentMode.NetworkHost or MultiplayerDevelopmentMode.NetworkClient;
+        public bool HasNetworkOverride => Mode is MultiplayerDevelopmentMode.NetworkHost
+            or MultiplayerDevelopmentMode.NetworkClient or MultiplayerDevelopmentMode.DedicatedServer;
 
         public static NetworkLaunchOptions Parse(string[] arguments, string defaultAddress = "127.0.0.1", ushort defaultPort = 7777)
         {
@@ -131,6 +151,8 @@ namespace SwingPop.Online
                     mode = MultiplayerDevelopmentMode.NetworkHost;
                 else if (string.Equals(argument, "-swingpopClient", StringComparison.OrdinalIgnoreCase))
                     mode = MultiplayerDevelopmentMode.NetworkClient;
+                else if (string.Equals(argument, "-swingpopServer", StringComparison.OrdinalIgnoreCase))
+                    mode = MultiplayerDevelopmentMode.DedicatedServer;
                 else if (argument != null && argument.StartsWith("-swingpopAddress=", StringComparison.OrdinalIgnoreCase))
                     address = argument.Substring("-swingpopAddress=".Length).Trim();
                 else if (argument != null && argument.StartsWith("-swingpopPort=", StringComparison.OrdinalIgnoreCase)
@@ -176,6 +198,17 @@ namespace SwingPop.Online
         }
 
         public bool Remove(int connectionId) => players.Remove(connectionId);
+        public bool ContainsPlayer(MatchPlayerId playerId)
+        {
+            foreach (MatchPlayerId value in players.Values)
+                if (value == playerId) return true;
+            return false;
+        }
+
+        public bool TryGetPlayer(int connectionId, out MatchPlayerId playerId)
+        {
+            return players.TryGetValue(connectionId, out playerId);
+        }
         public void Clear() => players.Clear();
     }
 
@@ -225,6 +258,83 @@ namespace SwingPop.Online
             if (sequenceGuard == null || !sequenceGuard.TryAccept(envelope.Sequence)) return ShotRejectReason.StaleMessage;
             return ShotRejectReason.None;
         }
+
+        public static bool IsAllowedFromClient(NetworkMessageType messageType)
+        {
+            return messageType is NetworkMessageType.ClientHello
+                or NetworkMessageType.ShotSubmission
+                or NetworkMessageType.PredictedShotResult
+                or NetworkMessageType.SnapshotHash
+                or NetworkMessageType.Ping
+                or NetworkMessageType.Pong
+                or NetworkMessageType.DisconnectNotice;
+        }
+
+        public static bool IsAllowedFromServer(NetworkMessageType messageType)
+        {
+            return messageType is NetworkMessageType.PlayerAssigned
+                or NetworkMessageType.MatchStarted
+                or NetworkMessageType.ShotApproved
+                or NetworkMessageType.ShotRejected
+                or NetworkMessageType.Snapshot
+                or NetworkMessageType.TurnChanged
+                or NetworkMessageType.Ping
+                or NetworkMessageType.Pong
+                or NetworkMessageType.DisconnectNotice
+                or NetworkMessageType.ConnectionRejected;
+        }
+    }
+
+    public sealed class DedicatedPlayerSlotAllocator
+    {
+        private static readonly MatchPlayerId PlayerA = new("player-a");
+        private static readonly MatchPlayerId PlayerB = new("player-b");
+        private readonly HashSet<MatchPlayerId> occupied = new();
+
+        public int Count => occupied.Count;
+
+        public bool TryAssign(out MatchPlayerId playerId)
+        {
+            if (!occupied.Contains(PlayerA)) playerId = PlayerA;
+            else if (!occupied.Contains(PlayerB)) playerId = PlayerB;
+            else
+            {
+                playerId = default;
+                return false;
+            }
+            occupied.Add(playerId);
+            return true;
+        }
+
+        public bool Release(MatchPlayerId playerId) => occupied.Remove(playerId);
+        public void Reset() => occupied.Clear();
+    }
+
+    public sealed class DedicatedMatchLifecycle
+    {
+        public DedicatedMatchLifecycleState State { get; private set; } = DedicatedMatchLifecycleState.WaitingForPlayers;
+
+        public bool TryTransition(DedicatedMatchLifecycleState next)
+        {
+            if (State == next) return true;
+            bool allowed = State switch
+            {
+                DedicatedMatchLifecycleState.WaitingForPlayers => next is DedicatedMatchLifecycleState.Starting
+                    or DedicatedMatchLifecycleState.Ended,
+                DedicatedMatchLifecycleState.Starting => next is DedicatedMatchLifecycleState.Playing
+                    or DedicatedMatchLifecycleState.Aborted,
+                DedicatedMatchLifecycleState.Playing => next is DedicatedMatchLifecycleState.HoleComplete
+                    or DedicatedMatchLifecycleState.Aborted,
+                DedicatedMatchLifecycleState.HoleComplete => next == DedicatedMatchLifecycleState.Ended,
+                DedicatedMatchLifecycleState.Aborted => next == DedicatedMatchLifecycleState.Ended,
+                DedicatedMatchLifecycleState.Ended => next == DedicatedMatchLifecycleState.WaitingForPlayers,
+                _ => false
+            };
+            if (allowed) State = next;
+            return allowed;
+        }
+
+        public void Reset() => State = DedicatedMatchLifecycleState.WaitingForPlayers;
     }
 
     public static class MatchSnapshotHash

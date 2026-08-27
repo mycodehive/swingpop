@@ -506,3 +506,15 @@ Green까지 직접 이동하지 않고 Putt 구도만 확인하려면 Play Mode�
 - [x] Add command-line launch, Development build, F2 telemetry, validator, tests, localhost two-process evidence, and captures.
 - [x] Preserve OfflineSingle/LocalTwoPlayer and graphics validation baselines.
 - [ ] Do not start M14 in this milestone.
+
+## M14 Dedicated Authority / Server Simulation Foundation (2026-08-27)
+
+- [x] Preserve protocol 2, DTOs, authority/transport interfaces, OfflineSingle default, and M13 modes.
+- [x] Add independent `DedicatedServer` mode, command-line bootstrap, and two-player server transport.
+- [x] Assign remote A/B by connection order and reject a third connection as `MatchFull`.
+- [x] Execute authoritative shots with existing Rigidbody Ball/HoleFlow without Character Animator.
+- [x] Keep clients on approved playback plus authoritative snapshot correction.
+- [x] Synchronize turn, ball, lie, stroke, penalty, hazard, putter, holed, lifecycle, version, and hash state.
+- [x] Disable server presentation by typed policy while retaining shared Hole01 colliders.
+- [x] Add build/validator tools, EditMode/PlayMode coverage, headless and three-process evidence, captures, and documentation.
+- [ ] Do not start M15 in this milestone.

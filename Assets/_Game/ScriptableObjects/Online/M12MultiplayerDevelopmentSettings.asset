@@ -20,3 +20,6 @@ MonoBehaviour:
   hostAddress: 127.0.0.1
   port: 7777
   connectionTimeoutSeconds: 8
+  dedicatedServerMaxPlayers: 2
+  disableServerPresentation: 1
+  desyncWarningThreshold: 0.25

@@ -344,6 +344,21 @@ namespace SwingPop.Gameplay.Shot
             return FinalizeCommittedShot(command);
         }
 
+        /// <summary>
+        /// Dedicated authority entry point. It reuses the normal command, shot state, ball launch,
+        /// and HoleFlow events, but never waits for a character Animator impact marker.
+        /// </summary>
+        public bool TryExecuteAuthoritativeShot(ShotCommand command)
+        {
+            if (state != ShotFlowState.Aiming || ball == null || ball.State != BallState.Ready)
+            {
+                return false;
+            }
+
+            if (!FinalizeCommittedShot(command)) return false;
+            return !hasPendingBallLaunch || TryLaunchCommittedShot();
+        }
+
         private void UpdateAim(float deltaTime)
         {
             aimAngleDegrees = ShotCalculator.ClampAimAngle(

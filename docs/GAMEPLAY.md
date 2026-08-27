@@ -411,3 +411,12 @@ Player A Ready
 - The host simulates and resolves every approved shot through existing Ball/HoleFlow. Client prediction cannot change match state.
 - Host snapshots restore ball position, last valid position, lie, strokes, penalties, holed state, club selection, current turn, and sequence.
 - Network-mode debug reset is blocked. F2 telemetry is presentation-only.
+
+## 26. M14 Dedicated Gameplay Contract
+
+- The dedicated server is not Player A or Player B and cannot submit a player shot.
+- The first remote connection is `player-a`; the second is `player-b`; a third is rejected as `MatchFull`.
+- Only the current player can submit. The server validates identity/turn/sequence, broadcasts approval, and launches the existing server Rigidbody shot without waiting for Character Animator.
+- Client ball motion is presentation prediction. Server Ball/HoleFlow owns settle position, lie, hazard penalty/recovery, strokes, putter state, hole-in, next turn, and MatchComplete.
+- A disconnected player marks the match `Aborted`; reconnect/forfeit UX is not part of M14.
+- OfflineSingle remains the default and M13 Host/Client behaviour remains available.

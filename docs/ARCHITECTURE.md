@@ -529,3 +529,9 @@ HoleFlow.HoleCompleted ───────────────────
 `UnityTransportMatchTransport` is a second `IMatchTransport` adapter beside M12's `LocalLoopbackTransport`. `NetworkHost` alone owns `LocalMatchAuthority` and the authoritative gameplay result. `NetworkClient` submits commands, waits for approval, plays approved commands for presentation, and accepts versioned host snapshots at the settle boundary.
 
 No network dependency was added to Camera, Character, HUD, VFX, or Audio cores. See `docs/M13_REAL_NETWORK_TRANSPORT_ARCHITECTURE.md`.
+
+## M14 Dedicated Authority Boundary
+
+`DedicatedServerMatchTransport` is an additional `IMatchTransport` adapter; it does not replace M12 LocalLoopback or M13 Unity Transport Host/Client. The dedicated process has no player, assigns two remote player IDs, owns `LocalMatchAuthority`, executes approved commands through the existing Rigidbody Ball/HoleFlow graph without Character Animator, and alone publishes results/snapshots. Clients remain approved-playback and snapshot-correction consumers.
+
+The shared Hole01 server scene disables presentation by explicit component type while keeping physics colliders. Protocol version 2 and M13 DTO/interfaces remain compatible. See `docs/M14_DEDICATED_AUTHORITY_ARCHITECTURE.md`.

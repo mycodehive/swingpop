@@ -396,6 +396,15 @@ namespace SwingPop.Online
                 case NetworkMessageType.DisconnectNotice:
                     HandleDisconnect(serializer.Deserialize<DisconnectNoticeMessage>(envelope.Payload).Reason);
                     break;
+                case NetworkMessageType.ConnectionRejected when role == NetworkRole.Client:
+                {
+                    ConnectionRejectedMessage rejection = serializer.Deserialize<ConnectionRejectedMessage>(envelope.Payload);
+                    LastRejectionReason = rejection.Reason;
+                    RejectedMessageCount++;
+                    // Capacity/protocol refusal is an expected handshake outcome, not a runtime fault.
+                    Fail(string.IsNullOrWhiteSpace(rejection.Detail) ? rejection.Reason.ToString() : rejection.Detail, false);
+                    break;
+                }
             }
         }
 
@@ -523,19 +532,24 @@ namespace SwingPop.Online
 
         private void HandleDisconnect(string reason)
         {
+            bool rejectionAlreadyReported = connectionState.State == NetworkConnectionState.Failed;
             playerRegistry.Clear();
             assignedPlayer = default;
             RemoteSnapshotVersion = -1;
             connection = default;
-            connectionState.TryTransition(NetworkConnectionState.Disconnected);
-            Disconnected?.Invoke(reason ?? "Disconnected");
+            if (!rejectionAlreadyReported)
+            {
+                connectionState.TryTransition(NetworkConnectionState.Disconnected);
+                Disconnected?.Invoke(reason ?? "Disconnected");
+            }
             Log($"DISCONNECTED: {reason}");
         }
 
-        private void Fail(string reason)
+        private void Fail(string reason, bool logAsError = true)
         {
             connectionState.TryTransition(NetworkConnectionState.Failed);
-            Debug.LogError($"[M13][Transport] {reason}", this);
+            if (logAsError) Debug.LogError($"[M13][Transport] {reason}", this);
+            else Debug.LogWarning($"[M13][Transport] {reason}", this);
             Disconnected?.Invoke(reason);
         }
 

@@ -4,6 +4,7 @@ namespace SwingPop.Online
     {
         public const int CurrentVersion = 2;
         public const int MaximumPlayers = 4;
+        public const int DedicatedServerPlayerCapacity = 2;
         public const int MaximumProcessedShotHistory = 64;
         public const int MaximumPayloadBytes = 64 * 1024;
     }
@@ -13,7 +14,8 @@ namespace SwingPop.Online
         OfflineSingle,
         LocalTwoPlayer,
         NetworkHost,
-        NetworkClient
+        NetworkClient,
+        DedicatedServer
     }
 
     public enum MatchPhase
@@ -61,14 +63,17 @@ namespace SwingPop.Online
         StaleMessage,
         PayloadTooLarge,
         RateLimited,
-        ConnectionNotReady
+        ConnectionNotReady,
+        MatchFull,
+        MessageDirectionNotAllowed
     }
 
     public enum NetworkRole
     {
         None,
         Host,
-        Client
+        Client,
+        DedicatedServer
     }
 
     public enum NetworkConnectionState
@@ -99,6 +104,22 @@ namespace SwingPop.Online
         PredictedShotResult,
         Ping,
         Pong,
-        DisconnectNotice
+        DisconnectNotice,
+        ConnectionRejected
+    }
+
+    public enum ClientRequestedRole
+    {
+        Player
+    }
+
+    public enum DedicatedMatchLifecycleState
+    {
+        WaitingForPlayers,
+        Starting,
+        Playing,
+        HoleComplete,
+        Ended,
+        Aborted
     }
 }

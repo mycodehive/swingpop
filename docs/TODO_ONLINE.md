@@ -23,6 +23,18 @@
 - [x] Timeout, disconnect cleanup, and listener restart
 - [x] Development build, command-line roles, validator, tests, and captures
 
+### M14 Dedicated Authority Foundation
+
+- [x] Independent dedicated server role with no local player
+- [x] Two remote slots with connection-order Player A/B assignment
+- [x] Third-client `MatchFull` rejection and message-direction enforcement
+- [x] Server-only approval, Rigidbody simulation, result, snapshot, and turn authority
+- [x] Animator-independent server shot entry point using existing Ball/HoleFlow
+- [x] Shared Hole01 scene with typed headless presentation shutdown and collider retention
+- [x] Client approved playback, settle correction, snapshot version/hash convergence
+- [x] Disconnect abort/cleanup, server-termination handling, and listener restart
+- [x] Server/client builds, validator, tests, three-process logs, and captures
+
 ## Future Production Work
 
 ### Relay / NAT
@@ -50,10 +62,11 @@
 - [ ] Grace period, latest-snapshot request, pending-shot reconciliation
 - [ ] Rejoin identity proof, timeout, forfeit, and user-facing UX
 
-### Dedicated Authority
+### Dedicated Deployment / Operations
 
-- [ ] Move host authority/gameplay simulation to a trusted dedicated process
-- [ ] Headless simulation validation, deployment, monitoring, host migration policy
+- [ ] Install and validate Unity's native Dedicated Server build target
+- [ ] Container/image packaging, regions, scaling, health checks, monitoring, and alerting
+- [ ] Load, soak, packet-loss/jitter, chaos, and cost/bandwidth gates
 
 ### Multi-Hole
 
