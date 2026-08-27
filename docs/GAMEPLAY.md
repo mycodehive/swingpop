@@ -420,3 +420,6 @@ Player A Ready
 - Client ball motion is presentation prediction. Server Ball/HoleFlow owns settle position, lie, hazard penalty/recovery, strokes, putter state, hole-in, next turn, and MatchComplete.
 - A disconnected player marks the match `Aborted`; reconnect/forfeit UX is not part of M14.
 - OfflineSingle remains the default and M13 Host/Client behaviour remains available.
+# M15 Reconnect Gameplay Policy
+
+In a dedicated two-player match, one disconnected player suspends new shots for both players. An already approved server shot may finish and be recorded exactly once. Reconnect restores the newest stable authoritative snapshot and resumes the preserved turn; grace expiry aborts the match. This policy does not change offline gameplay, shot tuning, terrain, scoring, or club selection.

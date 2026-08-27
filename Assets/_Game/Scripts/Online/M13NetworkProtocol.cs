@@ -267,7 +267,8 @@ namespace SwingPop.Online
                 or NetworkMessageType.SnapshotHash
                 or NetworkMessageType.Ping
                 or NetworkMessageType.Pong
-                or NetworkMessageType.DisconnectNotice;
+                or NetworkMessageType.DisconnectNotice
+                or NetworkMessageType.ReconnectRequest;
         }
 
         public static bool IsAllowedFromServer(NetworkMessageType messageType)
@@ -281,7 +282,11 @@ namespace SwingPop.Online
                 or NetworkMessageType.Ping
                 or NetworkMessageType.Pong
                 or NetworkMessageType.DisconnectNotice
-                or NetworkMessageType.ConnectionRejected;
+                or NetworkMessageType.ConnectionRejected
+                or NetworkMessageType.ReconnectTicketIssued
+                or NetworkMessageType.ReconnectAccepted
+                or NetworkMessageType.ReconnectRejected
+                or NetworkMessageType.MatchLifecycleChanged;
         }
     }
 
@@ -324,6 +329,8 @@ namespace SwingPop.Online
                 DedicatedMatchLifecycleState.Starting => next is DedicatedMatchLifecycleState.Playing
                     or DedicatedMatchLifecycleState.Aborted,
                 DedicatedMatchLifecycleState.Playing => next is DedicatedMatchLifecycleState.HoleComplete
+                    or DedicatedMatchLifecycleState.ReconnectGrace or DedicatedMatchLifecycleState.Aborted,
+                DedicatedMatchLifecycleState.ReconnectGrace => next is DedicatedMatchLifecycleState.Playing
                     or DedicatedMatchLifecycleState.Aborted,
                 DedicatedMatchLifecycleState.HoleComplete => next == DedicatedMatchLifecycleState.Ended,
                 DedicatedMatchLifecycleState.Aborted => next == DedicatedMatchLifecycleState.Ended,

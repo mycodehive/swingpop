@@ -199,6 +199,35 @@ namespace SwingPop.Online
             return true;
         }
 
+        public bool EnterReconnectGrace(MatchPlayerId playerId)
+        {
+            if (phase != MatchPhase.Playing || !TryFindPlayer(playerId, out int playerIndex)) return false;
+            if (players[playerIndex].ConnectionState != PlayerConnectionState.Connected) return false;
+            players[playerIndex] = players[playerIndex].WithConnectionState(PlayerConnectionState.ReconnectGrace);
+            snapshotVersion++;
+            return true;
+        }
+
+        public bool ReconnectPlayer(MatchPlayerId playerId)
+        {
+            if (phase != MatchPhase.Playing || !TryFindPlayer(playerId, out int playerIndex)) return false;
+            if (players[playerIndex].ConnectionState != PlayerConnectionState.ReconnectGrace) return false;
+            players[playerIndex] = players[playerIndex].WithConnectionState(PlayerConnectionState.Connected);
+            snapshotVersion++;
+            return true;
+        }
+
+        public bool ExpireReconnectGrace(MatchPlayerId playerId)
+        {
+            if (!TryFindPlayer(playerId, out int playerIndex)) return false;
+            if (players[playerIndex].ConnectionState != PlayerConnectionState.ReconnectGrace) return false;
+            players[playerIndex] = players[playerIndex].WithConnectionState(PlayerConnectionState.Expired);
+            phase = MatchPhase.Aborted;
+            turnState = TurnState.TurnComplete;
+            snapshotVersion++;
+            return true;
+        }
+
         private MatchSnapshot CreateSnapshot()
         {
             MatchPlayerId current = currentPlayerIndex >= 0 && currentPlayerIndex < players.Length

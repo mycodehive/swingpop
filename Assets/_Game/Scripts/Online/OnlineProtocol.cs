@@ -43,7 +43,9 @@ namespace SwingPop.Online
     public enum PlayerConnectionState
     {
         Connected,
-        Disconnected
+        Disconnected,
+        ReconnectGrace,
+        Expired
     }
 
     public enum ShotRejectReason
@@ -64,6 +66,7 @@ namespace SwingPop.Online
         PayloadTooLarge,
         RateLimited,
         ConnectionNotReady,
+        MatchSuspended,
         MatchFull,
         MessageDirectionNotAllowed
     }
@@ -105,7 +108,12 @@ namespace SwingPop.Online
         Ping,
         Pong,
         DisconnectNotice,
-        ConnectionRejected
+        ConnectionRejected,
+        ReconnectTicketIssued,
+        ReconnectRequest,
+        ReconnectAccepted,
+        ReconnectRejected,
+        MatchLifecycleChanged
     }
 
     public enum ClientRequestedRole
@@ -118,6 +126,7 @@ namespace SwingPop.Online
         WaitingForPlayers,
         Starting,
         Playing,
+        ReconnectGrace,
         HoleComplete,
         Ended,
         Aborted

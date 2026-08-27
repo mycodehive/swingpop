@@ -23,10 +23,12 @@ namespace SwingPop.Online
             public bool HandshakeComplete;
             public float RateWindowElapsed;
             public int SubmissionsInWindow;
+            public int ReconnectRequestsInWindow;
             public long SentBytes;
             public long ReceivedBytes;
             public long SnapshotVersion = -1;
             public string SnapshotHash = string.Empty;
+            public long AcceptedAtMilliseconds;
         }
 
         private sealed class RejectedPeer
@@ -46,15 +48,22 @@ namespace SwingPop.Online
         private readonly List<ClientPeer> peers = new(OnlineProtocol.DedicatedServerPlayerCapacity);
         private readonly List<RejectedPeer> rejectedPeers = new();
         private readonly NetworkDesyncTelemetry desyncTelemetry = new();
+        private readonly ReconnectSessionRegistry reconnectSessions = new();
+        private readonly IServerClock serverClock = new SystemServerClock();
         private NetworkDriver driver;
         private NetworkPipeline reliablePipeline;
         private NetworkConnectionStateMachine connectionState = new();
         private string address = "127.0.0.1";
         private ushort port = 7777;
         private float timeoutSeconds = 8f;
+        private float livenessTimeoutSeconds = 30f;
         private float pingElapsed;
         private long outboundSequence;
         private bool matchStarted;
+        private float reconnectGraceSeconds = 30f;
+        private float endedCleanupElapsed;
+        private float reconnectRateWindowElapsed;
+        private int reconnectRequestsInWindow;
 
         public event Action<ApprovedShot> ShotApprovedReceived;
         public event Action<ShotRejection> ShotRejectedReceived;
@@ -63,12 +72,23 @@ namespace SwingPop.Online
         public event Action<MatchPlayerId> PlayerDisconnected;
         public event Action AllPlayersReady;
         public event Action<string> ServerError;
+        public event Action<MatchLifecycleChangedMessage> LifecycleChanged;
 
         public int PendingMessageCount => 0;
         public int MessageCount { get; private set; }
         public int LastShotSubmissionBytes { get; private set; }
         public int LastSnapshotBytes { get; private set; }
-        public int ConnectedPlayerCount => slotAllocator.Count;
+        public int ConnectedPlayerCount
+        {
+            get
+            {
+                int count = 0;
+                for (int index = 0; index < peers.Count; index++)
+                    if (peers[index].HandshakeComplete) count++;
+                return count;
+            }
+        }
+        public int ReservedPlayerCount => slotAllocator.Count;
         public int MaxPlayers => Mathf.Clamp(maxPlayers, 2, 2);
         public NetworkConnectionState ConnectionState => connectionState.State;
         public DedicatedMatchLifecycleState LifecycleState => lifecycle.State;
@@ -83,6 +103,8 @@ namespace SwingPop.Online
         public string LocalSnapshotHash { get; private set; } = string.Empty;
         public bool IsCreated => driver.IsCreated;
         public bool IsReady => matchStarted && connectionState.State == NetworkConnectionState.InMatch;
+        public bool IsMatchSuspended => lifecycle.State == DedicatedMatchLifecycleState.ReconnectGrace;
+        public float ReconnectGraceSeconds => reconnectGraceSeconds;
 
         private void Update() => Tick(Time.unscaledDeltaTime);
         private void OnDisable() => CancelPending();
@@ -92,6 +114,16 @@ namespace SwingPop.Online
             authority = matchAuthority;
             maxPlayers = Mathf.Clamp(playerCapacity, 2, 2);
             verboseLogging = verbose;
+        }
+
+        public void ConfigureReconnectPolicy(float graceSeconds)
+        {
+            reconnectGraceSeconds = Mathf.Clamp(graceSeconds, 3f, 120f);
+        }
+
+        public void ConfigureConnectionLiveness(float seconds)
+        {
+            livenessTimeoutSeconds = Mathf.Clamp(seconds, 15f, 120f);
         }
 
         public bool StartDedicatedServer(string bindAddress, ushort networkPort, float connectionTimeoutSeconds)
@@ -124,6 +156,15 @@ namespace SwingPop.Online
             lifecycle.TryTransition(DedicatedMatchLifecycleState.Starting);
             matchStarted = true;
             connectionState.TryTransition(NetworkConnectionState.InMatch);
+            for (int index = 0; index < peers.Count; index++)
+            {
+                ClientPeer peer = peers[index];
+                if (!peer.HandshakeComplete || !peer.PlayerId.IsValid) continue;
+                ReconnectTicket ticket = reconnectSessions.Register(initialSnapshot.MatchId, peer.PlayerId,
+                    serverClock.UtcNowMilliseconds);
+                SendTo(peer, NetworkMessageType.ReconnectTicketIssued, initialSnapshot.MatchId,
+                    serializer.Serialize(new ReconnectTicketIssuedMessage(ticket)));
+            }
             Broadcast(NetworkMessageType.MatchStarted, initialSnapshot.MatchId, serializer.Serialize(initialSnapshot));
             PublishSnapshot(initialSnapshot);
             lifecycle.TryTransition(DedicatedMatchLifecycleState.Playing);
@@ -175,6 +216,12 @@ namespace SwingPop.Online
             driver.ScheduleUpdate().Complete();
             float safeDelta = Mathf.Max(0f, deltaTime);
             pingElapsed += safeDelta;
+            reconnectRateWindowElapsed += safeDelta;
+            if (reconnectRateWindowElapsed >= 1f)
+            {
+                reconnectRateWindowElapsed = 0f;
+                reconnectRequestsInWindow = 0;
+            }
             PollRejectedConnections();
             AcceptConnections();
             for (int index = peers.Count - 1; index >= 0; index--)
@@ -185,8 +232,17 @@ namespace SwingPop.Online
                 {
                     peer.RateWindowElapsed = 0f;
                     peer.SubmissionsInWindow = 0;
+                    peer.ReconnectRequestsInWindow = 0;
                 }
                 PollPeer(peer);
+            }
+
+            CheckReconnectDeadline();
+            if (lifecycle.State == DedicatedMatchLifecycleState.Aborted)
+            {
+                endedCleanupElapsed += safeDelta;
+                if (endedCleanupElapsed >= 2f && lifecycle.TryTransition(DedicatedMatchLifecycleState.Ended))
+                    BroadcastLifecycle(default, PlayerConnectionState.Expired, 0L, "Match ended after reconnect grace expiry");
             }
 
             if (peers.Count > 0 && pingElapsed >= 1f)
@@ -224,12 +280,15 @@ namespace SwingPop.Online
             networkSettings.WithNetworkConfigParameters(
                 connectTimeoutMS: 1000,
                 maxConnectAttempts: Mathf.CeilToInt(timeoutSeconds),
-                disconnectTimeoutMS: Mathf.RoundToInt(timeoutSeconds * 1000f),
+                disconnectTimeoutMS: Mathf.RoundToInt(livenessTimeoutSeconds * 1000f),
                 heartbeatTimeoutMS: 500,
                 receiveQueueCapacity: 256,
                 sendQueueCapacity: 256);
             networkSettings.WithFragmentationStageParameters(OnlineProtocol.MaximumPayloadBytes);
-            driver = NetworkDriver.Create(networkSettings);
+            // M15 uses UTP's WebSocket interface (TCP-backed on standalone players). A hard-killed
+            // localhost UDP peer can poison the shared Windows loopback socket and starve the
+            // remaining peer; the stream interface gives each peer an independent OS connection.
+            driver = NetworkDriver.Create(new WebSocketNetworkInterface(), networkSettings);
             reliablePipeline = driver.CreatePipeline(typeof(FragmentationPipelineStage), typeof(ReliableSequencedPipelineStage));
         }
 
@@ -238,7 +297,7 @@ namespace SwingPop.Online
             NetworkConnection accepted;
             while ((accepted = driver.Accept()) != default)
             {
-                if (matchStarted || peers.Count >= MaxPlayers)
+                if (peers.Count >= MaxPlayers + 2)
                 {
                     SendToConnection(accepted, NetworkMessageType.ConnectionRejected, default,
                         serializer.Serialize(new ConnectionRejectedMessage(ShotRejectReason.MatchFull, "MatchFull")), null);
@@ -247,11 +306,15 @@ namespace SwingPop.Online
                     rejectedPeers.Add(new RejectedPeer { Connection = accepted });
                     LastRejectionReason = ShotRejectReason.MatchFull;
                     RejectedMessageCount++;
-                    Log("Connection", "Rejected additional client: MatchFull");
+                    Log("Connection", "Rejected excessive pending client: MatchFull");
                     continue;
                 }
 
-                peers.Add(new ClientPeer { Connection = accepted });
+                peers.Add(new ClientPeer
+                {
+                    Connection = accepted,
+                    AcceptedAtMilliseconds = serverClock.UtcNowMilliseconds
+                });
                 connectionState.TryTransition(NetworkConnectionState.Handshaking);
                 Log("Connection", $"Accepted socket; handshakes={peers.Count}/{MaxPlayers}");
             }
@@ -283,6 +346,14 @@ namespace SwingPop.Online
 
         private void PollPeer(ClientPeer peer)
         {
+            if (!peer.HandshakeComplete
+                && serverClock.UtcNowMilliseconds - peer.AcceptedAtMilliseconds > timeoutSeconds * 1000f)
+            {
+                RejectAndClose(peer, NetworkMessageType.ConnectionRejected,
+                    serializer.Serialize(new ConnectionRejectedMessage(ShotRejectReason.ConnectionNotReady,
+                        "Handshake timeout")));
+                return;
+            }
             NetworkEvent.Type eventType;
             while ((eventType = peer.Connection.PopEvent(driver, out DataStreamReader reader)) != NetworkEvent.Type.Empty)
             {
@@ -292,6 +363,9 @@ namespace SwingPop.Online
                         Receive(peer, reader);
                         break;
                     case NetworkEvent.Type.Disconnect:
+                        byte reasonCode = reader.Length > 0 ? reader.ReadByte() : (byte)0;
+                        Log("Connection", $"Disconnect event player={peer.PlayerId} reasonCode={reasonCode} handshake={peer.HandshakeComplete} " +
+                                          $"sent={peer.SentBytes} received={peer.ReceivedBytes}");
                         RemovePeer(peer, "Remote client disconnected");
                         return;
                 }
@@ -344,6 +418,15 @@ namespace SwingPop.Online
                 case NetworkMessageType.ClientHello:
                     HandleClientHello(peer, serializer.Deserialize<ClientHelloMessage>(envelope.Payload));
                     break;
+                case NetworkMessageType.ReconnectRequest:
+                {
+                    ReconnectRequestMessage request = serializer.Deserialize<ReconnectRequestMessage>(envelope.Payload);
+                    if (envelope.MatchId != request.MatchId)
+                        RejectReconnectAndClose(peer, ReconnectRejectReason.UnknownMatch);
+                    else
+                        HandleReconnectRequest(peer, request);
+                    break;
+                }
                 case NetworkMessageType.ShotSubmission:
                     HandleShotSubmission(peer, serializer.Deserialize<ShotSubmission>(envelope.Payload));
                     break;
@@ -379,6 +462,14 @@ namespace SwingPop.Online
                 RejectMalformed(ShotRejectReason.InvalidCommand);
                 return;
             }
+            if (matchStarted)
+            {
+                RejectAndClose(peer, NetworkMessageType.ConnectionRejected,
+                    serializer.Serialize(new ConnectionRejectedMessage(ShotRejectReason.MatchFull, "MatchFull")));
+                LastRejectionReason = ShotRejectReason.MatchFull;
+                RejectedMessageCount++;
+                return;
+            }
             if (!slotAllocator.TryAssign(out MatchPlayerId playerId)
                 || !playerRegistry.TryBind(peer.Connection.GetHashCode(), playerId))
             {
@@ -406,6 +497,11 @@ namespace SwingPop.Online
                 || !playerRegistry.IsBoundPlayer(peer.Connection.GetHashCode(), submission.PlayerId))
             {
                 RejectSubmission(peer, submission, ShotRejectReason.PlayerSpoofing);
+                return;
+            }
+            if (IsMatchSuspended)
+            {
+                RejectSubmission(peer, submission, ShotRejectReason.MatchSuspended);
                 return;
             }
             peer.SubmissionsInWindow++;
@@ -464,12 +560,105 @@ namespace SwingPop.Online
             if (playerId.IsValid)
             {
                 playerRegistry.Remove(peer.Connection.GetHashCode());
-                slotAllocator.Release(playerId);
                 PlayerDisconnected?.Invoke(playerId);
                 Log("Connection", $"{playerId} disconnected reason={reason}");
-                if (matchStarted && authority != null && authority.AbortForDisconnect(playerId))
-                    PublishSnapshot(authority.CurrentSnapshot);
+                if (matchStarted && authority != null)
+                {
+                    long now = serverClock.UtcNowMilliseconds;
+                    if (reconnectSessions.TryEnterGrace(playerId, now,
+                            Mathf.RoundToInt(reconnectGraceSeconds * 1000f), out long deadline)
+                        && authority.EnterReconnectGrace(playerId))
+                    {
+                        lifecycle.TryTransition(DedicatedMatchLifecycleState.ReconnectGrace);
+                        PublishSnapshot(authority.CurrentSnapshot);
+                        BroadcastLifecycle(playerId, PlayerConnectionState.ReconnectGrace, deadline,
+                            "Player disconnected; match suspended");
+                    }
+                }
+                else
+                {
+                    slotAllocator.Release(playerId);
+                }
             }
+        }
+
+        private void HandleReconnectRequest(ClientPeer peer, ReconnectRequestMessage request)
+        {
+            peer.ReconnectRequestsInWindow++;
+            reconnectRequestsInWindow++;
+            if (peer.ReconnectRequestsInWindow > 3 || reconnectRequestsInWindow > 8)
+            {
+                RejectReconnectAndClose(peer, ReconnectRejectReason.RateLimited);
+                return;
+            }
+            bool duplicateBinding = playerRegistry.ContainsPlayer(request.PlayerId);
+            ReconnectValidationResult validation = reconnectSessions.ValidateAndRotate(request,
+                serverClock.UtcNowMilliseconds, duplicateBinding);
+            if (!validation.Accepted)
+            {
+                RejectReconnectAndClose(peer, validation.Reason);
+                return;
+            }
+            if (!playerRegistry.TryBind(peer.Connection.GetHashCode(), request.PlayerId)
+                || authority == null || !authority.ReconnectPlayer(request.PlayerId))
+            {
+                RejectReconnectAndClose(peer, ReconnectRejectReason.PlayerAlreadyConnected);
+                return;
+            }
+
+            peer.PlayerId = request.PlayerId;
+            peer.HandshakeComplete = true;
+            MatchSnapshot snapshot = authority.CurrentSnapshot;
+            ReconnectAcceptedMessage accepted = new(request.PlayerId, snapshot.MatchId,
+                validation.RotatedTicket, snapshot.Version, snapshot.CurrentTurnPlayer);
+            SendTo(peer, NetworkMessageType.ReconnectAccepted, snapshot.MatchId, serializer.Serialize(accepted));
+            if (!reconnectSessions.HasPlayerInGrace)
+                lifecycle.TryTransition(DedicatedMatchLifecycleState.Playing);
+            PublishSnapshot(snapshot);
+            BroadcastLifecycle(request.PlayerId, PlayerConnectionState.Connected, 0L,
+                reconnectSessions.HasPlayerInGrace ? "Player reconnected; waiting for other player" : "Player reconnected; match resumed");
+            PlayerConnected?.Invoke(request.PlayerId);
+            Log("Reconnect", $"Accepted player={request.PlayerId} generation={validation.RotatedTicket.SessionGeneration} " +
+                             $"fingerprint={ReconnectSessionRegistry.Fingerprint(validation.RotatedTicket.Secret)}");
+        }
+
+        private void RejectReconnectAndClose(ClientPeer peer, ReconnectRejectReason reason)
+        {
+            RejectedMessageCount++;
+            RejectAndClose(peer, NetworkMessageType.ReconnectRejected,
+                serializer.Serialize(new ReconnectRejectedMessage(reason, reason.ToString())));
+            Log("Reconnect", $"Rejected reason={reason}");
+        }
+
+        private void RejectAndClose(ClientPeer peer, NetworkMessageType type, string payload)
+        {
+            if (peer == null || !peers.Contains(peer)) return;
+            SendTo(peer, type, default, payload);
+            peers.Remove(peer);
+            rejectedPeers.Add(new RejectedPeer { Connection = peer.Connection });
+        }
+
+        private void CheckReconnectDeadline()
+        {
+            if (!matchStarted || lifecycle.State != DedicatedMatchLifecycleState.ReconnectGrace) return;
+            if (!reconnectSessions.TryExpire(serverClock.UtcNowMilliseconds, out MatchPlayerId expiredPlayer)) return;
+            if (authority != null && authority.ExpireReconnectGrace(expiredPlayer)) PublishSnapshot(authority.CurrentSnapshot);
+            lifecycle.TryTransition(DedicatedMatchLifecycleState.Aborted);
+            reconnectSessions.MarkMatchEnded();
+            endedCleanupElapsed = 0f;
+            reconnectRateWindowElapsed = 0f;
+            reconnectRequestsInWindow = 0;
+            BroadcastLifecycle(expiredPlayer, PlayerConnectionState.Expired, 0L,
+                "Reconnect grace expired; match aborted");
+            Log("Reconnect", $"Grace expired player={expiredPlayer}; match aborted");
+        }
+
+        private void BroadcastLifecycle(MatchPlayerId playerId, PlayerConnectionState state, long deadline, string reason)
+        {
+            MatchLifecycleChangedMessage message = new(lifecycle.State, playerId, state, deadline, reason);
+            MatchId id = authority != null && authority.CurrentSnapshot != null ? authority.CurrentSnapshot.MatchId : default;
+            Broadcast(NetworkMessageType.MatchLifecycleChanged, id, serializer.Serialize(message));
+            LifecycleChanged?.Invoke(message);
         }
 
         private void Broadcast(NetworkMessageType messageType, MatchId matchId, string payload)
@@ -501,6 +690,7 @@ namespace SwingPop.Online
             if (beginResult != 0)
             {
                 nativeBytes.Dispose();
+                Debug.LogWarning($"[M15][Transport] BeginSend failed type={messageType} code={beginResult}", this);
                 return false;
             }
             bool wrote = writer.WriteBytes(nativeBytes);
@@ -511,7 +701,11 @@ namespace SwingPop.Online
                 return false;
             }
             int endResult = driver.EndSend(writer);
-            if (endResult < 0) return false;
+            if (endResult < 0)
+            {
+                Debug.LogWarning($"[M15][Transport] EndSend failed type={messageType} code={endResult}", this);
+                return false;
+            }
             SentBytes += bytes.Length;
             if (peer != null) peer.SentBytes += bytes.Length;
             MessageCount++;
@@ -557,6 +751,8 @@ namespace SwingPop.Online
             outboundSequence = 0;
             pingElapsed = 0f;
             matchStarted = false;
+            reconnectSessions.Reset();
+            endedCleanupElapsed = 0f;
         }
 
         private static long NowMilliseconds() => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();

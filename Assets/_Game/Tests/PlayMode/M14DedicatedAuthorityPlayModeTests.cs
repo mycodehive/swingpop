@@ -146,14 +146,15 @@ namespace SwingPop.Tests
         }
 
         [UnityTest]
-        public IEnumerator J_ClientDisconnectAbortsMatchAndKeepsOtherClientAlive()
+        public IEnumerator J_ClientDisconnectEntersReconnectGraceAndKeepsOtherClientAlive()
         {
             yield return ConnectThree();
             clientB.CancelPending();
-            yield return WaitFor(() => authority.CurrentSnapshot.Phase == MatchPhase.Aborted, 3f, "disconnect abort");
-            yield return WaitFor(() => latestA != null && latestA.Phase == MatchPhase.Aborted, 3f, "remaining client snapshot");
+            yield return WaitFor(() => server.LifecycleState == DedicatedMatchLifecycleState.ReconnectGrace, 3f, "disconnect grace");
+            yield return WaitFor(() => latestA != null && latestA.GetPlayer(1).ConnectionState == PlayerConnectionState.ReconnectGrace,
+                3f, "remaining client snapshot");
             Assert.That(clientA.ConnectionState, Is.EqualTo(NetworkConnectionState.InMatch));
-            Assert.That(latestA.GetPlayer(1).ConnectionState, Is.EqualTo(PlayerConnectionState.Disconnected));
+            Assert.That(latestA.Phase, Is.EqualTo(MatchPhase.Playing));
         }
 
         [UnityTest]

@@ -23,6 +23,7 @@ namespace SwingPop.Online
         [SerializeField] private LocalLoopbackTransport transport;
         [SerializeField] private UnityTransportMatchTransport networkTransport;
         [SerializeField] private DedicatedServerMatchTransport dedicatedServerTransport;
+        [SerializeField] private ReconnectController reconnectController;
 
         [Header("Existing Gameplay")]
         [SerializeField] private ShotFlowController shotFlow;
@@ -39,6 +40,8 @@ namespace SwingPop.Online
         private bool matchStarted;
         private float remoteTurnElapsed;
         private bool remoteSubmissionPending;
+        private bool matchSuspended;
+        private MatchLifecycleChangedMessage latestLifecycle;
 
         public event Action<ShotCommand> ShotApproved;
         public event Action ShotRejected;
@@ -47,6 +50,7 @@ namespace SwingPop.Online
 
         public bool RequiresApproval => activeMode != MultiplayerDevelopmentMode.OfflineSingle;
         public bool CanSubmitShot => RequiresApproval && IsActiveTransportReady && !localSubmissionPending
+                                     && !matchSuspended
                                      && snapshotStore.Current != null
                                      && snapshotStore.Current.Phase == MatchPhase.Playing
                                      && snapshotStore.Current.TurnState == TurnState.PreparingShot
@@ -61,6 +65,9 @@ namespace SwingPop.Online
         public UnityTransportMatchTransport NetworkTransport => networkTransport;
         public DedicatedServerMatchTransport DedicatedServerTransport => dedicatedServerTransport;
         public LocalMatchAuthority Authority => authority;
+        public ReconnectController ReconnectController => reconnectController;
+        public bool IsMatchSuspended => matchSuspended;
+        public MatchLifecycleChangedMessage LatestLifecycle => latestLifecycle;
         public bool IsConfigured => settings != null && authority != null && transport != null && networkTransport != null
                                     && dedicatedServerTransport != null
                                     && shotFlow != null && ball != null && holeFlow != null
@@ -82,6 +89,7 @@ namespace SwingPop.Online
                 networkTransport.PlayerAssigned += OnPlayerAssigned;
                 networkTransport.RemotePlayerReady += OnRemotePlayerReady;
                 networkTransport.Disconnected += OnNetworkDisconnected;
+                networkTransport.LifecycleChanged += OnLifecycleChanged;
             }
             if (dedicatedServerTransport != null)
             {
@@ -90,6 +98,7 @@ namespace SwingPop.Online
                 dedicatedServerTransport.SnapshotReceived += OnSnapshotReceived;
                 dedicatedServerTransport.AllPlayersReady += OnAllDedicatedPlayersReady;
                 dedicatedServerTransport.PlayerDisconnected += OnDedicatedPlayerDisconnected;
+                dedicatedServerTransport.LifecycleChanged += OnLifecycleChanged;
             }
             if (holeFlow != null)
             {
@@ -158,6 +167,7 @@ namespace SwingPop.Online
                 networkTransport.PlayerAssigned -= OnPlayerAssigned;
                 networkTransport.RemotePlayerReady -= OnRemotePlayerReady;
                 networkTransport.Disconnected -= OnNetworkDisconnected;
+                networkTransport.LifecycleChanged -= OnLifecycleChanged;
                 networkTransport.CancelPending();
             }
             if (dedicatedServerTransport != null)
@@ -167,6 +177,7 @@ namespace SwingPop.Online
                 dedicatedServerTransport.SnapshotReceived -= OnSnapshotReceived;
                 dedicatedServerTransport.AllPlayersReady -= OnAllDedicatedPlayersReady;
                 dedicatedServerTransport.PlayerDisconnected -= OnDedicatedPlayerDisconnected;
+                dedicatedServerTransport.LifecycleChanged -= OnLifecycleChanged;
                 dedicatedServerTransport.CancelPending();
             }
             if (holeFlow != null)
@@ -192,6 +203,8 @@ namespace SwingPop.Online
             remoteSubmissionPending = false;
             remoteTurnElapsed = 0f;
             snapshotStore.Reset();
+            matchSuspended = false;
+            latestLifecycle = default;
             networkTransport.CancelPending();
             dedicatedServerTransport.CancelPending();
             transport.CancelPending();
@@ -229,21 +242,34 @@ namespace SwingPop.Online
 
             matchStarted = true;
             activeMode = mode;
+            // Standalone network peers must continue pumping UTP while minimized or unfocused.
+            // Otherwise one client losing focus can make the server expire an otherwise healthy peer.
+            Application.runInBackground = true;
             localPlayerId = mode == MultiplayerDevelopmentMode.NetworkHost ? PlayerA : default;
             hasActiveApprovedShot = false;
             localSubmissionPending = false;
             remoteSubmissionPending = false;
             remoteTurnElapsed = 0f;
             snapshotStore.Reset();
+            matchSuspended = false;
+            latestLifecycle = default;
             transport.CancelPending();
             networkTransport.CancelPending();
             dedicatedServerTransport.CancelPending();
             bool verbose = settings != null && settings.VerboseLogging;
+            foreach (string argument in Environment.GetCommandLineArgs())
+                if (string.Equals(argument, "-swingpopVerboseNetwork", StringComparison.OrdinalIgnoreCase)) verbose = true;
             networkTransport.Configure(mode == MultiplayerDevelopmentMode.NetworkHost ? authority : null, verbose);
             dedicatedServerTransport.Configure(
                 mode == MultiplayerDevelopmentMode.DedicatedServer ? authority : null,
                 settings != null ? settings.DedicatedServerMaxPlayers : OnlineProtocol.DedicatedServerPlayerCapacity,
                 verbose);
+            dedicatedServerTransport.ConfigureReconnectPolicy(
+                ReadReconnectGraceOverride(Environment.GetCommandLineArgs(),
+                    settings != null ? settings.ReconnectGraceSeconds : 30f));
+            float liveness = settings != null ? settings.ConnectionLivenessTimeoutSeconds : 30f;
+            networkTransport.ConfigureConnectionLiveness(liveness);
+            dedicatedServerTransport.ConfigureConnectionLiveness(liveness);
             shotFlow.ConfigureCommitGate(this);
             holeFlow.SetAutomaticFlowSuspended(true);
             float timeout = settings != null ? settings.ConnectionTimeoutSeconds : 8f;
@@ -437,7 +463,7 @@ namespace SwingPop.Online
         {
             localSubmissionPending = false;
             remoteSubmissionPending = false;
-            Debug.LogWarning($"[M14][Connection] {playerId} disconnected; match policy is Aborted.", this);
+            Debug.LogWarning($"[M15][Connection] {playerId} disconnected; match suspended for reconnect grace.", this);
         }
 
         private void OnNetworkDisconnected(string reason)
@@ -447,6 +473,18 @@ namespace SwingPop.Online
             remoteSubmissionPending = false;
             if (rejectedPendingLocalShot) ShotRejected?.Invoke();
             Debug.LogWarning($"[M13][Match] Network disconnected: {reason}", this);
+        }
+
+        private void OnLifecycleChanged(MatchLifecycleChangedMessage message)
+        {
+            latestLifecycle = message;
+            matchSuspended = message.LifecycleState == DedicatedMatchLifecycleState.ReconnectGrace;
+            if (message.LifecycleState is DedicatedMatchLifecycleState.Aborted or DedicatedMatchLifecycleState.Ended)
+            {
+                localSubmissionPending = false;
+                remoteSubmissionPending = false;
+            }
+            SnapshotChanged?.Invoke(snapshotStore.Current);
         }
 
         private void RestoreCurrentPlayer(MatchSnapshot snapshot)
@@ -481,6 +519,23 @@ namespace SwingPop.Online
             NetworkVector3 position = NetworkVector3.FromUnity(tee);
             return new PlayerSnapshot(id, displayName, slot, slot, local,
                 PlayerConnectionState.Connected, 0, 0, position, position, TerrainSurfaceType.Tee, false);
+        }
+
+        private static float ReadReconnectGraceOverride(string[] arguments, float fallback)
+        {
+            const string prefix = "-swingpopReconnectGrace=";
+            if (arguments != null)
+            {
+                foreach (string argument in arguments)
+                {
+                    if (argument == null || !argument.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) continue;
+                    if (float.TryParse(argument.Substring(prefix.Length),
+                            System.Globalization.NumberStyles.Float,
+                            System.Globalization.CultureInfo.InvariantCulture, out float parsed))
+                        return Mathf.Clamp(parsed, 3f, 120f);
+                }
+            }
+            return Mathf.Clamp(fallback, 3f, 120f);
         }
     }
 }

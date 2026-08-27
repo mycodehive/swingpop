@@ -15,10 +15,16 @@ namespace SwingPop.Data
         [SerializeField] private string hostAddress = "127.0.0.1";
         [SerializeField, Range(1024, 65535)] private int port = 7777;
         [SerializeField, Range(5f, 10f)] private float connectionTimeoutSeconds = 8f;
+        [SerializeField, Range(15f, 120f)] private float connectionLivenessTimeoutSeconds = 30f;
         [Header("M14 Dedicated Authority")]
         [SerializeField, Range(2, 2)] private int dedicatedServerMaxPlayers = 2;
         [SerializeField] private bool disableServerPresentation = true;
         [SerializeField, Min(0f)] private float desyncWarningThreshold = 0.25f;
+        [Header("M15 Match Lifecycle / Reconnect")]
+        [SerializeField, Range(3f, 120f)] private float reconnectGraceSeconds = 30f;
+        [SerializeField] private bool autoReconnectEnabled = true;
+        [SerializeField, Range(1, 5)] private int reconnectAttemptLimit = 3;
+        [SerializeField, Range(0.25f, 5f)] private float reconnectRetryDelaySeconds = 1f;
 
         public MultiplayerDevelopmentMode Mode => mode;
         public int SimulatedLatencyMs => simulatedLatencyMs;
@@ -28,9 +34,14 @@ namespace SwingPop.Data
         public string HostAddress => string.IsNullOrWhiteSpace(hostAddress) ? "127.0.0.1" : hostAddress;
         public ushort Port => (ushort)Mathf.Clamp(port, 1, 65535);
         public float ConnectionTimeoutSeconds => connectionTimeoutSeconds;
+        public float ConnectionLivenessTimeoutSeconds => Mathf.Clamp(connectionLivenessTimeoutSeconds, 15f, 120f);
         public int DedicatedServerMaxPlayers => Mathf.Clamp(dedicatedServerMaxPlayers, 2, 2);
         public bool DisableServerPresentation => disableServerPresentation;
         public float DesyncWarningThreshold => Mathf.Max(0f, desyncWarningThreshold);
+        public float ReconnectGraceSeconds => Mathf.Clamp(reconnectGraceSeconds, 3f, 120f);
+        public bool AutoReconnectEnabled => autoReconnectEnabled;
+        public int ReconnectAttemptLimit => Mathf.Clamp(reconnectAttemptLimit, 1, 5);
+        public float ReconnectRetryDelaySeconds => Mathf.Clamp(reconnectRetryDelaySeconds, 0.25f, 5f);
 
         public void ConfigureForDevelopment(
             MultiplayerDevelopmentMode developmentMode,
@@ -53,12 +64,26 @@ namespace SwingPop.Data
             connectionTimeoutSeconds = Mathf.Clamp(timeoutSeconds, 5f, 10f);
         }
 
+        public void ConfigureConnectionLiveness(float timeoutSeconds = 30f)
+        {
+            connectionLivenessTimeoutSeconds = Mathf.Clamp(timeoutSeconds, 15f, 120f);
+        }
+
         public void ConfigureDedicatedServer(int maxPlayers = 2, bool disablePresentation = true,
             float positionDesyncThreshold = 0.25f)
         {
             dedicatedServerMaxPlayers = Mathf.Clamp(maxPlayers, 2, 2);
             disableServerPresentation = disablePresentation;
             desyncWarningThreshold = Mathf.Max(0f, positionDesyncThreshold);
+        }
+
+        public void ConfigureReconnect(float graceSeconds = 30f, bool autoReconnect = true,
+            int attemptLimit = 3, float retryDelaySeconds = 1f)
+        {
+            reconnectGraceSeconds = Mathf.Clamp(graceSeconds, 3f, 120f);
+            autoReconnectEnabled = autoReconnect;
+            reconnectAttemptLimit = Mathf.Clamp(attemptLimit, 1, 5);
+            reconnectRetryDelaySeconds = Mathf.Clamp(retryDelaySeconds, 0.25f, 5f);
         }
     }
 }

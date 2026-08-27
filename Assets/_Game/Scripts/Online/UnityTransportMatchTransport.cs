@@ -32,6 +32,7 @@ namespace SwingPop.Online
         private string address = "127.0.0.1";
         private ushort port = 7777;
         private float timeoutSeconds = 8f;
+        private float livenessTimeoutSeconds = 30f;
         private float stateElapsed;
         private float pingElapsed;
         private float rateWindowElapsed;
@@ -40,6 +41,10 @@ namespace SwingPop.Online
         private long sentBytes;
         private long receivedBytes;
         private string remoteSnapshotHash = string.Empty;
+        private ReconnectTicket reconnectTicket;
+        private bool hasReconnectTicket;
+        private ReconnectClientState reconnectState;
+        private MatchLifecycleChangedMessage latestLifecycle;
 
         public event Action<ApprovedShot> ShotApprovedReceived;
         public event Action<ShotRejection> ShotRejectedReceived;
@@ -48,6 +53,10 @@ namespace SwingPop.Online
         public event Action RemotePlayerReady;
         public event Action<TurnChangedMessage> TurnChangedReceived;
         public event Action<string> Disconnected;
+        public event Action<ReconnectTicket> ReconnectTicketChanged;
+        public event Action<ReconnectAcceptedMessage> ReconnectAccepted;
+        public event Action<ReconnectRejectedMessage> ReconnectRejected;
+        public event Action<MatchLifecycleChangedMessage> LifecycleChanged;
 
         public int PendingMessageCount => 0;
         public int MessageCount { get; private set; }
@@ -72,6 +81,10 @@ namespace SwingPop.Online
         public long InboundSequence => inboundSequence.LastAcceptedSequence;
         public bool IsCreated => driver.IsCreated;
         public bool IsReady => connectionState.State == NetworkConnectionState.InMatch;
+        public bool HasReconnectTicket => hasReconnectTicket && reconnectTicket.IsValid;
+        public ReconnectTicket CurrentReconnectTicket => reconnectTicket;
+        public ReconnectClientState ReconnectState => reconnectState;
+        public MatchLifecycleChangedMessage LatestLifecycle => latestLifecycle;
 
         private void Update()
         {
@@ -87,6 +100,21 @@ namespace SwingPop.Online
         {
             authority = matchAuthority;
             verboseLogging = verbose;
+        }
+
+        public bool SetPendingReconnectTicket(ReconnectTicket ticket)
+        {
+            if (!ticket.IsValid) return false;
+            reconnectTicket = ticket;
+            hasReconnectTicket = true;
+            assignedPlayer = ticket.PlayerId;
+            reconnectState = ReconnectClientState.TicketReady;
+            return true;
+        }
+
+        public void ConfigureConnectionLiveness(float seconds)
+        {
+            livenessTimeoutSeconds = Mathf.Clamp(seconds, 15f, 120f);
         }
 
         public bool StartHost(string bindAddress, ushort networkPort, float connectionTimeoutSeconds)
@@ -237,12 +265,12 @@ namespace SwingPop.Online
             networkSettings.WithNetworkConfigParameters(
                 connectTimeoutMS: 1000,
                 maxConnectAttempts: Mathf.CeilToInt(timeoutSeconds),
-                disconnectTimeoutMS: Mathf.RoundToInt(timeoutSeconds * 1000f),
+                disconnectTimeoutMS: Mathf.RoundToInt(livenessTimeoutSeconds * 1000f),
                 heartbeatTimeoutMS: 500,
                 receiveQueueCapacity: 128,
                 sendQueueCapacity: 128);
             networkSettings.WithFragmentationStageParameters(OnlineProtocol.MaximumPayloadBytes);
-            driver = NetworkDriver.Create(networkSettings);
+            driver = NetworkDriver.Create(new WebSocketNetworkInterface(), networkSettings);
             reliablePipeline = driver.CreatePipeline(typeof(FragmentationPipelineStage), typeof(ReliableSequencedPipelineStage));
         }
 
@@ -282,14 +310,27 @@ namespace SwingPop.Online
                         stateElapsed = 0f;
                         connectionState.TryTransition(NetworkConnectionState.Handshaking);
                         if (role == NetworkRole.Client)
-                            Send(NetworkMessageType.ClientHello, default,
-                                serializer.Serialize(new ClientHelloMessage(Application.version)));
+                        {
+                            if (HasReconnectTicket)
+                            {
+                                reconnectState = ReconnectClientState.Reconnecting;
+                                Send(NetworkMessageType.ReconnectRequest, reconnectTicket.MatchId,
+                                    serializer.Serialize(new ReconnectRequestMessage(reconnectTicket, RemoteSnapshotVersion)));
+                            }
+                            else
+                            {
+                                Send(NetworkMessageType.ClientHello, default,
+                                    serializer.Serialize(new ClientHelloMessage(Application.version)));
+                            }
+                        }
                         break;
                     case NetworkEvent.Type.Data:
                         Receive(reader);
                         break;
                     case NetworkEvent.Type.Disconnect:
-                        HandleDisconnect("Remote peer disconnected.");
+                        byte reasonCode = reader.Length > 0 ? reader.ReadByte() : (byte)0;
+                        Log($"DISCONNECT EVENT reasonCode={reasonCode} state={connectionState.State}");
+                        HandleDisconnect($"Remote peer disconnected ({reasonCode}).");
                         break;
                 }
             }
@@ -322,6 +363,11 @@ namespace SwingPop.Online
             if (ruleResult != ShotRejectReason.None)
             {
                 RejectMalformed(ruleResult);
+                return;
+            }
+            if (role == NetworkRole.Client && !NetworkMessageRules.IsAllowedFromServer(envelope.MessageType))
+            {
+                RejectMalformed(ShotRejectReason.MessageDirectionNotAllowed);
                 return;
             }
             Dispatch(envelope);
@@ -403,6 +449,51 @@ namespace SwingPop.Online
                     RejectedMessageCount++;
                     // Capacity/protocol refusal is an expected handshake outcome, not a runtime fault.
                     Fail(string.IsNullOrWhiteSpace(rejection.Detail) ? rejection.Reason.ToString() : rejection.Detail, false);
+                    break;
+                }
+                case NetworkMessageType.ReconnectTicketIssued when role == NetworkRole.Client:
+                {
+                    ReconnectTicket ticket = serializer.Deserialize<ReconnectTicketIssuedMessage>(envelope.Payload).Ticket;
+                    if (!ticket.IsValid || assignedPlayer.IsValid && ticket.PlayerId != assignedPlayer)
+                    {
+                        RejectMalformed(ShotRejectReason.InvalidCommand);
+                        break;
+                    }
+                    reconnectTicket = ticket;
+                    hasReconnectTicket = true;
+                    reconnectState = ReconnectClientState.TicketReady;
+                    ReconnectTicketChanged?.Invoke(ticket);
+                    break;
+                }
+                case NetworkMessageType.ReconnectAccepted when role == NetworkRole.Client:
+                {
+                    ReconnectAcceptedMessage accepted = serializer.Deserialize<ReconnectAcceptedMessage>(envelope.Payload);
+                    assignedPlayer = accepted.PlayerId;
+                    reconnectTicket = accepted.RotatedTicket;
+                    hasReconnectTicket = reconnectTicket.IsValid;
+                    reconnectState = ReconnectClientState.Reconnected;
+                    connectionState.TryTransition(NetworkConnectionState.Connected);
+                    connectionState.TryTransition(NetworkConnectionState.InMatch);
+                    stateElapsed = 0f;
+                    PlayerAssigned?.Invoke(assignedPlayer);
+                    ReconnectTicketChanged?.Invoke(reconnectTicket);
+                    ReconnectAccepted?.Invoke(accepted);
+                    break;
+                }
+                case NetworkMessageType.ReconnectRejected when role == NetworkRole.Client:
+                {
+                    ReconnectRejectedMessage rejected = serializer.Deserialize<ReconnectRejectedMessage>(envelope.Payload);
+                    reconnectState = ReconnectClientState.ReconnectFailed;
+                    ReconnectRejected?.Invoke(rejected);
+                    Fail($"Reconnect rejected: {rejected.Reason}", false);
+                    break;
+                }
+                case NetworkMessageType.MatchLifecycleChanged when role == NetworkRole.Client:
+                {
+                    latestLifecycle = serializer.Deserialize<MatchLifecycleChangedMessage>(envelope.Payload);
+                    if (latestLifecycle.LifecycleState == DedicatedMatchLifecycleState.Ended)
+                        reconnectState = ReconnectClientState.Ended;
+                    LifecycleChanged?.Invoke(latestLifecycle);
                     break;
                 }
             }
@@ -534,12 +625,13 @@ namespace SwingPop.Online
         {
             bool rejectionAlreadyReported = connectionState.State == NetworkConnectionState.Failed;
             playerRegistry.Clear();
-            assignedPlayer = default;
+            if (!HasReconnectTicket) assignedPlayer = default;
             RemoteSnapshotVersion = -1;
             connection = default;
             if (!rejectionAlreadyReported)
             {
                 connectionState.TryTransition(NetworkConnectionState.Disconnected);
+                if (HasReconnectTicket) reconnectState = ReconnectClientState.ConnectionLost;
                 Disconnected?.Invoke(reason ?? "Disconnected");
             }
             Log($"DISCONNECTED: {reason}");
@@ -555,6 +647,7 @@ namespace SwingPop.Online
 
         private void ShutdownInternal(bool notifyRemote)
         {
+            Log($"SHUTDOWN notifyRemote={notifyRemote} role={role} state={connectionState.State}");
             if (driver.IsCreated)
             {
                 if (notifyRemote && connection.IsCreated)

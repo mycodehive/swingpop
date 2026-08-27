@@ -34,6 +34,21 @@ namespace SwingPop.Online
             return EnsureCore().AbortForDisconnect(playerId);
         }
 
+        public bool EnterReconnectGrace(MatchPlayerId playerId)
+        {
+            return EnsureCore().EnterReconnectGrace(playerId);
+        }
+
+        public bool ReconnectPlayer(MatchPlayerId playerId)
+        {
+            return EnsureCore().ReconnectPlayer(playerId);
+        }
+
+        public bool ExpireReconnectGrace(MatchPlayerId playerId)
+        {
+            return EnsureCore().ExpireReconnectGrace(playerId);
+        }
+
         private MatchAuthorityCore EnsureCore()
         {
             return core ??= new MatchAuthorityCore(new RoundRobinTurnOrderPolicy());

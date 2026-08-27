@@ -20,6 +20,11 @@ MonoBehaviour:
   hostAddress: 127.0.0.1
   port: 7777
   connectionTimeoutSeconds: 8
+  connectionLivenessTimeoutSeconds: 30
   dedicatedServerMaxPlayers: 2
   disableServerPresentation: 1
   desyncWarningThreshold: 0.25
+  reconnectGraceSeconds: 30
+  autoReconnectEnabled: 1
+  reconnectAttemptLimit: 3
+  reconnectRetryDelaySeconds: 1

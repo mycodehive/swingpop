@@ -535,3 +535,6 @@ No network dependency was added to Camera, Character, HUD, VFX, or Audio cores. 
 `DedicatedServerMatchTransport` is an additional `IMatchTransport` adapter; it does not replace M12 LocalLoopback or M13 Unity Transport Host/Client. The dedicated process has no player, assigns two remote player IDs, owns `LocalMatchAuthority`, executes approved commands through the existing Rigidbody Ball/HoleFlow graph without Character Animator, and alone publishes results/snapshots. Clients remain approved-playback and snapshot-correction consumers.
 
 The shared Hole01 server scene disables presentation by explicit component type while keeping physics colliders. Protocol version 2 and M13 DTO/interfaces remain compatible. See `docs/M14_DEDICATED_AUTHORITY_ARCHITECTURE.md`.
+# M15 Match Lifecycle Addendum
+
+M15 adds an orthogonal server-owned dedicated lifecycle (`Playing`, `ReconnectGrace`, `Aborted`, `Ended`) and per-player connection lifecycle (`Connected`, `ReconnectGrace`, `Expired`). A disconnect no longer deletes the slot or aborts immediately. `ReconnectSessionRegistry` retains only a bounded in-memory SHA-256 ticket mapping; `ReconnectController` is a thin client session adapter. Gameplay authority and snapshot restoration remain in the M12-M14 boundaries. See `M15_MATCH_LIFECYCLE_RECONNECT_ARCHITECTURE.md`.

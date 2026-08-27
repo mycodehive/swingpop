@@ -60,7 +60,17 @@ namespace SwingPop.Online
 
             if (turnLabel != null)
             {
-                turnLabel.text = snapshot.Phase == MatchPhase.HoleComplete
+                ReconnectClientState reconnectState = session.ReconnectController != null
+                    ? session.ReconnectController.State : ReconnectClientState.None;
+                turnLabel.text = reconnectState == ReconnectClientState.ConnectionLost
+                    ? "CONNECTION LOST"
+                    : reconnectState == ReconnectClientState.Reconnecting
+                        ? "RECONNECTING"
+                    : reconnectState == ReconnectClientState.ReconnectFailed
+                        ? "RECONNECT FAILED"
+                    : session.IsMatchSuspended
+                        ? "WAITING FOR PLAYER"
+                    : snapshot.Phase == MatchPhase.HoleComplete
                     ? "MATCH COMPLETE"
                     : snapshot.CurrentTurnPlayer == session.LocalPlayerId
                         ? snapshot.TurnState == TurnState.PreparingShot ? "YOUR TURN" : "COMMITTED"
@@ -77,7 +87,9 @@ namespace SwingPop.Online
         {
             string marker = player.PlayerId == current ? "●" : "○";
             string done = player.Holed ? "  HOLED" : string.Empty;
-            return $"{marker} {player.DisplayName}   {player.StrokeCount}{done}";
+            string connection = player.ConnectionState == PlayerConnectionState.Connected
+                ? string.Empty : $"  {player.ConnectionState.ToString().ToUpperInvariant()}";
+            return $"{marker} {player.DisplayName}   {player.StrokeCount}{done}{connection}";
         }
     }
 }

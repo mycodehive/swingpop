@@ -46,6 +46,12 @@ namespace SwingPop.Debugging
                 GUILayout.Label($"Reject: {network.RejectedMessageCount} ({network.LastRejectionReason})");
                 GUILayout.Label($"Hash: {network.LocalSnapshotHash} | Remote v{network.RemoteSnapshotVersion} | Desync: {network.DesyncCount}");
                 GUILayout.Label($"Predicted error: {network.LastDesyncReport.PositionError:F3} m");
+                ReconnectController reconnect = session.ReconnectController;
+                if (reconnect != null)
+                {
+                    GUILayout.Label($"Reconnect: {reconnect.State} | Generation: {reconnect.SessionGeneration}");
+                    GUILayout.Label($"Grace: {reconnect.GraceRemainingMilliseconds / 1000f:F1}s | Result: {reconnect.LastResult}");
+                }
             }
             DedicatedServerMatchTransport server = session.DedicatedServerTransport;
             if (server != null && session.ActiveMode == MultiplayerDevelopmentMode.DedicatedServer)
@@ -71,7 +77,7 @@ namespace SwingPop.Debugging
                 {
                     PlayerSnapshot player = snapshot.GetPlayer(index);
                     GUILayout.Label(
-                        $"P{index + 1}: {player.PlayerId} | {player.Lie} | S{player.StrokeCount} P{player.PenaltyCount} | Holed={player.Holed}");
+                        $"P{index + 1}: {player.PlayerId} | {player.ConnectionState} | {player.Lie} | S{player.StrokeCount} P{player.PenaltyCount} | Holed={player.Holed}");
                 }
             }
             LocalLoopbackTransport transport = session.Transport;

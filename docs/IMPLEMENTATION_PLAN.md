@@ -518,3 +518,7 @@ Green까지 직접 이동하지 않고 Putt 구도만 확인하려면 Play Mode�
 - [x] Disable server presentation by typed policy while retaining shared Hole01 colliders.
 - [x] Add build/validator tools, EditMode/PlayMode coverage, headless and three-process evidence, captures, and documentation.
 - [ ] Do not start M15 in this milestone.
+
+# M15 Completion Addendum
+
+M15 Match Lifecycle / Reconnect Foundation is implemented on top of M14 dedicated authority: reserved player slots, server-clock grace, hashed rotating tickets, same-player connection rebind, suspended input, latest-snapshot restore, expiry/abort cleanup, status presentation, validator, automated coverage, and real replacement-process acceptance. M16 has not started.

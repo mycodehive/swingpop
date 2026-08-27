@@ -35,6 +35,16 @@
 - [x] Disconnect abort/cleanup, server-termination handling, and listener restart
 - [x] Server/client builds, validator, tests, three-process logs, and captures
 
+### M15 Match Lifecycle / Reconnect Foundation
+
+- [x] Server-owned match and player connection lifecycles
+- [x] Whole-match reconnect grace with preserved slot and authoritative player snapshot
+- [x] Cryptographic development reconnect ticket, server-side hash, generation rotation, and replay rejection
+- [x] Same-PlayerId connection rebind from a newly launched client process
+- [x] Disconnect-during-shot settle, suspended input gate, latest snapshot restore, and resume
+- [x] Grace expiry to Aborted/Ended without turn deadlock
+- [x] Minimal HUD/F2 status, validator, automated tests, real-process logs, and A-G captures
+
 ## Future Production Work
 
 ### Relay / NAT
@@ -57,10 +67,10 @@
 - [ ] Account identity to `MatchPlayerId` binding
 - [ ] Session token lifecycle, secure storage, expiry, revocation
 
-### Reconnect
+### Production Reconnect
 
-- [ ] Grace period, latest-snapshot request, pending-shot reconciliation
-- [ ] Rejoin identity proof, timeout, forfeit, and user-facing UX
+- [ ] Backend-authenticated identity proof, secure credential storage, revocation, and server-crash persistence
+- [ ] WAN retry/backoff, mobile roaming, forfeit policy, localization/accessibility, and production UX
 
 ### Dedicated Deployment / Operations
 
