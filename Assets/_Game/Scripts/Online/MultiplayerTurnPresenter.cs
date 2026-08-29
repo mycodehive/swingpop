@@ -51,8 +51,18 @@ namespace SwingPop.Online
             if (snapshot == null)
             {
                 if (turnLabel != null)
-                    turnLabel.text = session.ActiveMode == MultiplayerDevelopmentMode.NetworkHost
-                        ? "HOST WAITING" : "CONNECTING";
+                {
+                    AuthenticationClientState authState = session.AuthenticationController != null
+                        ? session.AuthenticationController.State : AuthenticationClientState.None;
+                    turnLabel.text = authState == AuthenticationClientState.Authenticating
+                        ? "AUTHENTICATING"
+                        : authState == AuthenticationClientState.Rejected
+                            ? "AUTH FAILED"
+                            : authState == AuthenticationClientState.Authenticated
+                                ? "CONNECTED"
+                                : session.ActiveMode == MultiplayerDevelopmentMode.NetworkHost
+                                    ? "HOST WAITING" : "CONNECTING";
+                }
                 if (playerAScore != null) playerAScore.text = "WAITING FOR MATCH";
                 if (playerBScore != null) playerBScore.text = string.Empty;
                 return;
@@ -60,9 +70,15 @@ namespace SwingPop.Online
 
             if (turnLabel != null)
             {
+                AuthenticationClientState authenticationState = session.AuthenticationController != null
+                    ? session.AuthenticationController.State : AuthenticationClientState.None;
                 ReconnectClientState reconnectState = session.ReconnectController != null
                     ? session.ReconnectController.State : ReconnectClientState.None;
-                turnLabel.text = reconnectState == ReconnectClientState.ConnectionLost
+                turnLabel.text = authenticationState == AuthenticationClientState.Authenticating
+                    ? "AUTHENTICATING"
+                    : authenticationState == AuthenticationClientState.Rejected
+                        ? "AUTH FAILED"
+                    : reconnectState == ReconnectClientState.ConnectionLost
                     ? "CONNECTION LOST"
                     : reconnectState == ReconnectClientState.Reconnecting
                         ? "RECONNECTING"

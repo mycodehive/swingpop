@@ -26,11 +26,11 @@ namespace SwingPop.Debugging
         {
             if (!visible || session == null) return;
             MatchSnapshot snapshot = session.CurrentSnapshot;
-            Rect expandedRect = new(panelRect.x, panelRect.y, Mathf.Max(panelRect.width, 430f), Mathf.Max(panelRect.height, 420f));
+            Rect expandedRect = new(panelRect.x, panelRect.y, Mathf.Max(panelRect.width, 430f), Mathf.Max(panelRect.height, 480f));
             GUILayout.BeginArea(expandedRect, GUI.skin.box);
             bool dedicatedMatch = session.ActiveMode == MultiplayerDevelopmentMode.DedicatedServer
                                   || snapshot != null && snapshot.MatchId.Value.StartsWith("server-", System.StringComparison.Ordinal);
-            GUILayout.Label(dedicatedMatch ? "M14 DEDICATED AUTHORITY" : "M13 REAL NETWORK PROTOTYPE");
+            GUILayout.Label(dedicatedMatch ? "M16 AUTHENTICATED DEDICATED AUTHORITY" : "M13 REAL NETWORK PROTOTYPE");
             GUILayout.Label($"Mode: {session.ActiveMode}");
             GUILayout.Label($"Local: {session.LocalPlayerId}");
             UnityTransportMatchTransport network = session.NetworkTransport;
@@ -46,6 +46,12 @@ namespace SwingPop.Debugging
                 GUILayout.Label($"Reject: {network.RejectedMessageCount} ({network.LastRejectionReason})");
                 GUILayout.Label($"Hash: {network.LocalSnapshotHash} | Remote v{network.RemoteSnapshotVersion} | Desync: {network.DesyncCount}");
                 GUILayout.Label($"Predicted error: {network.LastDesyncReport.PositionError:F3} m");
+                AuthenticationController authentication = session.AuthenticationController;
+                if (authentication != null)
+                {
+                    GUILayout.Label($"Auth: {authentication.State} | Account: {authentication.AccountLabel}");
+                    GUILayout.Label($"Auth session: {authentication.SessionFingerprint} | Expiry: {authentication.SessionExpiryUnixMilliseconds}");
+                }
                 ReconnectController reconnect = session.ReconnectController;
                 if (reconnect != null)
                 {
@@ -57,6 +63,7 @@ namespace SwingPop.Debugging
             if (server != null && session.ActiveMode == MultiplayerDevelopmentMode.DedicatedServer)
             {
                 GUILayout.Label($"Server: {server.ConnectionState} / {server.LifecycleState}");
+                GUILayout.Label($"Auth: required={server.AuthenticationRequired} connections={server.AuthenticatedConnectionCount} sessions={server.AuthenticationSessionCount}");
                 GUILayout.Label($"Players: {server.ConnectedPlayerCount}/{server.MaxPlayers} | Endpoint: {server.Address}:{server.Port}");
                 GUILayout.Label($"Bytes: TX {server.SentBytes} / RX {server.ReceivedBytes} | Msg: {server.MessageCount}");
                 GUILayout.Label($"Seq: {server.OutboundSequence} | Reject: {server.RejectedMessageCount} ({server.LastRejectionReason})");

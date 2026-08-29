@@ -55,6 +55,7 @@ namespace SwingPop.Editor
             DedicatedServerMatchTransport dedicatedServerTransport = root.AddComponent<DedicatedServerMatchTransport>();
             DedicatedServerBootstrap dedicatedServerBootstrap = root.AddComponent<DedicatedServerBootstrap>();
             ReconnectController reconnectController = root.AddComponent<ReconnectController>();
+            AuthenticationController authenticationController = root.AddComponent<AuthenticationController>();
             MatchSessionController session = root.AddComponent<MatchSessionController>();
             MultiplayerTurnPresenter presenter = root.AddComponent<MultiplayerTurnPresenter>();
             MultiplayerDebugOverlay debug = root.AddComponent<MultiplayerDebugOverlay>();
@@ -67,6 +68,7 @@ namespace SwingPop.Editor
             SetReference(session, "networkTransport", networkTransport);
             SetReference(session, "dedicatedServerTransport", dedicatedServerTransport);
             SetReference(session, "reconnectController", reconnectController);
+            SetReference(session, "authenticationController", authenticationController);
             SetReference(session, "shotFlow", shotFlow);
             SetReference(session, "ball", ball);
             SetReference(session, "holeFlow", holeFlow);
@@ -74,6 +76,8 @@ namespace SwingPop.Editor
             SetReference(dedicatedServerBootstrap, "settings", settings);
             SetReference(reconnectController, "settings", settings);
             SetReference(reconnectController, "networkTransport", networkTransport);
+            SetReference(authenticationController, "settings", settings);
+            SetReference(authenticationController, "networkTransport", networkTransport);
 
             RectTransform safeArea = FindInScene(scene, "Safe Area")?.GetComponent<RectTransform>();
             if (safeArea == null) throw new InvalidOperationException("Gameplay HUD Safe Area is missing.");

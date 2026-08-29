@@ -538,3 +538,7 @@ The shared Hole01 server scene disables presentation by explicit component type 
 # M15 Match Lifecycle Addendum
 
 M15 adds an orthogonal server-owned dedicated lifecycle (`Playing`, `ReconnectGrace`, `Aborted`, `Ended`) and per-player connection lifecycle (`Connected`, `ReconnectGrace`, `Expired`). A disconnect no longer deletes the slot or aborts immediately. `ReconnectSessionRegistry` retains only a bounded in-memory SHA-256 ticket mapping; `ReconnectController` is a thin client session adapter. Gameplay authority and snapshot restoration remain in the M12-M14 boundaries. See `M15_MATCH_LIFECYCLE_RECONNECT_ARCHITECTURE.md`.
+
+## M16 Authentication / Player Session Boundary
+
+M16 places a server-owned `PlayerAccountId -> AuthSessionId -> ConnectionId -> MatchPlayerId` binding in front of dedicated admission. `DevelopmentAuthenticationProvider` validates runtime-key HMAC credentials through `IAuthenticationService`; gameplay and snapshots remain account-agnostic. Reconnect now requires both a valid authenticated account and the M15 ticket, and the account must own the reserved match slot. Protocol version is 3. See `M16_AUTHENTICATION_PLAYER_SESSION_ARCHITECTURE.md`.

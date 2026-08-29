@@ -8,6 +8,13 @@
 **Future Platform:** Android / iOS  
 **Development Stage:** Vertical Slice
 
+## M16 Authentication / Player Session Status (2026-08-29)
+
+- Dedicated match admission requires a verified development authentication session.
+- Account identity, auth session, transport connection, match player, and reconnect credential are separate layers.
+- Reconnect requires both original account ownership and the rotating M15 ticket.
+- This is a development foundation only. Production authentication, personal data, secure storage, lobby, matchmaking, relay, ranking, economy, and M17 work are not approved or implemented.
+
 SwingPop은 현실적인 골프 시뮬레이터가 아니라 캐릭터성과 타격감, 판타지 코스, 명확한 UI, 역동적인 카메라 연출을 중심으로 한 아케이드 골프 게임이다.
 
 현재 v0.1의 목적은 온라인 서비스를 완성하는 것이 아니라 **한 개 Hole에서 Tee Shot부터 Hole In까지 충분히 재미있고 보기 좋은 경험을 완성하는 것**이다.

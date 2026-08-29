@@ -45,6 +45,11 @@ namespace SwingPop.Online
         private bool hasReconnectTicket;
         private ReconnectClientState reconnectState;
         private MatchLifecycleChangedMessage latestLifecycle;
+        private string authenticationCredential = string.Empty;
+        private AuthenticationClientState authenticationState;
+        private PlayerAccountId authenticatedAccountId;
+        private AuthSessionId authenticatedSessionId;
+        private long authenticationSessionExpiryUnixMilliseconds;
 
         public event Action<ApprovedShot> ShotApprovedReceived;
         public event Action<ShotRejection> ShotRejectedReceived;
@@ -57,6 +62,8 @@ namespace SwingPop.Online
         public event Action<ReconnectAcceptedMessage> ReconnectAccepted;
         public event Action<ReconnectRejectedMessage> ReconnectRejected;
         public event Action<MatchLifecycleChangedMessage> LifecycleChanged;
+        public event Action<AuthAcceptedMessage> AuthenticationAccepted;
+        public event Action<AuthRejectedMessage> AuthenticationRejected;
 
         public int PendingMessageCount => 0;
         public int MessageCount { get; private set; }
@@ -85,6 +92,11 @@ namespace SwingPop.Online
         public ReconnectTicket CurrentReconnectTicket => reconnectTicket;
         public ReconnectClientState ReconnectState => reconnectState;
         public MatchLifecycleChangedMessage LatestLifecycle => latestLifecycle;
+        public AuthenticationClientState AuthenticationState => authenticationState;
+        public PlayerAccountId AuthenticatedAccountId => authenticatedAccountId;
+        public AuthSessionId AuthenticatedSessionId => authenticatedSessionId;
+        public long AuthenticationSessionExpiryUnixMilliseconds => authenticationSessionExpiryUnixMilliseconds;
+        public bool HasAuthenticationCredential => !string.IsNullOrWhiteSpace(authenticationCredential);
 
         private void Update()
         {
@@ -109,6 +121,14 @@ namespace SwingPop.Online
             hasReconnectTicket = true;
             assignedPlayer = ticket.PlayerId;
             reconnectState = ReconnectClientState.TicketReady;
+            return true;
+        }
+
+        public bool SetAuthenticationCredential(string credential)
+        {
+            if (string.IsNullOrWhiteSpace(credential) || credential.Length > 4096) return false;
+            authenticationCredential = credential.Trim();
+            authenticationState = AuthenticationClientState.CredentialReady;
             return true;
         }
 
@@ -311,17 +331,14 @@ namespace SwingPop.Online
                         connectionState.TryTransition(NetworkConnectionState.Handshaking);
                         if (role == NetworkRole.Client)
                         {
-                            if (HasReconnectTicket)
+                            if (HasAuthenticationCredential)
                             {
-                                reconnectState = ReconnectClientState.Reconnecting;
-                                Send(NetworkMessageType.ReconnectRequest, reconnectTicket.MatchId,
-                                    serializer.Serialize(new ReconnectRequestMessage(reconnectTicket, RemoteSnapshotVersion)));
+                                authenticationState = AuthenticationClientState.Authenticating;
+                                Send(NetworkMessageType.AuthRequest, default,
+                                    serializer.Serialize(new AuthRequestMessage(authenticationCredential,
+                                        Guid.NewGuid().ToString("N"))));
                             }
-                            else
-                            {
-                                Send(NetworkMessageType.ClientHello, default,
-                                    serializer.Serialize(new ClientHelloMessage(Application.version)));
-                            }
+                            else SendAdmissionRequest();
                         }
                         break;
                     case NetworkEvent.Type.Data:
@@ -496,6 +513,45 @@ namespace SwingPop.Online
                     LifecycleChanged?.Invoke(latestLifecycle);
                     break;
                 }
+                case NetworkMessageType.AuthAccepted when role == NetworkRole.Client:
+                {
+                    AuthAcceptedMessage accepted = serializer.Deserialize<AuthAcceptedMessage>(envelope.Payload);
+                    if (!accepted.PlayerAccountId.IsValid || !accepted.AuthSessionId.IsValid)
+                    {
+                        RejectMalformed(ShotRejectReason.InvalidCommand);
+                        break;
+                    }
+                    authenticatedAccountId = accepted.PlayerAccountId;
+                    authenticatedSessionId = accepted.AuthSessionId;
+                    authenticationSessionExpiryUnixMilliseconds = accepted.SessionExpiryUnixMilliseconds;
+                    authenticationState = AuthenticationClientState.Authenticated;
+                    AuthenticationAccepted?.Invoke(accepted);
+                    SendAdmissionRequest();
+                    break;
+                }
+                case NetworkMessageType.AuthRejected when role == NetworkRole.Client:
+                {
+                    AuthRejectedMessage rejected = serializer.Deserialize<AuthRejectedMessage>(envelope.Payload);
+                    authenticationState = AuthenticationClientState.Rejected;
+                    AuthenticationRejected?.Invoke(rejected);
+                    Fail($"Authentication rejected: {rejected.Reason}", false);
+                    break;
+                }
+            }
+        }
+
+        private void SendAdmissionRequest()
+        {
+            if (HasReconnectTicket)
+            {
+                reconnectState = ReconnectClientState.Reconnecting;
+                Send(NetworkMessageType.ReconnectRequest, reconnectTicket.MatchId,
+                    serializer.Serialize(new ReconnectRequestMessage(reconnectTicket, RemoteSnapshotVersion)));
+            }
+            else
+            {
+                Send(NetworkMessageType.ClientHello, default,
+                    serializer.Serialize(new ClientHelloMessage(Application.version)));
             }
         }
 
@@ -631,6 +687,8 @@ namespace SwingPop.Online
             if (!rejectionAlreadyReported)
             {
                 connectionState.TryTransition(NetworkConnectionState.Disconnected);
+                if (HasAuthenticationCredential && authenticationState != AuthenticationClientState.Rejected)
+                    authenticationState = AuthenticationClientState.Disconnected;
                 if (HasReconnectTicket) reconnectState = ReconnectClientState.ConnectionLost;
                 Disconnected?.Invoke(reason ?? "Disconnected");
             }
@@ -665,6 +723,11 @@ namespace SwingPop.Online
             playerRegistry.Clear();
             inboundSequence.Reset();
             assignedPlayer = default;
+            authenticatedAccountId = default;
+            authenticatedSessionId = default;
+            authenticationSessionExpiryUnixMilliseconds = 0L;
+            authenticationState = HasAuthenticationCredential
+                ? AuthenticationClientState.CredentialReady : AuthenticationClientState.None;
             outboundSequence = 0;
             stateElapsed = 0f;
             pingElapsed = 0f;

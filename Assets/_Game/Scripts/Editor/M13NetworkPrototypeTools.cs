@@ -47,7 +47,7 @@ namespace SwingPop.Editor
             Require(settings != null, "Development settings are missing.");
             Require(settings.Mode == MultiplayerDevelopmentMode.OfflineSingle, "Default mode must remain OfflineSingle.");
             Require(settings.HostAddress == "127.0.0.1" && settings.Port == 7777, "Default localhost endpoint must be 127.0.0.1:7777.");
-            Require(OnlineProtocol.CurrentVersion == 2, "M13 protocol version must be 2.");
+            Require(OnlineProtocol.CurrentVersion >= 2, "M13 protocol envelope requires version 2 or newer.");
             Require(OnlineProtocol.MaximumPayloadBytes == 65536, "Payload cap must be 64KB.");
             Require(Object.FindObjectsByType<MatchSessionController>(FindObjectsInactive.Include).Length == 1,
                 "Expected exactly one MatchSessionController.");
@@ -80,7 +80,7 @@ namespace SwingPop.Editor
                 "Network envelope serializer round trip failed.");
             M12OnlineFoundationValidationTools.Validate();
 
-            string report = "transport=UnityTransport6.5 protocol=2 payload=65536 default=OfflineSingle " +
+            string report = $"transport=UnityTransport6.5 protocol={OnlineProtocol.CurrentVersion} payload=65536 default=OfflineSingle " +
                             "sceneSession=1 localLoopback=1 realTransport=1 authority=1 camera=1 canvas=1 buildScenes=2 m12=PASS";
             string resultPath = Path.GetFullPath(Path.Combine(Application.dataPath, "../Library/M13/M13Validation.result"));
             Directory.CreateDirectory(Path.GetDirectoryName(resultPath));

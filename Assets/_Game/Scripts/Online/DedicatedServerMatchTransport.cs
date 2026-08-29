@@ -24,11 +24,15 @@ namespace SwingPop.Online
             public float RateWindowElapsed;
             public int SubmissionsInWindow;
             public int ReconnectRequestsInWindow;
+            public int AuthenticationRequestsInWindow;
             public long SentBytes;
             public long ReceivedBytes;
             public long SnapshotVersion = -1;
             public string SnapshotHash = string.Empty;
             public long AcceptedAtMilliseconds;
+            public bool Authenticated;
+            public PlayerAccountId AccountId;
+            public AuthSessionId AuthSessionId;
         }
 
         private sealed class RejectedPeer
@@ -49,7 +53,9 @@ namespace SwingPop.Online
         private readonly List<RejectedPeer> rejectedPeers = new();
         private readonly NetworkDesyncTelemetry desyncTelemetry = new();
         private readonly ReconnectSessionRegistry reconnectSessions = new();
+        private readonly MatchPlayerOwnershipRegistry matchOwnership = new();
         private readonly IServerClock serverClock = new SystemServerClock();
+        private AuthenticatedConnectionRegistry authenticationRegistry;
         private NetworkDriver driver;
         private NetworkPipeline reliablePipeline;
         private NetworkConnectionStateMachine connectionState = new();
@@ -64,6 +70,10 @@ namespace SwingPop.Online
         private float endedCleanupElapsed;
         private float reconnectRateWindowElapsed;
         private int reconnectRequestsInWindow;
+        private bool authenticationRequired;
+        private float authenticationTimeoutSeconds = 8f;
+        private float authenticationRateWindowElapsed;
+        private int authenticationRequestsInWindow;
 
         public event Action<ApprovedShot> ShotApprovedReceived;
         public event Action<ShotRejection> ShotRejectedReceived;
@@ -105,6 +115,9 @@ namespace SwingPop.Online
         public bool IsReady => matchStarted && connectionState.State == NetworkConnectionState.InMatch;
         public bool IsMatchSuspended => lifecycle.State == DedicatedMatchLifecycleState.ReconnectGrace;
         public float ReconnectGraceSeconds => reconnectGraceSeconds;
+        public bool AuthenticationRequired => authenticationRequired;
+        public int AuthenticatedConnectionCount => authenticationRegistry?.ActiveConnectionCount ?? 0;
+        public int AuthenticationSessionCount => authenticationRegistry?.SessionCount ?? 0;
 
         private void Update() => Tick(Time.unscaledDeltaTime);
         private void OnDisable() => CancelPending();
@@ -121,6 +134,26 @@ namespace SwingPop.Online
             reconnectGraceSeconds = Mathf.Clamp(graceSeconds, 3f, 120f);
         }
 
+        public void ConfigureAuthentication(bool required, byte[] signingKey, string issuer,
+            float sessionLifetimeSeconds, float authTimeoutSeconds)
+        {
+            authenticationRequired = required;
+            authenticationTimeoutSeconds = Mathf.Clamp(authTimeoutSeconds, 5f, 10f);
+            if (!required)
+            {
+                authenticationRegistry = null;
+                return;
+            }
+            if (signingKey == null || signingKey.Length < 32)
+            {
+                authenticationRegistry = null;
+                return;
+            }
+            DevelopmentAuthenticationProvider provider = new(signingKey, issuer);
+            authenticationRegistry = new AuthenticatedConnectionRegistry(provider,
+                Mathf.RoundToInt(Mathf.Clamp(sessionLifetimeSeconds, 60f, 7200f) * 1000f));
+        }
+
         public void ConfigureConnectionLiveness(float seconds)
         {
             livenessTimeoutSeconds = Mathf.Clamp(seconds, 15f, 120f);
@@ -129,6 +162,11 @@ namespace SwingPop.Online
         public bool StartDedicatedServer(string bindAddress, ushort networkPort, float connectionTimeoutSeconds)
         {
             ShutdownInternal(false);
+            if (authenticationRequired && authenticationRegistry == null)
+            {
+                Fail("Development authentication is enabled but no runtime signing key was supplied.");
+                return false;
+            }
             address = string.IsNullOrWhiteSpace(bindAddress) ? "127.0.0.1" : bindAddress.Trim();
             port = networkPort;
             timeoutSeconds = Mathf.Clamp(connectionTimeoutSeconds, 5f, 10f);
@@ -161,7 +199,7 @@ namespace SwingPop.Online
                 ClientPeer peer = peers[index];
                 if (!peer.HandshakeComplete || !peer.PlayerId.IsValid) continue;
                 ReconnectTicket ticket = reconnectSessions.Register(initialSnapshot.MatchId, peer.PlayerId,
-                    serverClock.UtcNowMilliseconds);
+                    peer.AccountId, serverClock.UtcNowMilliseconds);
                 SendTo(peer, NetworkMessageType.ReconnectTicketIssued, initialSnapshot.MatchId,
                     serializer.Serialize(new ReconnectTicketIssuedMessage(ticket)));
             }
@@ -217,10 +255,16 @@ namespace SwingPop.Online
             float safeDelta = Mathf.Max(0f, deltaTime);
             pingElapsed += safeDelta;
             reconnectRateWindowElapsed += safeDelta;
+            authenticationRateWindowElapsed += safeDelta;
             if (reconnectRateWindowElapsed >= 1f)
             {
                 reconnectRateWindowElapsed = 0f;
                 reconnectRequestsInWindow = 0;
+            }
+            if (authenticationRateWindowElapsed >= 1f)
+            {
+                authenticationRateWindowElapsed = 0f;
+                authenticationRequestsInWindow = 0;
             }
             PollRejectedConnections();
             AcceptConnections();
@@ -233,6 +277,7 @@ namespace SwingPop.Online
                     peer.RateWindowElapsed = 0f;
                     peer.SubmissionsInWindow = 0;
                     peer.ReconnectRequestsInWindow = 0;
+                    peer.AuthenticationRequestsInWindow = 0;
                 }
                 PollPeer(peer);
             }
@@ -273,6 +318,14 @@ namespace SwingPop.Online
             snapshotHash = string.Empty;
             return false;
         }
+
+        public bool RevokeAuthenticationSession(AuthSessionId sessionId)
+        {
+            return authenticationRegistry != null && authenticationRegistry.Revoke(sessionId);
+        }
+
+        public bool TryGetMatchOwner(MatchPlayerId playerId, out PlayerAccountId accountId) =>
+            matchOwnership.TryGetOwner(playerId, out accountId);
 
         private void CreateDriver()
         {
@@ -347,7 +400,8 @@ namespace SwingPop.Online
         private void PollPeer(ClientPeer peer)
         {
             if (!peer.HandshakeComplete
-                && serverClock.UtcNowMilliseconds - peer.AcceptedAtMilliseconds > timeoutSeconds * 1000f)
+                && serverClock.UtcNowMilliseconds - peer.AcceptedAtMilliseconds
+                > (authenticationRequired ? authenticationTimeoutSeconds : timeoutSeconds) * 1000f)
             {
                 RejectAndClose(peer, NetworkMessageType.ConnectionRejected,
                     serializer.Serialize(new ConnectionRejectedMessage(ShotRejectReason.ConnectionNotReady,
@@ -413,8 +467,17 @@ namespace SwingPop.Online
 
         private void Dispatch(ClientPeer peer, NetworkMessageEnvelope envelope)
         {
+            if (authenticationRequired && !peer.Authenticated
+                && !AuthenticationMessagePolicy.IsAllowedBeforeAuthentication(envelope.MessageType))
+            {
+                RejectAuthenticationAndClose(peer, AuthenticationRejectReason.AuthenticationRequired);
+                return;
+            }
             switch (envelope.MessageType)
             {
+                case NetworkMessageType.AuthRequest:
+                    HandleAuthenticationRequest(peer, serializer.Deserialize<AuthRequestMessage>(envelope.Payload));
+                    break;
                 case NetworkMessageType.ClientHello:
                     HandleClientHello(peer, serializer.Deserialize<ClientHelloMessage>(envelope.Payload));
                     break;
@@ -457,7 +520,8 @@ namespace SwingPop.Online
 
         private void HandleClientHello(ClientPeer peer, ClientHelloMessage hello)
         {
-            if (peer.HandshakeComplete || hello.RequestedRole != ClientRequestedRole.Player)
+            if (peer.HandshakeComplete || hello.RequestedRole != ClientRequestedRole.Player
+                || authenticationRequired && !peer.Authenticated)
             {
                 RejectMalformed(ShotRejectReason.InvalidCommand);
                 return;
@@ -481,19 +545,71 @@ namespace SwingPop.Online
             }
 
             peer.PlayerId = playerId;
+            if (authenticationRequired && !matchOwnership.TryBind(playerId, peer.AccountId))
+            {
+                playerRegistry.Remove(peer.Connection.GetHashCode());
+                slotAllocator.Release(playerId);
+                RejectAuthenticationAndClose(peer, AuthenticationRejectReason.SessionConflict);
+                return;
+            }
             peer.HandshakeComplete = true;
             SendTo(peer, NetworkMessageType.PlayerAssigned, default,
                 serializer.Serialize(new PlayerAssignedMessage(playerId)));
             connectionState.TryTransition(NetworkConnectionState.Connected);
             PlayerConnected?.Invoke(playerId);
-            Log("Connection", $"{playerId} connected build={hello.ClientBuild}");
+            Log("Connection", $"{playerId} connected account={AccountFingerprint(peer.AccountId)} build={hello.ClientBuild}");
             if (ConnectedPlayerCount == MaxPlayers) AllPlayersReady?.Invoke();
+        }
+
+        private void HandleAuthenticationRequest(ClientPeer peer, AuthRequestMessage request)
+        {
+            peer.AuthenticationRequestsInWindow++;
+            authenticationRequestsInWindow++;
+            if (!authenticationRequired || authenticationRegistry == null)
+            {
+                RejectAuthenticationAndClose(peer, AuthenticationRejectReason.DevelopmentProviderDisabled);
+                return;
+            }
+            if (request.ProtocolVersion != OnlineProtocol.CurrentVersion)
+            {
+                RejectAuthenticationAndClose(peer, AuthenticationRejectReason.UnsupportedVersion);
+                return;
+            }
+            if (peer.Authenticated)
+            {
+                RejectAuthenticationAndClose(peer, AuthenticationRejectReason.AlreadyAuthenticated);
+                return;
+            }
+            if (peer.AuthenticationRequestsInWindow > 3 || authenticationRequestsInWindow > 12)
+            {
+                RejectAuthenticationAndClose(peer, AuthenticationRejectReason.RateLimited);
+                return;
+            }
+
+            AuthenticationBindingResult result = authenticationRegistry.Authenticate(
+                peer.Connection.GetHashCode(), request.Credential, serverClock.UtcNowMilliseconds);
+            if (!result.Accepted)
+            {
+                RejectAuthenticationAndClose(peer, result.Reason);
+                return;
+            }
+            peer.Authenticated = true;
+            peer.AccountId = result.Session.AccountId;
+            peer.AuthSessionId = result.Session.SessionId;
+            AuthAcceptedMessage accepted = new(result.Session.AccountId, result.Session.SessionId,
+                result.Session.ExpiresAtMilliseconds);
+            SendTo(peer, NetworkMessageType.AuthAccepted, default, serializer.Serialize(accepted));
+            Log("Auth", $"Accepted account={AccountFingerprint(peer.AccountId)} session={SessionFingerprint(peer.AuthSessionId)}");
         }
 
         private void HandleShotSubmission(ClientPeer peer, ShotSubmission submission)
         {
             LastShotSubmissionBytes = Encoding.UTF8.GetByteCount(serializer.Serialize(submission));
             if (!peer.HandshakeComplete
+                || authenticationRequired && (authenticationRegistry == null
+                    || !authenticationRegistry.TryGetConnection(peer.Connection.GetHashCode(), out AuthenticatedPlayerSession authenticated)
+                    || authenticated.AccountId != peer.AccountId
+                    || !matchOwnership.IsOwner(submission.PlayerId, peer.AccountId))
                 || !playerRegistry.IsBoundPlayer(peer.Connection.GetHashCode(), submission.PlayerId))
             {
                 RejectSubmission(peer, submission, ShotRejectReason.PlayerSpoofing);
@@ -556,6 +672,7 @@ namespace SwingPop.Online
         {
             if (!peers.Contains(peer)) return;
             MatchPlayerId playerId = peer.PlayerId;
+            authenticationRegistry?.RemoveConnection(peer.Connection.GetHashCode());
             peers.Remove(peer);
             if (playerId.IsValid)
             {
@@ -584,6 +701,11 @@ namespace SwingPop.Online
 
         private void HandleReconnectRequest(ClientPeer peer, ReconnectRequestMessage request)
         {
+            if (authenticationRequired && (!peer.Authenticated || !peer.AccountId.IsValid))
+            {
+                RejectReconnectAndClose(peer, ReconnectRejectReason.AuthenticationRequired);
+                return;
+            }
             peer.ReconnectRequestsInWindow++;
             reconnectRequestsInWindow++;
             if (peer.ReconnectRequestsInWindow > 3 || reconnectRequestsInWindow > 8)
@@ -593,13 +715,14 @@ namespace SwingPop.Online
             }
             bool duplicateBinding = playerRegistry.ContainsPlayer(request.PlayerId);
             ReconnectValidationResult validation = reconnectSessions.ValidateAndRotate(request,
-                serverClock.UtcNowMilliseconds, duplicateBinding);
+                serverClock.UtcNowMilliseconds, duplicateBinding, peer.AccountId);
             if (!validation.Accepted)
             {
                 RejectReconnectAndClose(peer, validation.Reason);
                 return;
             }
             if (!playerRegistry.TryBind(peer.Connection.GetHashCode(), request.PlayerId)
+                || authenticationRequired && !matchOwnership.IsOwner(request.PlayerId, peer.AccountId)
                 || authority == null || !authority.ReconnectPlayer(request.PlayerId))
             {
                 RejectReconnectAndClose(peer, ReconnectRejectReason.PlayerAlreadyConnected);
@@ -619,7 +742,15 @@ namespace SwingPop.Online
                 reconnectSessions.HasPlayerInGrace ? "Player reconnected; waiting for other player" : "Player reconnected; match resumed");
             PlayerConnected?.Invoke(request.PlayerId);
             Log("Reconnect", $"Accepted player={request.PlayerId} generation={validation.RotatedTicket.SessionGeneration} " +
-                             $"fingerprint={ReconnectSessionRegistry.Fingerprint(validation.RotatedTicket.Secret)}");
+                             $"account={AccountFingerprint(peer.AccountId)} fingerprint={ReconnectSessionRegistry.Fingerprint(validation.RotatedTicket.Secret)}");
+        }
+
+        private void RejectAuthenticationAndClose(ClientPeer peer, AuthenticationRejectReason reason)
+        {
+            RejectedMessageCount++;
+            RejectAndClose(peer, NetworkMessageType.AuthRejected,
+                serializer.Serialize(new AuthRejectedMessage(reason, reason.ToString())));
+            Log("Auth", $"Rejected reason={reason}");
         }
 
         private void RejectReconnectAndClose(ClientPeer peer, ReconnectRejectReason reason)
@@ -634,6 +765,7 @@ namespace SwingPop.Online
         {
             if (peer == null || !peers.Contains(peer)) return;
             SendTo(peer, type, default, payload);
+            authenticationRegistry?.RemoveConnection(peer.Connection.GetHashCode());
             peers.Remove(peer);
             rejectedPeers.Add(new RejectedPeer { Connection = peer.Connection });
         }
@@ -752,10 +884,20 @@ namespace SwingPop.Online
             pingElapsed = 0f;
             matchStarted = false;
             reconnectSessions.Reset();
+            authenticationRegistry?.Reset();
+            matchOwnership.Reset();
             endedCleanupElapsed = 0f;
+            authenticationRateWindowElapsed = 0f;
+            authenticationRequestsInWindow = 0;
         }
 
         private static long NowMilliseconds() => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+
+        private static string AccountFingerprint(PlayerAccountId accountId) => accountId.IsValid
+            ? DevelopmentAuthenticationProvider.Fingerprint(accountId.Value) : "none";
+
+        private static string SessionFingerprint(AuthSessionId sessionId) => sessionId.IsValid
+            ? DevelopmentAuthenticationProvider.Fingerprint(sessionId.Value) : "none";
 
         private void Log(string category, string message)
         {

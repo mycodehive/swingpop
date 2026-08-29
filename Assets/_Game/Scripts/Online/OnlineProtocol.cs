@@ -2,7 +2,7 @@ namespace SwingPop.Online
 {
     public static class OnlineProtocol
     {
-        public const int CurrentVersion = 2;
+        public const int CurrentVersion = 3;
         public const int MaximumPlayers = 4;
         public const int DedicatedServerPlayerCapacity = 2;
         public const int MaximumProcessedShotHistory = 64;
@@ -113,7 +113,10 @@ namespace SwingPop.Online
         ReconnectRequest,
         ReconnectAccepted,
         ReconnectRejected,
-        MatchLifecycleChanged
+        MatchLifecycleChanged,
+        AuthRequest,
+        AuthAccepted,
+        AuthRejected
     }
 
     public enum ClientRequestedRole

@@ -45,6 +45,16 @@
 - [x] Grace expiry to Aborted/Ended without turn deadlock
 - [x] Minimal HUD/F2 status, validator, automated tests, real-process logs, and A-G captures
 
+### M16 Authentication / Player Session Foundation
+
+- [x] Separate account, auth-session, connection, match-player, and reconnect-ticket identities
+- [x] Development-only HMAC-SHA256 provider with runtime-generated 256-bit key
+- [x] Authentication-before-admission handshake and unauthenticated message allowlist
+- [x] Server-owned connection/account/session and match-player/account bindings
+- [x] One active match connection per account and separate `MatchFull` admission result
+- [x] Same-account reconnect requirement and stolen-ticket wrong-account rejection
+- [x] Token tamper, expiry, revocation, rate-limit seam, safe F2 telemetry, tests, builds, and real-process evidence
+
 ## Future Production Work
 
 ### Relay / NAT
@@ -64,8 +74,10 @@
 
 ### Authentication
 
-- [ ] Account identity to `MatchPlayerId` binding
-- [ ] Session token lifecycle, secure storage, expiry, revocation
+- [x] Development account identity to `MatchPlayerId` binding foundation
+- [x] In-memory development session expiry/revocation seam
+- [ ] Production identity provider and backend-issued tokens
+- [ ] Secure platform credential storage, refresh, distributed revocation, logout/kick UX, and audit
 
 ### Production Reconnect
 

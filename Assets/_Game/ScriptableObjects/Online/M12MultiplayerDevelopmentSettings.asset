@@ -28,3 +28,9 @@ MonoBehaviour:
   autoReconnectEnabled: 1
   reconnectAttemptLimit: 3
   reconnectRetryDelaySeconds: 1
+  developmentAuthenticationEnabled: 1
+  developmentAuthenticationIssuer: swingpop-development
+  authenticationTokenLifetimeSeconds: 900
+  authenticationSessionLifetimeSeconds: 1800
+  authenticationTimeoutSeconds: 8
+  verboseAuthenticationLogging: 0

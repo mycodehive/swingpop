@@ -521,4 +521,16 @@ Green까지 직접 이동하지 않고 Putt 구도만 확인하려면 Play Mode�
 
 # M15 Completion Addendum
 
-M15 Match Lifecycle / Reconnect Foundation is implemented on top of M14 dedicated authority: reserved player slots, server-clock grace, hashed rotating tickets, same-player connection rebind, suspended input, latest-snapshot restore, expiry/abort cleanup, status presentation, validator, automated coverage, and real replacement-process acceptance. M16 has not started.
+M15 Match Lifecycle / Reconnect Foundation is implemented on top of M14 dedicated authority: reserved player slots, server-clock grace, hashed rotating tickets, same-player connection rebind, suspended input, latest-snapshot restore, expiry/abort cleanup, status presentation, validator, automated coverage, and real replacement-process acceptance.
+
+## M16 Authentication / Player Session Foundation (2026-08-29)
+
+- [x] Separate Account, AuthSession, Connection, MatchPlayer, and ReconnectTicket identity layers.
+- [x] Add development-only HMAC-SHA256 credentials with runtime-only signing key.
+- [x] Require authentication before dedicated match admission or reconnect.
+- [x] Bind verified account/session to connection and verified account to match player.
+- [x] Reject tampered, expired, revoked, duplicate-account, unauthenticated, and wrong-owner flows.
+- [x] Preserve M15 reconnect ticket hashing/rotation and require same-account ownership.
+- [x] Add F2-safe telemetry, validator, automated coverage, builds, real-process evidence, captures, and documentation.
+- [x] Keep OfflineSingle default and preserve M12-M15 regression baselines.
+- [ ] Do not start M17 or production authentication in this milestone.

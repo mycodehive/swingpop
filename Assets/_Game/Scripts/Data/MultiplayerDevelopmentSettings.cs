@@ -25,6 +25,13 @@ namespace SwingPop.Data
         [SerializeField] private bool autoReconnectEnabled = true;
         [SerializeField, Range(1, 5)] private int reconnectAttemptLimit = 3;
         [SerializeField, Range(0.25f, 5f)] private float reconnectRetryDelaySeconds = 1f;
+        [Header("M16 Authentication / Player Session")]
+        [SerializeField] private bool developmentAuthenticationEnabled = true;
+        [SerializeField] private string developmentAuthenticationIssuer = "swingpop-development";
+        [SerializeField, Range(60f, 3600f)] private float authenticationTokenLifetimeSeconds = 900f;
+        [SerializeField, Range(60f, 7200f)] private float authenticationSessionLifetimeSeconds = 1800f;
+        [SerializeField, Range(5f, 10f)] private float authenticationTimeoutSeconds = 8f;
+        [SerializeField] private bool verboseAuthenticationLogging;
 
         public MultiplayerDevelopmentMode Mode => mode;
         public int SimulatedLatencyMs => simulatedLatencyMs;
@@ -42,6 +49,13 @@ namespace SwingPop.Data
         public bool AutoReconnectEnabled => autoReconnectEnabled;
         public int ReconnectAttemptLimit => Mathf.Clamp(reconnectAttemptLimit, 1, 5);
         public float ReconnectRetryDelaySeconds => Mathf.Clamp(reconnectRetryDelaySeconds, 0.25f, 5f);
+        public bool DevelopmentAuthenticationEnabled => developmentAuthenticationEnabled;
+        public string DevelopmentAuthenticationIssuer => string.IsNullOrWhiteSpace(developmentAuthenticationIssuer)
+            ? "swingpop-development" : developmentAuthenticationIssuer.Trim();
+        public float AuthenticationTokenLifetimeSeconds => Mathf.Clamp(authenticationTokenLifetimeSeconds, 60f, 3600f);
+        public float AuthenticationSessionLifetimeSeconds => Mathf.Clamp(authenticationSessionLifetimeSeconds, 60f, 7200f);
+        public float AuthenticationTimeoutSeconds => Mathf.Clamp(authenticationTimeoutSeconds, 5f, 10f);
+        public bool VerboseAuthenticationLogging => verboseAuthenticationLogging;
 
         public void ConfigureForDevelopment(
             MultiplayerDevelopmentMode developmentMode,
@@ -84,6 +98,18 @@ namespace SwingPop.Data
             autoReconnectEnabled = autoReconnect;
             reconnectAttemptLimit = Mathf.Clamp(attemptLimit, 1, 5);
             reconnectRetryDelaySeconds = Mathf.Clamp(retryDelaySeconds, 0.25f, 5f);
+        }
+
+        public void ConfigureAuthentication(bool enabled = true, string issuer = "swingpop-development",
+            float tokenLifetimeSeconds = 900f, float sessionLifetimeSeconds = 1800f,
+            float timeoutSeconds = 8f, bool verbose = false)
+        {
+            developmentAuthenticationEnabled = enabled;
+            developmentAuthenticationIssuer = string.IsNullOrWhiteSpace(issuer) ? "swingpop-development" : issuer.Trim();
+            authenticationTokenLifetimeSeconds = Mathf.Clamp(tokenLifetimeSeconds, 60f, 3600f);
+            authenticationSessionLifetimeSeconds = Mathf.Clamp(sessionLifetimeSeconds, 60f, 7200f);
+            authenticationTimeoutSeconds = Mathf.Clamp(timeoutSeconds, 5f, 10f);
+            verboseAuthenticationLogging = verbose;
         }
     }
 }

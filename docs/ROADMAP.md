@@ -1,5 +1,9 @@
 # SwingPop Roadmap
 
+## M16 Online Authentication Foundation Status (2026-08-29)
+
+Development authentication/player-session foundation is complete: authenticated dedicated admission, account-owned match slots, and account-checked reconnect are verified. Production provider integration, secure credential storage, lobby, matchmaking, relay, and deployment remain future work. M17 has not started.
+
 ## Phase A — Vertical Slice
 
 ### M0 Project Foundation — Complete (2026-08-10)

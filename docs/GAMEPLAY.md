@@ -423,3 +423,7 @@ Player A Ready
 # M15 Reconnect Gameplay Policy
 
 In a dedicated two-player match, one disconnected player suspends new shots for both players. An already approved server shot may finish and be recorded exactly once. Reconnect restores the newest stable authoritative snapshot and resumes the preserved turn; grace expiry aborts the match. This policy does not change offline gameplay, shot tuning, terrain, scoring, or club selection.
+
+## M16 Authenticated Match Policy
+
+Dedicated clients authenticate before they can receive `player-a` or `player-b`. Authentication success does not guarantee a free match slot. Shot gameplay starts only after the server binds the verified account, connection, and match player. Reconnect requires the same verified account that originally owned the slot plus the rotating M15 ticket. OfflineSingle, LocalTwoPlayer, ball physics, shot tuning, terrain, scoring, clubs, camera, character, HUD, VFX, and audio are unchanged.

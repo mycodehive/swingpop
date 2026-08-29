@@ -24,6 +24,7 @@ namespace SwingPop.Online
         [SerializeField] private UnityTransportMatchTransport networkTransport;
         [SerializeField] private DedicatedServerMatchTransport dedicatedServerTransport;
         [SerializeField] private ReconnectController reconnectController;
+        [SerializeField] private AuthenticationController authenticationController;
 
         [Header("Existing Gameplay")]
         [SerializeField] private ShotFlowController shotFlow;
@@ -66,10 +67,12 @@ namespace SwingPop.Online
         public DedicatedServerMatchTransport DedicatedServerTransport => dedicatedServerTransport;
         public LocalMatchAuthority Authority => authority;
         public ReconnectController ReconnectController => reconnectController;
+        public AuthenticationController AuthenticationController => authenticationController;
         public bool IsMatchSuspended => matchSuspended;
         public MatchLifecycleChangedMessage LatestLifecycle => latestLifecycle;
         public bool IsConfigured => settings != null && authority != null && transport != null && networkTransport != null
-                                    && dedicatedServerTransport != null
+                                    && dedicatedServerTransport != null && reconnectController != null
+                                    && authenticationController != null
                                     && shotFlow != null && ball != null && holeFlow != null
                                     && surfaces != null && surfaces.Length > 0;
 
@@ -267,6 +270,14 @@ namespace SwingPop.Online
             dedicatedServerTransport.ConfigureReconnectPolicy(
                 ReadReconnectGraceOverride(Environment.GetCommandLineArgs(),
                     settings != null ? settings.ReconnectGraceSeconds : 30f));
+            bool authenticationEnabled = mode == MultiplayerDevelopmentMode.DedicatedServer
+                                         && settings != null && settings.DevelopmentAuthenticationEnabled;
+            SwingPop.Online.AuthenticationController.TryLoadServerSigningKey(
+                Environment.GetCommandLineArgs(), out byte[] authKey);
+            dedicatedServerTransport.ConfigureAuthentication(authenticationEnabled, authKey,
+                settings != null ? settings.DevelopmentAuthenticationIssuer : "swingpop-development",
+                settings != null ? settings.AuthenticationSessionLifetimeSeconds : 1800f,
+                settings != null ? settings.AuthenticationTimeoutSeconds : 8f);
             float liveness = settings != null ? settings.ConnectionLivenessTimeoutSeconds : 30f;
             networkTransport.ConfigureConnectionLiveness(liveness);
             dedicatedServerTransport.ConfigureConnectionLiveness(liveness);

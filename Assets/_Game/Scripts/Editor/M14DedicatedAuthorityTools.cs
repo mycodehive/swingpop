@@ -44,7 +44,7 @@ namespace SwingPop.Editor
             Require(settings.Mode == MultiplayerDevelopmentMode.OfflineSingle, "Default mode must remain OfflineSingle.");
             Require(settings.DedicatedServerMaxPlayers == 2, "Dedicated player capacity must be 2.");
             Require(settings.DisableServerPresentation, "Dedicated presentation disable policy must be enabled.");
-            Require(OnlineProtocol.CurrentVersion == 2, "M14 must retain compatible protocol version 2.");
+            Require(OnlineProtocol.CurrentVersion >= 2, "M14 dedicated envelope requires protocol version 2 or newer.");
             Require(Object.FindObjectsByType<MatchSessionController>(FindObjectsInactive.Include).Length == 1,
                 "Expected exactly one MatchSessionController.");
             Require(Object.FindObjectsByType<LocalMatchAuthority>(FindObjectsInactive.Include).Length == 1,
@@ -76,7 +76,7 @@ namespace SwingPop.Editor
             int cameras = Object.FindObjectsByType<Camera>(FindObjectsInactive.Include).Length;
             int canvases = Object.FindObjectsByType<Canvas>(FindObjectsInactive.Include).Length;
             int audio = Object.FindObjectsByType<AudioSource>(FindObjectsInactive.Include).Length;
-            string report = $"protocol=2 capacity=2 authority=1 serverTransport=1 m13Transport=1 " +
+            string report = $"protocol={OnlineProtocol.CurrentVersion} capacity=2 authority=1 serverTransport=1 m13Transport=1 " +
                             $"colliders>=8 sharedScene=1 presentationPolicy=typed cameraRequired=0 canvasRequired=0 " +
                             $"audioRequired=0 sceneRenderers={renderers} sceneCameras={cameras} sceneCanvases={canvases} " +
                             $"sceneAudio={audio} dedicatedTargetInstalled={IsDedicatedServerTargetInstalled()} m13=PASS";

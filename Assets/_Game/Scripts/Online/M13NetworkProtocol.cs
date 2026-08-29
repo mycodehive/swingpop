@@ -268,7 +268,8 @@ namespace SwingPop.Online
                 or NetworkMessageType.Ping
                 or NetworkMessageType.Pong
                 or NetworkMessageType.DisconnectNotice
-                or NetworkMessageType.ReconnectRequest;
+                or NetworkMessageType.ReconnectRequest
+                or NetworkMessageType.AuthRequest;
         }
 
         public static bool IsAllowedFromServer(NetworkMessageType messageType)
@@ -286,7 +287,9 @@ namespace SwingPop.Online
                 or NetworkMessageType.ReconnectTicketIssued
                 or NetworkMessageType.ReconnectAccepted
                 or NetworkMessageType.ReconnectRejected
-                or NetworkMessageType.MatchLifecycleChanged;
+                or NetworkMessageType.MatchLifecycleChanged
+                or NetworkMessageType.AuthAccepted
+                or NetworkMessageType.AuthRejected;
         }
     }
 

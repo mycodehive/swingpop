@@ -137,7 +137,7 @@ namespace SwingPop.Tests
         [Test]
         public void ProtocolTwoRemainsCompatibleAndCapacityIsTwo()
         {
-            Assert.That(OnlineProtocol.CurrentVersion, Is.EqualTo(2));
+            Assert.That(OnlineProtocol.CurrentVersion, Is.GreaterThanOrEqualTo(2));
             Assert.That(OnlineProtocol.DedicatedServerPlayerCapacity, Is.EqualTo(2));
             Assert.That(OnlineProtocol.MaximumPayloadBytes, Is.EqualTo(65536));
         }

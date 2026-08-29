@@ -17,7 +17,9 @@ namespace SwingPop.Online
         MatchEnded,
         ProtocolMismatch,
         SlotExpired,
-        RateLimited
+        RateLimited,
+        AccountOwnershipMismatch,
+        AuthenticationRequired
     }
 
     public enum ReconnectClientState
@@ -223,6 +225,7 @@ namespace SwingPop.Online
             public byte[] SecretHash;
             public PlayerConnectionState State;
             public long GraceDeadline;
+            public PlayerAccountId OwnerAccountId;
         }
 
         private readonly Dictionary<MatchPlayerId, Session> sessions = new();
@@ -249,11 +252,17 @@ namespace SwingPop.Online
 
         public ReconnectTicket Register(MatchId newMatchId, MatchPlayerId playerId, long nowMilliseconds)
         {
+            return Register(newMatchId, playerId, default, nowMilliseconds);
+        }
+
+        public ReconnectTicket Register(MatchId newMatchId, MatchPlayerId playerId,
+            PlayerAccountId ownerAccountId, long nowMilliseconds)
+        {
             if (!newMatchId.IsValid || !playerId.IsValid) throw new ArgumentException("Valid match and player ids are required.");
             if (matchId.IsValid && matchId != newMatchId) throw new InvalidOperationException("Registry already belongs to another match.");
             matchId = newMatchId;
             matchEnded = false;
-            return Rotate(playerId, nowMilliseconds, PlayerConnectionState.Connected, 0L, 1);
+            return Rotate(playerId, ownerAccountId, nowMilliseconds, PlayerConnectionState.Connected, 0L, 1);
         }
 
         public bool TryEnterGrace(MatchPlayerId playerId, long nowMilliseconds, long graceDurationMilliseconds,
@@ -271,6 +280,12 @@ namespace SwingPop.Online
         public ReconnectValidationResult ValidateAndRotate(ReconnectRequestMessage request, long nowMilliseconds,
             bool hasActiveConnection)
         {
+            return ValidateAndRotate(request, nowMilliseconds, hasActiveConnection, default);
+        }
+
+        public ReconnectValidationResult ValidateAndRotate(ReconnectRequestMessage request, long nowMilliseconds,
+            bool hasActiveConnection, PlayerAccountId authenticatedAccountId)
+        {
             if (request.ProtocolVersion != OnlineProtocol.CurrentVersion)
                 return ReconnectValidationResult.Reject(ReconnectRejectReason.ProtocolMismatch);
             if (matchEnded) return ReconnectValidationResult.Reject(ReconnectRejectReason.MatchEnded);
@@ -284,13 +299,16 @@ namespace SwingPop.Online
                 return ReconnectValidationResult.Reject(ReconnectRejectReason.PlayerAlreadyConnected);
             if (session.State != PlayerConnectionState.ReconnectGrace)
                 return ReconnectValidationResult.Reject(ReconnectRejectReason.InvalidTicket);
+            if (session.OwnerAccountId.IsValid
+                && (!authenticatedAccountId.IsValid || session.OwnerAccountId != authenticatedAccountId))
+                return ReconnectValidationResult.Reject(ReconnectRejectReason.AccountOwnershipMismatch);
             if (nowMilliseconds > session.GraceDeadline)
                 return ReconnectValidationResult.Reject(ReconnectRejectReason.ExpiredTicket);
             if (request.SessionGeneration != session.Generation
                 || !FixedTimeEquals(session.SecretHash, Hash(request.Secret)))
                 return ReconnectValidationResult.Reject(ReconnectRejectReason.InvalidTicket);
 
-            ReconnectTicket rotated = Rotate(request.PlayerId, nowMilliseconds,
+            ReconnectTicket rotated = Rotate(request.PlayerId, session.OwnerAccountId, nowMilliseconds,
                 PlayerConnectionState.Connected, 0L, session.Generation + 1);
             return ReconnectValidationResult.Accept(rotated);
         }
@@ -346,7 +364,7 @@ namespace SwingPop.Online
             return hash.Length < 4 ? "none" : BitConverter.ToString(hash, 0, 4).Replace("-", string.Empty);
         }
 
-        private ReconnectTicket Rotate(MatchPlayerId playerId, long nowMilliseconds,
+        private ReconnectTicket Rotate(MatchPlayerId playerId, PlayerAccountId ownerAccountId, long nowMilliseconds,
             PlayerConnectionState state, long deadline, int generation)
         {
             string secret = tokenSource.CreateSecret();
@@ -357,7 +375,8 @@ namespace SwingPop.Online
                 Generation = generation,
                 SecretHash = Hash(secret),
                 State = state,
-                GraceDeadline = deadline
+                GraceDeadline = deadline,
+                OwnerAccountId = ownerAccountId
             };
             sessions[playerId] = session;
             return new ReconnectTicket(matchId, playerId, generation, secret, nowMilliseconds, deadline);

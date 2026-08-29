@@ -56,7 +56,7 @@ namespace SwingPop.Editor
 
             string resultPath = Path.GetFullPath(Path.Combine(Application.dataPath, "../Library/M15/M15Validation.result"));
             Directory.CreateDirectory(Path.GetDirectoryName(resultPath));
-            string report = "protocol=2 reconnectController=1 grace=30s attempts=3 ticketHash=SHA256 " +
+            string report = $"protocol={OnlineProtocol.CurrentVersion} reconnectController=1 grace=30s attempts=3 ticketHash=SHA256 " +
                             "slotReservation=1 pausePolicy=whole-match m14=PASS";
             File.WriteAllText(resultPath, "PASS | " + report);
             Debug.Log("M15 MATCH LIFECYCLE VALIDATION PASS | " + report);
