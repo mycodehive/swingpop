@@ -562,3 +562,9 @@ M19 adds a third explicit connectivity route, `ProductionRelay`, behind the exis
 The dedicated process is the Unity Relay host and remains the only authority. The Lobby prepares an allocation, passes opaque host material through a one-use temporary reservation, waits for Relay establishment, and then grants clients a provider join code. Connectivity permission, M16 Authentication, one-time M17 `MatchJoinTicket`, and rotating M15 `ReconnectTicket` remain separate gates. A failed ProductionRelay path never falls back to Direct.
 
 A one-PC real cloud run through `asia-northeast1` verified allocation, both joins, two authoritative shots, matching hashes, and reconnect generation 2. Cross-NAT, a public Lobby control plane, shaped WAN profiles, 30-minute soak, repeated allocation lifecycle, Profiler, and bandwidth/cost remain No-Go. See `M19_PRODUCTION_RELAY_WAN_QUALITY_ARCHITECTURE.md` and `M19_NETWORK_QUALITY_GATE.md`.
+
+## M20 Public Control Plane Boundary
+
+M20 adds a deployable staging edge in front of the existing M17 Lobby transport. Caddy is the only public listener and terminates trusted HTTPS/WSS; the Unity Lobby and safe health counter endpoint bind loopback only. Staging rejects plaintext WebSocket, non-loopback Lobby bind, and Direct/LocalRelay gameplay routing. Development keeps all three connectivity modes and localhost behavior.
+
+The Lobby still owns only authentication gating, rooms, Ready/Start, reservations, allocation coordination, and admission delivery. Dedicated match processes remain gameplay authority and connect outbound through ProductionRelay. Staging processes are no longer tied to the Lobby PID, so a control-plane restart does not immediately terminate an active match; bounded maximum lifetime plus allocator reaping prevents indefinite orphans. State remains in-memory and single-VM. See `M20_PUBLIC_CONTROL_PLANE_DEPLOYMENT.md` and `M20_WAN_NETWORK_QUALITY_GATE.md`.

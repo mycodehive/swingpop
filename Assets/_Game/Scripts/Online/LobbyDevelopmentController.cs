@@ -21,6 +21,11 @@ namespace SwingPop.Online
         public const string UnityEnvironmentArgument = "-swingpopUnityEnvironment=";
         public const string RelayRegionArgument = "-swingpopRelayRegion=";
         public const string RelayConnectionTypeArgument = "-swingpopRelayConnectionType=";
+        public const string ControlPlaneEnvironmentArgument = "-swingpopControlPlaneEnvironment=";
+        public const string LobbyEndpointArgument = "-swingpopLobbyEndpoint=";
+        public const string LobbyBindAddressArgument = "-swingpopLobbyBindAddress=";
+        public const string LobbyBindPortArgument = "-swingpopLobbyBindPort=";
+        public const string HealthPortArgument = "-swingpopHealthPort=";
 
         [SerializeField] private LobbyDevelopmentSettings settings;
         [SerializeField] private MultiplayerDevelopmentSettings authenticationSettings;
@@ -34,6 +39,10 @@ namespace SwingPop.Online
         private bool currentReady;
         private string pendingRequestId = string.Empty;
         private int localSlot = -1;
+        private DevelopmentGameServerAllocator activeAllocator;
+        private InMemoryLobbyService activeLobbyService;
+        private ControlPlaneHealthServer healthServer;
+        private float maintenanceElapsed;
 
         public LobbyNetworkTransport Transport => transport;
         public string Status => status;
@@ -61,6 +70,8 @@ namespace SwingPop.Online
 
         private void OnDisable()
         {
+            healthServer?.Dispose();
+            healthServer = null;
             if (transport == null) return;
             transport.AuthenticationAccepted -= OnAuthenticationAccepted;
             transport.AuthenticationRejected -= OnAuthenticationRejected;
@@ -69,6 +80,16 @@ namespace SwingPop.Online
             transport.AdmissionGranted -= OnAdmissionGranted;
             transport.OperationRejected -= OnOperationRejected;
             transport.Disconnected -= OnDisconnected;
+        }
+
+        private void Update()
+        {
+            if (activeAllocator == null) return;
+            maintenanceElapsed += Time.unscaledDeltaTime;
+            if (maintenanceElapsed < 5f) return;
+            maintenanceElapsed = 0f;
+            int reaped = activeAllocator.Reap(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+            if (reaped > 0) Debug.Log($"[M20][Allocation] Reaped {reaped} expired/exited match server(s).", this);
         }
 
         private async void Start()
@@ -149,9 +170,18 @@ namespace SwingPop.Online
             if (string.IsNullOrWhiteSpace(executable)) executable = ResolveProjectRelative(settings.MatchServerExecutable);
             string authKeyPath = MatchReservationFile.ReadArgument(args, AuthenticationController.ServerKeyFileArgument);
             string evidence = MatchReservationFile.ReadArgument(args, EvidenceDirectoryArgument);
-            if (string.IsNullOrWhiteSpace(evidence)) evidence = Path.Combine(Path.GetTempPath(), "SwingPop", "M17");
+            if (string.IsNullOrWhiteSpace(evidence)) evidence = Path.Combine(Path.GetTempPath(), "SwingPop", "M20");
+            ControlPlaneEnvironment targetEnvironment = ReadEnvironment(args, settings.Environment);
             MatchConnectivityMode connectivityMode = ReadConnectivityMode(args,
                 connectivitySettings != null ? connectivitySettings.DefaultMode : MatchConnectivityMode.Direct);
+            if (targetEnvironment == ControlPlaneEnvironment.Staging
+                && connectivityMode != MatchConnectivityMode.ProductionRelay)
+            {
+                status = "STAGING REQUIRES PRODUCTION RELAY";
+                Debug.LogError("[M20][Security] Staging requires ProductionRelay; Direct/LocalRelay remain " +
+                               "development-only and no fallback was attempted.", this);
+                return;
+            }
             IMatchConnectivityProvider connectivityProvider;
             if (connectivityMode == MatchConnectivityMode.LocalRelay)
             {
@@ -203,19 +233,57 @@ namespace SwingPop.Online
                 connectivityProvider = production;
             }
             else connectivityProvider = new DirectMatchConnectivityProvider();
+            MatchServerLaunchPolicy launchPolicy = targetEnvironment == ControlPlaneEnvironment.Staging
+                ? MatchServerLaunchPolicy.Staging(settings.StagingServerMaximumLifetimeSeconds,
+                    settings.ServerCompletionShutdownSeconds)
+                : MatchServerLaunchPolicy.Development;
             DevelopmentGameServerAllocator allocator = new(executable, settings.MatchServerAddress,
                 settings.FirstMatchServerPort, settings.MaximumActiveMatches,
                 Mathf.RoundToInt(settings.JoinTicketLifetimeSeconds * 1000f),
                 settings.ServerReadyTimeoutSeconds, authKeyPath, evidence,
-                connectivityProvider: connectivityProvider);
+                connectivityProvider: connectivityProvider, launchPolicy: launchPolicy);
             InMemoryLobbyService lobbyService = new(allocator, settings.MaximumRooms);
             DevelopmentAuthenticationProvider auth = new(key, authenticationSettings.DevelopmentAuthenticationIssuer);
-            bool started = transport.StartService(settings.LobbyAddress, settings.LobbyPort,
+            string bindAddress = ReadArgument(args, LobbyBindAddressArgument, settings.LobbyAddress);
+            ushort bindPort = ReadPort(args, LobbyBindPortArgument, settings.LobbyPort);
+            if (targetEnvironment == ControlPlaneEnvironment.Staging && !IsLoopback(bindAddress))
+            {
+                status = "STAGING LOBBY BIND MUST BE LOOPBACK";
+                Debug.LogError("[M20][Security] Caddy is the only public listener; Lobby WS must bind loopback.", this);
+                return;
+            }
+            string endpointValue = ReadArgument(args, LobbyEndpointArgument, settings.PublicLobbyEndpoint);
+            string path = "/";
+            ControlPlaneEndpoint publicEndpoint = default;
+            if (targetEnvironment == ControlPlaneEnvironment.Staging
+                && !ControlPlaneEndpoint.TryParse(endpointValue, true, out publicEndpoint,
+                    out string endpointFailure))
+            {
+                status = "INVALID PUBLIC LOBBY ENDPOINT";
+                Debug.LogError("[M20][TLS] " + endpointFailure, this);
+                return;
+            }
+            if (targetEnvironment == ControlPlaneEnvironment.Staging) path = publicEndpoint.Path;
+            ControlPlaneTelemetry telemetry = new();
+            bool started = transport.StartService(bindAddress, bindPort,
                 settings.MaximumConnections, settings.LobbyHandshakeTimeoutSeconds, auth,
                 Mathf.RoundToInt(authenticationSettings.AuthenticationSessionLifetimeSeconds * 1000f),
-                lobbyService, settings.VerboseLogging);
-            status = started ? $"LOBBY SERVICE {settings.LobbyAddress}:{settings.LobbyPort}" : "LOBBY SERVICE FAILED";
-            if (started) Debug.Log($"[M19][Lobby] Connectivity mode={connectivityMode}", this);
+                lobbyService, settings.VerboseLogging, path, settings.CreateRateLimitPolicy(), telemetry);
+            status = started ? $"LOBBY SERVICE {bindAddress}:{bindPort}{path}" : "LOBBY SERVICE FAILED";
+            if (!started) return;
+            activeAllocator = allocator;
+            activeLobbyService = lobbyService;
+            ushort healthPort = ReadPort(args, HealthPortArgument, settings.HealthPort);
+            healthServer = new ControlPlaneHealthServer(() => new ControlPlaneHealthSnapshot(
+                transport != null && transport.ConnectionState == NetworkConnectionState.Listening,
+                transport != null ? transport.ConnectedPeerCount : 0,
+                activeLobbyService?.MatchCount ?? 0,
+                activeAllocator?.ActiveProcessCount ?? 0,
+                activeAllocator?.ActiveAllocationCount ?? 0));
+            if (!healthServer.Start(healthPort))
+                Debug.LogError($"[M20][ControlPlane] Loopback health endpoint failed on port {healthPort}.", this);
+            Debug.Log($"[M20][ControlPlane] environment={targetEnvironment} connectivity={connectivityMode} " +
+                      $"parentBound={launchPolicy.BindToAllocatorParent} health=127.0.0.1:{healthPort}/healthz", this);
         }
 
         private void StartClient(string[] args)
@@ -229,9 +297,25 @@ namespace SwingPop.Online
                 return;
             }
             string credential = File.ReadAllText(credentialPath).Trim();
-            bool started = transport.StartClient(settings.LobbyAddress, settings.LobbyPort,
-                settings.LobbyHandshakeTimeoutSeconds, credential, settings.VerboseLogging);
+            ControlPlaneEnvironment targetEnvironment = ReadEnvironment(args, settings.Environment);
+            string endpointValue = ReadArgument(args, LobbyEndpointArgument,
+                targetEnvironment == ControlPlaneEnvironment.Staging
+                    ? settings.PublicLobbyEndpoint
+                    : $"ws://{settings.LobbyAddress}:{settings.LobbyPort}/");
+            bool valid = ControlPlaneEndpoint.TryParse(endpointValue,
+                targetEnvironment == ControlPlaneEnvironment.Staging, out ControlPlaneEndpoint endpoint,
+                out string failure);
+            if (!valid)
+            {
+                status = "INVALID LOBBY ENDPOINT";
+                Debug.LogError("[M20][TLS] " + failure, this);
+                return;
+            }
+            bool started = transport.StartClient(endpoint, settings.LobbyHandshakeTimeoutSeconds,
+                credential, settings.VerboseLogging);
             status = started ? "CONNECTING TO LOBBY" : "LOBBY CONNECTION FAILED";
+            if (started) Debug.Log($"[M20][TLS] Lobby client endpoint={endpoint.SafeLabel} " +
+                                   $"certificateValidation={(endpoint.IsSecure ? "system-trust-required" : "development-plaintext")}", this);
         }
 
         private void OnAuthenticationAccepted(AuthAcceptedMessage _)
@@ -332,5 +416,27 @@ namespace SwingPop.Online
             string value = MatchReservationFile.ReadArgument(args, ConnectivityModeArgument);
             return Enum.TryParse(value, true, out MatchConnectivityMode parsed) ? parsed : fallback;
         }
+
+        public static ControlPlaneEnvironment ReadEnvironment(string[] args, ControlPlaneEnvironment fallback)
+        {
+            string value = MatchReservationFile.ReadArgument(args, ControlPlaneEnvironmentArgument);
+            return Enum.TryParse(value, true, out ControlPlaneEnvironment parsed) ? parsed : fallback;
+        }
+
+        private static string ReadArgument(string[] args, string prefix, string fallback)
+        {
+            string value = MatchReservationFile.ReadArgument(args, prefix);
+            return string.IsNullOrWhiteSpace(value) ? fallback ?? string.Empty : value.Trim();
+        }
+
+        private static ushort ReadPort(string[] args, string prefix, ushort fallback)
+        {
+            string value = MatchReservationFile.ReadArgument(args, prefix);
+            return ushort.TryParse(value, out ushort parsed) && parsed > 0 ? parsed : fallback;
+        }
+
+        private static bool IsLoopback(string value) => string.Equals(value, "127.0.0.1", StringComparison.OrdinalIgnoreCase)
+                                                        || string.Equals(value, "localhost", StringComparison.OrdinalIgnoreCase)
+                                                        || string.Equals(value, "::1", StringComparison.OrdinalIgnoreCase);
     }
 }

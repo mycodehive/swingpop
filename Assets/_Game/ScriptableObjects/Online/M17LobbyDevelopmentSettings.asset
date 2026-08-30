@@ -18,9 +18,19 @@ MonoBehaviour:
   maximumRooms: 32
   lobbyHandshakeTimeoutSeconds: 8
   verboseLogging: 0
+  environment: 0
+  publicLobbyEndpoint: wss://lobby.example.invalid/lobby
+  healthPort: 18818
+  authRequestsPerSecond: 4
+  listRequestsPerSecond: 8
+  createRequestsPerSecond: 2
+  joinRequestsPerSecond: 4
+  startRequestsPerSecond: 2
   matchServerExecutable: Builds/M17MatchServer/SwingPopServer.exe
   matchServerAddress: 127.0.0.1
   firstMatchServerPort: 19817
   maximumActiveMatches: 4
   serverReadyTimeoutSeconds: 15
   joinTicketLifetimeSeconds: 90
+  stagingServerMaximumLifetimeSeconds: 3600
+  serverCompletionShutdownSeconds: 15

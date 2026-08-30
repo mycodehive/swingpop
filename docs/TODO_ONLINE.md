@@ -85,6 +85,18 @@
 - [x] Add M19 validator, 21 EditMode tests, 10 PlayMode tests, builds, logs, captures, and quality-gate docs
 - [ ] Verify two-router Cross-NAT, controlled WAN profiles, five lifecycle cycles, 30-minute soak, Profiler, and bandwidth/cost
 
+### M20 Public Control Plane Foundation
+
+- [x] Add configurable trusted-WSS public Lobby endpoint without certificate bypass
+- [x] Add loopback-only Unity Lobby/health behind a Caddy TLS reverse proxy template
+- [x] Add bounded operation rates, connection/room/allocation caps, safe counters, and log redaction
+- [x] Separate staging match process lifetime from Lobby PID and add maximum-lifetime/allocator reaping
+- [x] Preserve ProductionRelay/admission/reconnect/authority boundaries with no Direct fallback
+- [x] Add deployment scripts, tests, quality gate, test log, and capture checklist
+- [ ] Deploy to a real VM/domain and verify trusted public TLS
+- [ ] Verify different-network Cross-NAT A/B flow and Lobby-outage independence
+- [ ] Run WAN Profiles B/C, five real lifecycle cleanups, 30-minute soak, Profiler, bandwidth/cost, and provider audit
+
 ## Future Production Work
 
 ### Relay / NAT
@@ -121,10 +133,11 @@
 
 ### Dedicated Deployment / Operations
 
-- [ ] Install and validate Unity's native Dedicated Server build target
+- [ ] Install and validate Unity Linux Build Support / native Dedicated Server build target
 - [ ] Container/image packaging, regions, scaling, health checks, monitoring, and alerting
 - [ ] Load, soak, packet-loss/jitter, chaos, and cost/bandwidth gates
-- [ ] Public TLS Lobby/control plane so remote clients can obtain admission grants without localhost access
+- [x] Public TLS Lobby/control-plane deployment foundation and configuration
+- [ ] Actual public VM/DNS/certificate deployment and Cross-NAT verification
 
 ### Multi-Hole
 
@@ -133,7 +146,8 @@
 
 ### Security
 
-- [ ] TLS/encryption policy and hardened anti-replay
+- [x] M20 staging TLS/WSS policy with system trust and no validation bypass
+- [ ] Production identity, hardened anti-replay, WAF/DDoS, and secret manager
 - [ ] Production rate limiting, validation, audit, privacy, abuse, DDoS response
 - [ ] Signed result receipt and server-side integrity checks
 

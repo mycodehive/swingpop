@@ -12,10 +12,34 @@ namespace SwingPop.Online
         bool TryLaunch(string executablePath, string address, ushort port, string authenticationKeyPath,
             string reservationPath, string readyPath, float timeoutSeconds,
             out int processId, out string failure);
+        bool TryStop(int processId);
+    }
+
+    public sealed class MatchServerLaunchPolicy
+    {
+        public MatchServerLaunchPolicy(bool bindToAllocatorParent, float maximumLifetimeSeconds,
+            float completionShutdownSeconds = 15f)
+        {
+            BindToAllocatorParent = bindToAllocatorParent;
+            MaximumLifetimeSeconds = Math.Clamp(maximumLifetimeSeconds, 300f, 14_400f);
+            CompletionShutdownSeconds = Math.Clamp(completionShutdownSeconds, 5f, 60f);
+        }
+
+        public bool BindToAllocatorParent { get; }
+        public float MaximumLifetimeSeconds { get; }
+        public float CompletionShutdownSeconds { get; }
+        public static MatchServerLaunchPolicy Development => new(true, 3600f, 15f);
+        public static MatchServerLaunchPolicy Staging(float maximumLifetimeSeconds,
+            float completionShutdownSeconds = 15f) => new(false, maximumLifetimeSeconds, completionShutdownSeconds);
     }
 
     public sealed class LocalMatchServerProcessLauncher : ILocalMatchServerLauncher
     {
+        private readonly MatchServerLaunchPolicy policy;
+
+        public LocalMatchServerProcessLauncher(MatchServerLaunchPolicy policy = null) =>
+            this.policy = policy ?? MatchServerLaunchPolicy.Development;
+
         public bool TryLaunch(string executablePath, string address, ushort port, string authenticationKeyPath,
             string reservationPath, string readyPath, float timeoutSeconds,
             out int processId, out string failure)
@@ -35,7 +59,7 @@ namespace SwingPop.Online
             try
             {
                 if (File.Exists(readyPath)) File.Delete(readyPath);
-                string arguments = string.Join(" ", new[]
+                List<string> values = new()
                 {
                     "-swingpopServer", "-batchmode", "-nographics",
                     "-swingpopAddress=" + Quote(address),
@@ -43,10 +67,16 @@ namespace SwingPop.Online
                     "-swingpopAuthKeyFile=" + Quote(authenticationKeyPath),
                     "-swingpopMatchReservationFile=" + Quote(reservationPath),
                     "-swingpopServerReadyFile=" + Quote(readyPath),
-                    DedicatedServerBootstrap.ParentProcessArgument +
-                    Process.GetCurrentProcess().Id.ToString(CultureInfo.InvariantCulture),
+                    DedicatedServerBootstrap.MaximumLifetimeArgument +
+                    policy.MaximumLifetimeSeconds.ToString(CultureInfo.InvariantCulture),
+                    DedicatedServerBootstrap.CompletionShutdownArgument +
+                    policy.CompletionShutdownSeconds.ToString(CultureInfo.InvariantCulture),
                     "-logFile", Quote(Path.ChangeExtension(readyPath, ".server.log"))
-                });
+                };
+                if (policy.BindToAllocatorParent)
+                    values.Insert(values.Count - 2, DedicatedServerBootstrap.ParentProcessArgument +
+                        Process.GetCurrentProcess().Id.ToString(CultureInfo.InvariantCulture));
+                string arguments = string.Join(" ", values);
                 Process process = Process.Start(new ProcessStartInfo
                 {
                     FileName = executablePath,
@@ -74,6 +104,7 @@ namespace SwingPop.Online
                     Thread.Sleep(50);
                 }
                 failure = "Match server ready handshake timed out.";
+                TryStop(process.Id);
                 return false;
             }
             catch (Exception exception)
@@ -83,12 +114,35 @@ namespace SwingPop.Online
             }
         }
 
+        public bool TryStop(int processId)
+        {
+            if (processId <= 0) return false;
+            try
+            {
+                using Process process = Process.GetProcessById(processId);
+                if (process.HasExited) return true;
+                process.Kill();
+                return process.WaitForExit(3000);
+            }
+            catch (ArgumentException) { return true; }
+            catch (Exception) { return false; }
+        }
+
         private static string Quote(string value) => "\"" + (value ?? string.Empty).Replace("\"", "") + "\"";
     }
 
     /// <summary>Local-development allocator. It is bounded and is not cloud orchestration.</summary>
     public sealed class DevelopmentGameServerAllocator : IGameServerAllocator
     {
+        private sealed class AllocationRecord
+        {
+            public string AllocationId;
+            public int ProcessId;
+            public long ExpiresAt;
+            public string ReservationPath;
+            public string ReadyPath;
+        }
+
         private readonly string executablePath;
         private readonly string address;
         private readonly ushort firstPort;
@@ -99,14 +153,16 @@ namespace SwingPop.Online
         private readonly string evidenceDirectory;
         private readonly ILocalMatchServerLauncher launcher;
         private readonly IMatchConnectivityProvider connectivityProvider;
+        private readonly MatchServerLaunchPolicy launchPolicy;
         private readonly HashSet<ushort> allocatedPorts = new();
         private readonly Dictionary<string, ushort> connectivityPorts = new();
+        private readonly Dictionary<string, AllocationRecord> processes = new();
         private long sequence;
 
         public DevelopmentGameServerAllocator(string executablePath, string address, ushort firstPort,
             int maximumActiveMatches, long ticketLifetimeMilliseconds, float readyTimeoutSeconds,
             string authenticationKeyPath, string evidenceDirectory, ILocalMatchServerLauncher launcher = null,
-            IMatchConnectivityProvider connectivityProvider = null)
+            IMatchConnectivityProvider connectivityProvider = null, MatchServerLaunchPolicy launchPolicy = null)
         {
             this.executablePath = executablePath ?? string.Empty;
             this.address = string.IsNullOrWhiteSpace(address) ? "127.0.0.1" : address.Trim();
@@ -116,11 +172,13 @@ namespace SwingPop.Online
             this.readyTimeoutSeconds = Math.Max(1f, readyTimeoutSeconds);
             this.authenticationKeyPath = authenticationKeyPath ?? string.Empty;
             this.evidenceDirectory = evidenceDirectory ?? Path.Combine(Path.GetTempPath(), "SwingPop", "M17");
-            this.launcher = launcher ?? new LocalMatchServerProcessLauncher();
+            this.launchPolicy = launchPolicy ?? MatchServerLaunchPolicy.Development;
+            this.launcher = launcher ?? new LocalMatchServerProcessLauncher(this.launchPolicy);
             this.connectivityProvider = connectivityProvider ?? new DirectMatchConnectivityProvider();
         }
 
         public int ActiveAllocationCount => allocatedPorts.Count;
+        public int ActiveProcessCount => processes.Count;
         public DevelopmentMatchAdmissionRegistry LastAdmissionRegistry { get; private set; }
         public string LastReservationPath { get; private set; } = string.Empty;
         public int LastProcessId { get; private set; }
@@ -171,15 +229,21 @@ namespace SwingPop.Online
             if (!launcher.TryLaunch(executablePath, address, port, authenticationKeyPath,
                     reservationPath, readyPath, readyTimeoutSeconds, out int processId, out failure))
             {
+                if (processId > 0) launcher.TryStop(processId);
                 connectivityProvider.Release(connectivity.AllocationId);
                 allocatedPorts.Remove(port);
+                Delete(reservationPath);
+                Delete(readyPath);
                 reservation = null;
                 return false;
             }
             if (!connectivityProvider.MarkServerReady(connectivity.AllocationId))
             {
+                launcher.TryStop(processId);
                 connectivityProvider.Release(connectivity.AllocationId);
                 allocatedPorts.Remove(port);
+                Delete(reservationPath);
+                Delete(readyPath);
                 reservation = null;
                 failure = "Connectivity allocation could not enter the server-ready state.";
                 return false;
@@ -189,15 +253,64 @@ namespace SwingPop.Online
             LastProcessId = processId;
             LastConnectivityAllocation = connectivity;
             connectivityPorts[connectivity.AllocationId] = port;
+            processes[connectivity.AllocationId] = new AllocationRecord
+            {
+                AllocationId = connectivity.AllocationId,
+                ProcessId = processId,
+                ExpiresAt = nowMilliseconds + (long)(launchPolicy.MaximumLifetimeSeconds * 1000f),
+                ReservationPath = reservationPath,
+                ReadyPath = readyPath
+            };
             return true;
         }
 
         public bool Release(string allocationId)
         {
             if (string.IsNullOrWhiteSpace(allocationId)) return false;
+            bool processReleased = false;
+            if (processes.Remove(allocationId, out AllocationRecord record))
+            {
+                processReleased = launcher.TryStop(record.ProcessId);
+                DeleteTemporaryFiles(record);
+            }
             bool released = connectivityProvider.Release(allocationId);
             if (connectivityPorts.Remove(allocationId, out ushort port)) allocatedPorts.Remove(port);
-            return released;
+            return released || processReleased;
+        }
+
+        public int Reap(long nowMilliseconds)
+        {
+            List<string> expired = new();
+            foreach (KeyValuePair<string, AllocationRecord> pair in processes)
+                if (nowMilliseconds >= pair.Value.ExpiresAt || !IsProcessAlive(pair.Value.ProcessId))
+                    expired.Add(pair.Key);
+            foreach (string allocationId in expired) Release(allocationId);
+            return expired.Count;
+        }
+
+        private static bool IsProcessAlive(int processId)
+        {
+            if (processId <= 0) return false;
+            try
+            {
+                using Process process = Process.GetProcessById(processId);
+                return !process.HasExited;
+            }
+            catch (ArgumentException) { return false; }
+            catch (Exception) { return true; }
+        }
+
+        private static void DeleteTemporaryFiles(AllocationRecord record)
+        {
+            Delete(record.ReservationPath);
+            Delete(record.ReadyPath);
+        }
+
+        private static void Delete(string path)
+        {
+            try { if (!string.IsNullOrWhiteSpace(path) && File.Exists(path)) File.Delete(path); }
+            catch (IOException) { }
+            catch (UnauthorizedAccessException) { }
         }
 
         private bool TryReservePort(out ushort port)

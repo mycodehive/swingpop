@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using SwingPop.AudioSystem;
 using SwingPop.CameraSystem;
 using SwingPop.CharacterSystem;
@@ -141,9 +142,16 @@ namespace SwingPop.Online
     public sealed class DedicatedServerBootstrap : MonoBehaviour
     {
         public const string ParentProcessArgument = "-swingpopParentProcess=";
+        public const string MaximumLifetimeArgument = "-swingpopMaximumLifetimeSeconds=";
+        public const string CompletionShutdownArgument = "-swingpopExitAfterMatchSeconds=";
         [SerializeField] private MultiplayerDevelopmentSettings settings;
         private int parentProcessId;
         private float parentCheckElapsed;
+        private float lifetimeElapsed;
+        private float maximumLifetimeSeconds;
+        private float completionShutdownSeconds;
+        private float completionElapsed;
+        private DedicatedServerMatchTransport matchTransport;
 
         public bool IsDedicatedServer { get; private set; }
         public bool IsNoGraphics => SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null;
@@ -162,10 +170,21 @@ namespace SwingPop.Online
             string parentValue = MatchReservationFile.ReadArgument(Environment.GetCommandLineArgs(),
                 ParentProcessArgument);
             int.TryParse(parentValue, out parentProcessId);
+            string lifetimeValue = MatchReservationFile.ReadArgument(Environment.GetCommandLineArgs(),
+                MaximumLifetimeArgument);
+            if (float.TryParse(lifetimeValue, NumberStyles.Float, CultureInfo.InvariantCulture,
+                    out float parsedLifetime))
+                maximumLifetimeSeconds = Mathf.Clamp(parsedLifetime, 300f, 14_400f);
+            string completionValue = MatchReservationFile.ReadArgument(Environment.GetCommandLineArgs(),
+                CompletionShutdownArgument);
+            if (float.TryParse(completionValue, NumberStyles.Float, CultureInfo.InvariantCulture,
+                    out float parsedCompletion))
+                completionShutdownSeconds = Mathf.Clamp(parsedCompletion, 5f, 60f);
 
             Application.runInBackground = true;
             if (settings == null || settings.DisableServerPresentation)
                 PresentationStats = DedicatedServerPresentationPolicy.Apply();
+            matchTransport = FindAnyObjectByType<DedicatedServerMatchTransport>(FindObjectsInactive.Include);
             Debug.Log($"[M14][Server] Bootstrap headless={IsNoGraphics} " +
                       $"disabledBehaviours={PresentationStats.DisabledBehaviours} " +
                       $"disabledRenderers={PresentationStats.DisabledRenderers} " +
@@ -175,7 +194,27 @@ namespace SwingPop.Online
 
         private void Update()
         {
-            if (!IsDedicatedServer || parentProcessId <= 0) return;
+            if (!IsDedicatedServer) return;
+            lifetimeElapsed += Time.unscaledDeltaTime;
+            if (maximumLifetimeSeconds > 0f && lifetimeElapsed >= maximumLifetimeSeconds)
+            {
+                Debug.Log("[M20][Allocation] Maximum match server lifetime reached; shutting down.", this);
+                Application.Quit(0);
+                return;
+            }
+            if (completionShutdownSeconds > 0f && matchTransport != null
+                && matchTransport.LifecycleState is DedicatedMatchLifecycleState.HoleComplete
+                    or DedicatedMatchLifecycleState.Aborted or DedicatedMatchLifecycleState.Ended)
+            {
+                completionElapsed += Time.unscaledDeltaTime;
+                if (completionElapsed >= completionShutdownSeconds)
+                {
+                    Debug.Log("[M20][Allocation] Match lifecycle complete; shutting down one-match server.", this);
+                    Application.Quit(0);
+                    return;
+                }
+            }
+            if (parentProcessId <= 0) return;
             parentCheckElapsed += Time.unscaledDeltaTime;
             if (parentCheckElapsed < 1f) return;
             parentCheckElapsed = 0f;

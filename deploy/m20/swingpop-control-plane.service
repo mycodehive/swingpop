@@ -1,0 +1,40 @@
+[Unit]
+Description=SwingPop M20 Staging Control Plane
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=swingpop
+Group=swingpop
+WorkingDirectory=/opt/swingpop/lobby
+EnvironmentFile=/etc/swingpop/staging.env
+ExecStart=/opt/swingpop/lobby/SwingPopLobby.x86_64 \
+  -batchmode -nographics -swingpopLobbyService \
+  -swingpopControlPlaneEnvironment=Staging \
+  -swingpopLobbyEndpoint=wss://${SWINGPOP_LOBBY_DOMAIN}/lobby \
+  -swingpopLobbyBindAddress=127.0.0.1 -swingpopLobbyBindPort=18817 \
+  -swingpopHealthPort=18818 \
+  -swingpopConnectivityMode=ProductionRelay -swingpopEnableRealRelayTests \
+  -swingpopUnityEnvironment=${SWINGPOP_UGS_ENVIRONMENT} \
+  -swingpopRelayRegion=${SWINGPOP_RELAY_REGION} \
+  -swingpopRelayConnectionType=${SWINGPOP_RELAY_CONNECTION_TYPE} \
+  -swingpopAuthKeyFile=/etc/swingpop/auth-key.txt \
+  -swingpopMatchServerExecutable=/opt/swingpop/server/SwingPopServer.x86_64 \
+  -swingpopM17EvidenceDirectory=/var/lib/swingpop/allocations \
+  -logFile /var/log/swingpop/control-plane.log
+Restart=on-failure
+RestartSec=3
+TimeoutStopSec=15
+# Do not kill already-active match processes when only the control plane restarts.
+# Match processes have their own bounded maximum lifetime and allocator reaper.
+KillMode=process
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/swingpop /var/log/swingpop
+LimitNOFILE=4096
+
+[Install]
+WantedBy=multi-user.target

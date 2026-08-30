@@ -83,4 +83,11 @@ Vertical Slice와 local turns가 안정된 후 별도 PRD 작성.
 - Status: Conditional Go for the opt-in Unity Relay provider integration; WAN quality gate No-Go.
 - Verified: MPS 2.3.1/DTLS integration, real `asia-northeast1` allocation, dedicated host, two client joins, A/B authoritative shots, matching snapshots, and provider reconnect.
 - Not verified: Cross-NAT, public Lobby, controlled latency/jitter/loss, five-cycle lifecycle, 30-minute soak, Profiler, bandwidth/cost, production identity, and operations.
-- Production online multiplayer remains No-Go. M20 was not started.
+- Production online multiplayer remains No-Go. This was the M19 closeout state; see M20 below.
+
+## M20 Public Control Plane / Cross-NAT WAN Gate (2026-08-31)
+
+- Status: Conditional Go for the deployable single-VM public-control-plane foundation; WAN quality gate No-Go.
+- Implemented: trusted-WSS configuration, loopback WS/health behind Caddy, bounded operation/resource policies, staging process-lifetime separation/reaper, deployment scripts, and automated seams.
+- Not verified: actual public DNS/TLS deployment, two-network Cross-NAT, real WAN gameplay/reconnect, simulated Profiles B/C, five real lifecycle cycles, 30-minute soak, Profiler, bandwidth/cost, and provider dashboard cleanup.
+- Production online multiplayer remains No-Go. M21 was not started.

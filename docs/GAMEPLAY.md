@@ -455,3 +455,12 @@ Dedicated clients authenticate before they can receive `player-a` or `player-b`.
 - Reconnect rejoins the provider allocation, authenticates the same account, then consumes the rotating M15 `ReconnectTicket` and restores the newest authoritative snapshot.
 - Provider failure or timeout never launches a Direct connection and never consumes a one-time match admission ticket before connectivity succeeds.
 - The verified cloud run completed one natural shot per player and converged both clients at turn 2/hash `7DA20979070610D1`; this is not Cross-NAT or adverse-WAN evidence.
+
+## 30. M20 Public Lobby / WAN Gameplay Contract
+
+- Public control-plane routing changes no shot, ball, terrain, score, turn, camera, character, HUD, VFX, or audio rule.
+- Staging clients must connect to the Lobby through trusted WSS and then use ProductionRelay; no Direct fallback or client port forwarding is allowed.
+- Lobby authentication and room membership never authorize a shot. Provider permission, Authentication, initial MatchJoinTicket, current-turn authority, and reconnect ticket remain separate checks.
+- A Lobby outage during an active match must not mutate the dedicated authoritative snapshot or immediately kill the match process.
+- WAN quality claims require real two-network evidence. Localhost/LAN, cloud Relay on one PC, or simulated impairment alone is insufficient for Cross-NAT verification.
+- M20 public TLS/Cross-NAT/WAN gameplay, reconnect, 30-minute soak, and five-cycle cleanup are currently not verified.

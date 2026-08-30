@@ -571,4 +571,20 @@ M15 Match Lifecycle / Reconnect Foundation is implemented on top of M14 dedicate
 - [x] Verify real cloud allocation in `asia-northeast1`, two clients, A/B shots, final matching hash, and reconnect generation 2.
 - [x] Add generic failure mapping/redaction, timeout/retry policy, temporary payload consumption, validator, tests, builds, logs, captures, and quality-gate docs.
 - [ ] Cross-NAT, public Lobby, WAN Profiles B/C, 5-cycle lifecycle, 30-minute soak, Profiler, bandwidth/cost, and production operations are not complete.
-- [x] Stop at M19; no M20 implementation was started.
+- [x] M19 originally stopped at its milestone boundary; superseded by the M20 section below.
+
+## M20 Public Lobby / Control Plane Deployment + Cross-NAT WAN Quality Gate (2026-08-31)
+
+- [x] Add validated `ws://` development / `wss://` staging endpoints and Unity Transport system-trust TLS configuration.
+- [x] Add a Caddy single-VM staging topology with loopback Lobby/health upstreams and public 80/443 only.
+- [x] Keep Lobby/control-plane responsibility separate from dedicated gameplay authority.
+- [x] Add per-operation auth/list/create/join/start rate limits plus bounded connection, room, allocation, and payload caps.
+- [x] Make staging match server lifetime independent of the Lobby PID while adding maximum-lifetime and allocator reaping cleanup.
+- [x] Preserve ProductionRelay, authentication, MatchJoinTicket, and ReconnectTicket ordered boundaries with no Direct fallback.
+- [x] Add safe health counters, secret redaction helper, log prefixes, deployment/status scripts, and M20 docs.
+- [x] Add 20+ EditMode cases and provider-independent PlayMode scenarios A–L.
+- [ ] Install Unity Linux Build Support and produce the two Linux staging players.
+- [ ] Provision a VM/domain, obtain a trusted certificate, and verify public WSS.
+- [ ] Execute real two-network Cross-NAT Lobby/Relay/gameplay/reconnect and Lobby-outage tests.
+- [ ] Execute Typical/Bad WAN shaping, five lifecycle cleanups, actual 30-minute soak, Profiler, bandwidth, and provider dashboard audit.
+- [x] Stop at M20; M21 matchmaking/auth/persistence was not started.

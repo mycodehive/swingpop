@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using Unity.Collections;
 using Unity.Networking.Transport;
+using Unity.Networking.Transport.TLS;
 using Unity.Networking.Transport.Utilities;
 using UnityEngine;
 
@@ -26,8 +27,7 @@ namespace SwingPop.Online
             public long AcceptedAt;
             public LobbyPlayerSession Session;
             public bool Authenticated;
-            public float RateElapsed;
-            public int Operations;
+            public ControlPlanePeerRateLimiter RateLimiter;
         }
 
         private readonly JsonMatchMessageSerializer serializer = new();
@@ -48,6 +48,10 @@ namespace SwingPop.Online
         private long clientOutboundSequence;
         private float clientElapsed;
         private bool verbose;
+        private string webSocketPath = "/";
+        private string secureHostname = string.Empty;
+        private ControlPlaneRateLimitPolicy rateLimitPolicy = new();
+        private ControlPlaneTelemetry telemetry = new();
 
         public event Action<AuthAcceptedMessage> AuthenticationAccepted;
         public event Action<AuthRejectedMessage> AuthenticationRejected;
@@ -68,13 +72,18 @@ namespace SwingPop.Online
         public LobbyRejectReason LastRejection { get; private set; }
         public long SentBytes { get; private set; }
         public long ReceivedBytes { get; private set; }
+        public bool UsesTls => !string.IsNullOrEmpty(secureHostname);
+        public string WebSocketPath => webSocketPath;
+        public ControlPlaneTelemetry Telemetry => telemetry;
 
         private void Update() => Tick(Time.unscaledDeltaTime);
         private void OnDisable() => Shutdown();
 
         public bool StartService(string bindAddress, ushort bindPort, int maxConnections,
             float timeoutSeconds, IAuthenticationService authenticationService,
-            long authSessionLifetimeMilliseconds, ILobbyService lobbyService, bool verboseLogging)
+            long authSessionLifetimeMilliseconds, ILobbyService lobbyService, bool verboseLogging,
+            string path = "/", ControlPlaneRateLimitPolicy operationRateLimits = null,
+            ControlPlaneTelemetry controlPlaneTelemetry = null)
         {
             Shutdown();
             if (authenticationService == null || lobbyService == null) return false;
@@ -87,7 +96,11 @@ namespace SwingPop.Online
             authRegistry = new AuthenticatedConnectionRegistry(authenticationService,
                 Math.Max(60_000L, authSessionLifetimeMilliseconds));
             verbose = verboseLogging;
-            CreateDriver();
+            webSocketPath = NormalizePath(path);
+            secureHostname = string.Empty;
+            rateLimitPolicy = operationRateLimits ?? new ControlPlaneRateLimitPolicy();
+            telemetry = controlPlaneTelemetry ?? new ControlPlaneTelemetry();
+            CreateDriver(webSocketPath, string.Empty);
             NetworkEndpoint endpoint = address == "127.0.0.1" || address.Equals("localhost", StringComparison.OrdinalIgnoreCase)
                 ? NetworkEndpoint.LoopbackIpv4.WithPort(port) : NetworkEndpoint.AnyIpv4.WithPort(port);
             int bind = driver.Bind(endpoint);
@@ -97,29 +110,34 @@ namespace SwingPop.Online
                 return false;
             }
             ConnectionState = NetworkConnectionState.Listening;
-            Log($"[M17][Lobby] Service listening {address}:{port}");
+            Log($"[M20][ControlPlane] Internal WS service listening {address}:{port}{webSocketPath}");
             return true;
         }
 
         public bool StartClient(string hostAddress, ushort hostPort, float timeoutSeconds,
             string developmentCredential, bool verboseLogging)
         {
+            string value = $"ws://{(string.IsNullOrWhiteSpace(hostAddress) ? "127.0.0.1" : hostAddress.Trim())}:{hostPort}/";
+            return ControlPlaneEndpoint.TryParse(value, false, out ControlPlaneEndpoint endpoint, out _)
+                   && StartClient(endpoint, timeoutSeconds, developmentCredential, verboseLogging);
+        }
+
+        public bool StartClient(ControlPlaneEndpoint endpoint, float timeoutSeconds,
+            string developmentCredential, bool verboseLogging)
+        {
             Shutdown();
-            if (string.IsNullOrWhiteSpace(developmentCredential)) return false;
+            if (string.IsNullOrWhiteSpace(developmentCredential) || string.IsNullOrWhiteSpace(endpoint.Host)) return false;
             role = LobbyNetworkRole.Client;
-            address = string.IsNullOrWhiteSpace(hostAddress) ? "127.0.0.1" : hostAddress.Trim();
-            port = hostPort;
+            address = endpoint.Host;
+            port = endpoint.Port;
+            webSocketPath = NormalizePath(endpoint.Path);
+            secureHostname = endpoint.IsSecure ? endpoint.Host : string.Empty;
             handshakeTimeout = Mathf.Clamp(timeoutSeconds, 5f, 20f);
             credential = developmentCredential.Trim();
             verbose = verboseLogging;
             AuthenticationState = AuthenticationClientState.CredentialReady;
-            CreateDriver();
-            if (!NetworkEndpoint.TryParse(address, port, out NetworkEndpoint endpoint))
-            {
-                Shutdown();
-                return false;
-            }
-            clientConnection = driver.Connect(endpoint);
+            CreateDriver(webSocketPath, secureHostname);
+            clientConnection = driver.Connect(new FixedString512Bytes(address), port);
             ConnectionState = NetworkConnectionState.Connecting;
             return clientConnection.IsCreated;
         }
@@ -148,16 +166,21 @@ namespace SwingPop.Online
             {
                 if (peers.Count >= maximumConnections)
                 {
+                    telemetry.RecordFailure();
                     accepted.Disconnect(driver);
                     continue;
                 }
-                peers.Add(new ServicePeer { Connection = accepted, AcceptedAt = Now() });
+                long acceptedAt = Now();
+                peers.Add(new ServicePeer
+                {
+                    Connection = accepted,
+                    AcceptedAt = acceptedAt,
+                    RateLimiter = new ControlPlanePeerRateLimiter(rateLimitPolicy, acceptedAt)
+                });
             }
             for (int index = peers.Count - 1; index >= 0; index--)
             {
                 ServicePeer peer = peers[index];
-                peer.RateElapsed += deltaTime;
-                if (peer.RateElapsed >= 1f) { peer.RateElapsed = 0f; peer.Operations = 0; }
                 if (!peer.Authenticated && Now() - peer.AcceptedAt > handshakeTimeout * 1000f)
                 {
                     RemovePeer(peer, "Authentication timeout");
@@ -209,13 +232,30 @@ namespace SwingPop.Online
                 || envelope.ProtocolVersion != LobbyProtocol.CurrentVersion
                 || !peer.Sequence.TryAccept(envelope.Sequence)
                 || !LobbyNetworkRules.IsAllowedFromClient(envelope.MessageType)) return;
+            if (peer.RateLimiter == null || !peer.RateLimiter.TryConsume(
+                    ControlPlaneRateLimitPolicy.Map(envelope.MessageType), Now()))
+            {
+                telemetry.RecordRateLimitReject();
+                if (peer.Authenticated) Reject(peer, string.Empty, LobbyRejectReason.RateLimited);
+                return;
+            }
             if (!peer.Authenticated && envelope.MessageType != LobbyWireMessageType.AuthRequest) return;
             if (envelope.MessageType == LobbyWireMessageType.AuthRequest)
             {
+                AuthRequestMessage request;
+                try { request = serializer.Deserialize<AuthRequestMessage>(envelope.Payload); }
+                catch (Exception)
+                {
+                    telemetry.RecordAuthenticationReject();
+                    SendService(peer, LobbyWireMessageType.AuthRejected,
+                        new AuthRejectedMessage(AuthenticationRejectReason.InvalidCredential, "InvalidCredential"));
+                    return;
+                }
                 AuthenticationBindingResult result = authRegistry.Authenticate(peer.Connection.GetHashCode(),
-                    serializer.Deserialize<AuthRequestMessage>(envelope.Payload).Credential, Now());
+                    request.Credential, Now());
                 if (!result.Accepted)
                 {
+                    telemetry.RecordAuthenticationReject();
                     SendService(peer, LobbyWireMessageType.AuthRejected,
                         new AuthRejectedMessage(result.Reason, result.Reason.ToString()));
                     return;
@@ -236,13 +276,12 @@ namespace SwingPop.Online
             }
             peer.Session = new LobbyPlayerSession(activeSession.AccountId, activeSession.SessionId,
                 activeSession.ExpiresAtMilliseconds);
-            peer.Operations++;
-            if (peer.Operations > 12)
+            try { DispatchService(peer, envelope); }
+            catch (Exception)
             {
-                Reject(peer, string.Empty, LobbyRejectReason.RateLimited);
-                return;
+                telemetry.RecordFailure();
+                Reject(peer, string.Empty, LobbyRejectReason.InvalidRequest);
             }
-            DispatchService(peer, envelope);
         }
 
         private void DispatchService(ServicePeer peer, LobbyNetworkEnvelope envelope)
@@ -301,6 +340,7 @@ namespace SwingPop.Online
                     LobbyMatchRequest request = serializer.Deserialize<LobbyMatchRequest>(envelope.Payload);
                     LobbyOperationResult<MatchReservation> result = service.StartMatch(peer.Session, request, now);
                     if (!result.Accepted) { Reject(peer, request.RequestId, result.Reason); break; }
+                    telemetry.RecordMatchStart();
                     LobbyOperationResult<LobbyMatchSnapshot> updated = service.GetMatch(peer.Session,
                         new LobbyMatchRequest(Guid.NewGuid().ToString("N"), request.LobbyMatchId), now);
                     if (updated.Accepted) BroadcastUpdate(request.RequestId, LobbyEventType.MatchStarting, updated.Value);
@@ -455,13 +495,16 @@ namespace SwingPop.Online
             catch (Exception) { return false; }
         }
 
-        private void CreateDriver()
+        private void CreateDriver(string path, string tlsHostname)
         {
             NetworkSettings settings = new();
             settings.WithNetworkConfigParameters(connectTimeoutMS: 1000,
                 maxConnectAttempts: Mathf.CeilToInt(handshakeTimeout), disconnectTimeoutMS: 30_000,
                 heartbeatTimeoutMS: 500, receiveQueueCapacity: 256, sendQueueCapacity: 256);
             settings.WithFragmentationStageParameters(OnlineProtocol.MaximumPayloadBytes);
+            settings.WithWebSocketParameters(new FixedString128Bytes(NormalizePath(path)));
+            if (!string.IsNullOrWhiteSpace(tlsHostname))
+                settings.WithSecureClientParameters(tlsHostname.Trim());
             driver = NetworkDriver.Create(new WebSocketNetworkInterface(), settings);
             pipeline = driver.CreatePipeline(typeof(FragmentationPipelineStage), typeof(ReliableSequencedPipelineStage));
         }
@@ -491,6 +534,7 @@ namespace SwingPop.Online
             LatestList = Array.Empty<LobbyMatchSnapshot>();
             clientOutboundSequence = 0;
             clientElapsed = 0f;
+            secureHostname = string.Empty;
         }
 
         private static LobbyMatchSnapshot[] Sanitize(LobbyMatchSnapshot[] values)
@@ -516,6 +560,9 @@ namespace SwingPop.Online
         }
 
         private static long Now() => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        private static string NormalizePath(string value) =>
+            string.IsNullOrWhiteSpace(value) || !value.Trim().StartsWith("/", StringComparison.Ordinal)
+                ? "/" : value.Trim();
         private void Log(string message) { if (verbose) Debug.Log(message, this); }
     }
 }

@@ -556,3 +556,10 @@ Vertical Slice 승인 이후에만 다음 단계 논의:
 - A real `asia-northeast1` DTLS allocation verified dedicated host bind, two client joins, account/ticket admission, one shot per player, matching authoritative hashes, and reconnect generation 2.
 - The provider integration is Conditional Go. Cross-NAT, remotely hosted Lobby, latency/jitter/loss profiles, repeated lifecycle, 30-minute soak, Profiler, bandwidth/cost, production identity, and operations are not verified.
 - WAN network quality and production online multiplayer remain No-Go. See `M19_NETWORK_QUALITY_GATE.md`.
+
+## 28. M20 Public Control Plane / WAN Gate Status (2026-08-31)
+
+- A single-VM staging foundation now supports trusted WSS client configuration, Caddy TLS termination, loopback Lobby/health services, bounded public operations, and ProductionRelay-only public gameplay routing.
+- Lobby and dedicated gameplay authority remain separate. Active staging match processes do not depend on Lobby PID lifetime and have bounded self/allocator cleanup.
+- No public VM/domain was available, so TLS, Cross-NAT A/B gameplay, WAN reconnect, impairment profiles, 30-minute soak, five-cycle cleanup, Profiler, and bandwidth are not verified.
+- Public-control-plane foundation is Conditional Go; WAN quality and production online multiplayer remain No-Go. M21 was not started.

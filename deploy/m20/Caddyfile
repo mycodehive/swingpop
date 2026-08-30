@@ -1,0 +1,42 @@
+{
+	servers {
+		timeouts {
+			read_header 10s
+			idle 5m
+		}
+	}
+}
+
+lobby.example.com {
+	encode zstd gzip
+
+	@health path /healthz
+	handle @health {
+		reverse_proxy 127.0.0.1:18818
+	}
+
+	@lobby path /lobby
+	handle @lobby {
+		reverse_proxy 127.0.0.1:18817 {
+			transport http {
+				versions 1.1
+				dial_timeout 5s
+			}
+			fail_duration 30s
+			max_fails 3
+		}
+	}
+
+	handle {
+		respond "not found" 404
+	}
+
+	log {
+		output file /var/log/caddy/swingpop-access.log {
+			roll_size 20MiB
+			roll_keep 5
+			roll_keep_for 168h
+		}
+		format json
+	}
+}
