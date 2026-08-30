@@ -33,6 +33,7 @@ namespace SwingPop.Online
             public bool Authenticated;
             public PlayerAccountId AccountId;
             public AuthSessionId AuthSessionId;
+            public bool ConnectivityAccepted;
         }
 
         private sealed class RejectedPeer
@@ -76,6 +77,8 @@ namespace SwingPop.Online
         private int authenticationRequestsInWindow;
         private IMatchAdmissionRegistry matchAdmissionRegistry;
         private bool matchAdmissionRequired;
+        private ConnectivityCredentialRegistry connectivityRegistry;
+        private bool connectivityRequired;
 
         public event Action<ApprovedShot> ShotApprovedReceived;
         public event Action<ShotRejection> ShotRejectedReceived;
@@ -122,6 +125,7 @@ namespace SwingPop.Online
         public int AuthenticationSessionCount => authenticationRegistry?.SessionCount ?? 0;
         public bool MatchAdmissionRequired => matchAdmissionRequired;
         public MatchId ReservedGameMatchId => matchAdmissionRegistry?.GameMatchId ?? default;
+        public bool ConnectivityRequired => connectivityRequired;
 
         private void Update() => Tick(Time.unscaledDeltaTime);
         private void OnDisable() => CancelPending();
@@ -162,6 +166,12 @@ namespace SwingPop.Online
         {
             matchAdmissionRegistry = registry;
             matchAdmissionRequired = registry != null;
+        }
+
+        public void ConfigureConnectivity(ConnectivityCredentialRegistry registry)
+        {
+            connectivityRegistry = registry;
+            connectivityRequired = registry != null;
         }
 
         public void ConfigureConnectionLiveness(float seconds)
@@ -482,6 +492,13 @@ namespace SwingPop.Online
 
         private void Dispatch(ClientPeer peer, NetworkMessageEnvelope envelope)
         {
+            if (connectivityRequired && !peer.ConnectivityAccepted
+                && envelope.MessageType is not NetworkMessageType.ConnectivityRequest
+                    and not NetworkMessageType.Ping and not NetworkMessageType.DisconnectNotice)
+            {
+                RejectConnectivityAndClose(peer, ConnectivityRejectReason.MissingCredential);
+                return;
+            }
             if (authenticationRequired && !peer.Authenticated
                 && !AuthenticationMessagePolicy.IsAllowedBeforeAuthentication(envelope.MessageType))
             {
@@ -490,6 +507,10 @@ namespace SwingPop.Online
             }
             switch (envelope.MessageType)
             {
+                case NetworkMessageType.ConnectivityRequest:
+                    HandleConnectivityRequest(peer,
+                        serializer.Deserialize<ConnectivityRequestMessage>(envelope.Payload));
+                    break;
                 case NetworkMessageType.AuthRequest:
                     HandleAuthenticationRequest(peer, serializer.Deserialize<AuthRequestMessage>(envelope.Payload));
                     break;
@@ -541,6 +562,32 @@ namespace SwingPop.Online
                     RemovePeer(peer, serializer.Deserialize<DisconnectNoticeMessage>(envelope.Payload).Reason);
                     break;
             }
+        }
+
+        private void HandleConnectivityRequest(ClientPeer peer, ConnectivityRequestMessage request)
+        {
+            if (!connectivityRequired || connectivityRegistry == null)
+            {
+                RejectConnectivityAndClose(peer, ConnectivityRejectReason.NotRequired);
+                return;
+            }
+            if (peer.ConnectivityAccepted)
+            {
+                RejectConnectivityAndClose(peer, ConnectivityRejectReason.AlreadyAccepted);
+                return;
+            }
+            ConnectivityValidationResult result = connectivityRegistry.Validate(request,
+                serverClock.UtcNowMilliseconds);
+            if (!result.Accepted)
+            {
+                RejectConnectivityAndClose(peer, result.Reason);
+                return;
+            }
+            peer.ConnectivityAccepted = true;
+            SendTo(peer, NetworkMessageType.ConnectivityAccepted, default,
+                serializer.Serialize(new ConnectivityAcceptedMessage(connectivityRegistry.AllocationId)));
+            Log("Connectivity", "Accepted allocation=" +
+                ConnectivitySecurity.Fingerprint(connectivityRegistry.AllocationId));
         }
 
         private void HandleClientHello(ClientPeer peer, ClientHelloMessage hello)
@@ -822,6 +869,14 @@ namespace SwingPop.Online
             RejectAndClose(peer, NetworkMessageType.AuthRejected,
                 serializer.Serialize(new AuthRejectedMessage(reason, reason.ToString())));
             Log("Auth", $"Rejected reason={reason}");
+        }
+
+        private void RejectConnectivityAndClose(ClientPeer peer, ConnectivityRejectReason reason)
+        {
+            RejectedMessageCount++;
+            RejectAndClose(peer, NetworkMessageType.ConnectivityRejected,
+                serializer.Serialize(new ConnectivityRejectedMessage(reason)));
+            Log("Connectivity", $"Rejected reason={reason}");
         }
 
         private void RejectReconnectAndClose(ClientPeer peer, ReconnectRejectReason reason)

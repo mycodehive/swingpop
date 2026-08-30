@@ -548,3 +548,9 @@ M16 places a server-owned `PlayerAccountId -> AuthSessionId -> ConnectionId -> M
 M17 adds a separate Lobby protocol/version and `ILobbyService` control plane in front of the M16 dedicated gameplay plane. Lobby owns authenticated room create/list/join/leave, membership, Ready, capacity, start coordination, allocation, and initial admission grants only. It never calculates shots, physics, turns, score, or gameplay snapshots.
 
 `LobbyMatchId` maps to a separately generated gameplay `MatchId` through `MatchReservation`. Initial entry requires the authenticated account plus a short-lived, match-bound, account-bound, one-time `MatchJoinTicket`; reconnect continues to use the distinct M15 `ReconnectTicket`. The development implementation is an in-memory localhost Lobby and bounded local process allocator, not a production backend. See `M17_LOBBY_MATCH_CREATION_ARCHITECTURE.md`.
+
+## M18 Relay / NAT Traversal Boundary
+
+M18 inserts `IMatchConnectivityProvider` between M17 reservation and dedicated admission. Direct remains the default. Relay mode returns only a client-visible proxy endpoint while the dedicated bind endpoint remains in the server reservation. Relay permission is checked before Authentication and remains separate from one-time `MatchJoinTicket` and rotating `ReconnectTicket` responsibilities.
+
+The verified provider is a separate localhost TCP relay-proxy carrying real UTP WebSocket traffic. It is not verified Cross-NAT or production Relay. Gameplay authority and presentation systems do not reference Relay code. See `M18_RELAY_NAT_TRAVERSAL_ARCHITECTURE.md`.

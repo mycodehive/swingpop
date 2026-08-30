@@ -43,6 +43,8 @@ namespace SwingPop.Online
                     "-swingpopAuthKeyFile=" + Quote(authenticationKeyPath),
                     "-swingpopMatchReservationFile=" + Quote(reservationPath),
                     "-swingpopServerReadyFile=" + Quote(readyPath),
+                    DedicatedServerBootstrap.ParentProcessArgument +
+                    Process.GetCurrentProcess().Id.ToString(CultureInfo.InvariantCulture),
                     "-logFile", Quote(Path.ChangeExtension(readyPath, ".server.log"))
                 });
                 Process process = Process.Start(new ProcessStartInfo
@@ -96,12 +98,15 @@ namespace SwingPop.Online
         private readonly string authenticationKeyPath;
         private readonly string evidenceDirectory;
         private readonly ILocalMatchServerLauncher launcher;
+        private readonly IMatchConnectivityProvider connectivityProvider;
         private readonly HashSet<ushort> allocatedPorts = new();
+        private readonly Dictionary<string, ushort> connectivityPorts = new();
         private long sequence;
 
         public DevelopmentGameServerAllocator(string executablePath, string address, ushort firstPort,
             int maximumActiveMatches, long ticketLifetimeMilliseconds, float readyTimeoutSeconds,
-            string authenticationKeyPath, string evidenceDirectory, ILocalMatchServerLauncher launcher = null)
+            string authenticationKeyPath, string evidenceDirectory, ILocalMatchServerLauncher launcher = null,
+            IMatchConnectivityProvider connectivityProvider = null)
         {
             this.executablePath = executablePath ?? string.Empty;
             this.address = string.IsNullOrWhiteSpace(address) ? "127.0.0.1" : address.Trim();
@@ -112,12 +117,14 @@ namespace SwingPop.Online
             this.authenticationKeyPath = authenticationKeyPath ?? string.Empty;
             this.evidenceDirectory = evidenceDirectory ?? Path.Combine(Path.GetTempPath(), "SwingPop", "M17");
             this.launcher = launcher ?? new LocalMatchServerProcessLauncher();
+            this.connectivityProvider = connectivityProvider ?? new DirectMatchConnectivityProvider();
         }
 
         public int ActiveAllocationCount => allocatedPorts.Count;
         public DevelopmentMatchAdmissionRegistry LastAdmissionRegistry { get; private set; }
         public string LastReservationPath { get; private set; } = string.Empty;
         public int LastProcessId { get; private set; }
+        public MatchConnectivityAllocation LastConnectivityAllocation { get; private set; }
 
         public bool TryAllocate(LobbyMatchSnapshot match, long nowMilliseconds,
             out MatchReservation reservation, out string failure)
@@ -136,6 +143,12 @@ namespace SwingPop.Online
             }
 
             MatchId gameMatchId = new($"game-{nowMilliseconds:x}-{++sequence:x}");
+            if (!connectivityProvider.TryAllocate(gameMatchId, address, port, nowMilliseconds,
+                    out MatchConnectivityAllocation connectivity, out failure))
+            {
+                allocatedPorts.Remove(port);
+                return false;
+            }
             DevelopmentMatchAdmissionRegistry registry = new(gameMatchId);
             long expiry = nowMilliseconds + ticketLifetimeMilliseconds;
             MatchAdmissionGrant[] grants = new MatchAdmissionGrant[match.Members.Length];
@@ -145,9 +158,10 @@ namespace SwingPop.Online
                 MatchPlayerId playerId = new(index == 0 ? "player-a" : "player-b");
                 MatchJoinTicket ticket = registry.Register(member.AccountId, playerId, expiry);
                 grants[index] = new MatchAdmissionGrant(match.LobbyMatchId, gameMatchId,
-                    member.AccountId, playerId, address, port, ticket);
+                    member.AccountId, playerId, connectivity.Client, ticket);
             }
-            reservation = new MatchReservation(match.LobbyMatchId, gameMatchId, address, port, expiry, grants);
+            reservation = new MatchReservation(match.LobbyMatchId, gameMatchId, connectivity.Server,
+                expiry, connectivity.Client, grants);
             Directory.CreateDirectory(evidenceDirectory);
             string safeId = gameMatchId.Value.Replace(':', '-').Replace('/', '-');
             string reservationPath = Path.Combine(evidenceDirectory, safeId + ".reservation.json");
@@ -157,14 +171,33 @@ namespace SwingPop.Online
             if (!launcher.TryLaunch(executablePath, address, port, authenticationKeyPath,
                     reservationPath, readyPath, readyTimeoutSeconds, out int processId, out failure))
             {
+                connectivityProvider.Release(connectivity.AllocationId);
                 allocatedPorts.Remove(port);
                 reservation = null;
+                return false;
+            }
+            if (!connectivityProvider.MarkServerReady(connectivity.AllocationId))
+            {
+                connectivityProvider.Release(connectivity.AllocationId);
+                allocatedPorts.Remove(port);
+                reservation = null;
+                failure = "Connectivity allocation could not enter the server-ready state.";
                 return false;
             }
             LastAdmissionRegistry = registry;
             LastReservationPath = reservationPath;
             LastProcessId = processId;
+            LastConnectivityAllocation = connectivity;
+            connectivityPorts[connectivity.AllocationId] = port;
             return true;
+        }
+
+        public bool Release(string allocationId)
+        {
+            if (string.IsNullOrWhiteSpace(allocationId)) return false;
+            bool released = connectivityProvider.Release(allocationId);
+            if (connectivityPorts.Remove(allocationId, out ushort port)) allocatedPorts.Remove(port);
+            return released;
         }
 
         private bool TryReservePort(out ushort port)

@@ -40,6 +40,8 @@ namespace SwingPop.Debugging
                 string remoteId = session.ActiveMode == MultiplayerDevelopmentMode.NetworkHost
                     ? "player-b" : dedicatedMatch ? "authority-server" : "player-a";
                 GUILayout.Label($"Endpoint: {network.Address}:{network.Port} | Remote: {(network.IsReady ? remoteId : "WAITING")}");
+                GUILayout.Label($"Connectivity: {network.ConnectivityMode} / {network.ConnectivityState}");
+                GUILayout.Label($"Provider: {network.ConnectivityLabel}");
                 GUILayout.Label($"RTT: {network.RoundTripTimeMilliseconds:F0} ms | Msg: {network.MessageCount}");
                 GUILayout.Label($"Envelope Seq: TX {network.OutboundSequence} / RX {network.InboundSequence}");
                 GUILayout.Label($"Bytes: TX {network.SentBytes} / RX {network.ReceivedBytes}");
@@ -63,6 +65,7 @@ namespace SwingPop.Debugging
             if (server != null && session.ActiveMode == MultiplayerDevelopmentMode.DedicatedServer)
             {
                 GUILayout.Label($"Server: {server.ConnectionState} / {server.LifecycleState}");
+                GUILayout.Label($"Connectivity credential required: {server.ConnectivityRequired}");
                 GUILayout.Label($"Auth: required={server.AuthenticationRequired} connections={server.AuthenticatedConnectionCount} sessions={server.AuthenticationSessionCount}");
                 GUILayout.Label($"Players: {server.ConnectedPlayerCount}/{server.MaxPlayers} | Endpoint: {server.Address}:{server.Port}");
                 GUILayout.Label($"Bytes: TX {server.SentBytes} / RX {server.ReceivedBytes} | Msg: {server.MessageCount}");

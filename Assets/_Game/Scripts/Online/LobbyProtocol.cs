@@ -318,6 +318,7 @@ namespace SwingPop.Online
         [SerializeField] private string serverAddress;
         [SerializeField] private int serverPort;
         [SerializeField] private MatchJoinTicket joinTicket;
+        [SerializeField] private MatchConnectivityDescriptor connectivity;
 
         public MatchAdmissionGrant(LobbyMatchId lobbyMatchId, MatchId gameMatchId,
             PlayerAccountId playerAccountId, MatchPlayerId matchPlayerId, string serverAddress, ushort serverPort,
@@ -330,6 +331,23 @@ namespace SwingPop.Online
             this.serverAddress = serverAddress ?? string.Empty;
             this.serverPort = serverPort;
             this.joinTicket = joinTicket;
+            connectivity = new MatchConnectivityDescriptor(MatchConnectivityMode.Direct,
+                ConnectivityProtocol.DirectProvider, this.serverAddress, serverPort,
+                "direct-" + gameMatchId.Value, string.Empty, 0L);
+        }
+
+        public MatchAdmissionGrant(LobbyMatchId lobbyMatchId, MatchId gameMatchId,
+            PlayerAccountId playerAccountId, MatchPlayerId matchPlayerId,
+            MatchConnectivityDescriptor connectivity, MatchJoinTicket joinTicket)
+        {
+            this.lobbyMatchId = lobbyMatchId;
+            this.gameMatchId = gameMatchId;
+            this.playerAccountId = playerAccountId;
+            this.matchPlayerId = matchPlayerId;
+            this.connectivity = connectivity;
+            serverAddress = connectivity.Address;
+            serverPort = connectivity.Port;
+            this.joinTicket = joinTicket;
         }
 
         public LobbyMatchId LobbyMatchId => lobbyMatchId;
@@ -339,8 +357,10 @@ namespace SwingPop.Online
         public string ServerAddress => serverAddress ?? string.Empty;
         public ushort ServerPort => (ushort)Mathf.Clamp(serverPort, 1, 65535);
         public MatchJoinTicket JoinTicket => joinTicket;
+        public MatchConnectivityDescriptor Connectivity => connectivity;
         public bool IsValid => lobbyMatchId.IsValid && gameMatchId.IsValid && playerAccountId.IsValid && matchPlayerId.IsValid
-            && !string.IsNullOrWhiteSpace(ServerAddress) && serverPort > 0 && joinTicket.IsValid;
+            && !string.IsNullOrWhiteSpace(ServerAddress) && serverPort > 0 && joinTicket.IsValid
+            && connectivity.IsValidAt(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
     }
 
     [Serializable]
@@ -352,6 +372,7 @@ namespace SwingPop.Online
         [SerializeField] private int serverPort;
         [SerializeField] private long expiresAtUnixMilliseconds;
         [SerializeField] private MatchAdmissionGrant[] grants;
+        [SerializeField] private MatchConnectivityDescriptor connectivity;
 
         public MatchReservation(LobbyMatchId lobbyMatchId, MatchId gameMatchId, string serverAddress,
             ushort serverPort, long expiresAtUnixMilliseconds, MatchAdmissionGrant[] grants)
@@ -362,6 +383,22 @@ namespace SwingPop.Online
             this.serverPort = serverPort;
             this.expiresAtUnixMilliseconds = expiresAtUnixMilliseconds;
             this.grants = grants ?? Array.Empty<MatchAdmissionGrant>();
+            connectivity = new MatchConnectivityDescriptor(MatchConnectivityMode.Direct,
+                ConnectivityProtocol.DirectProvider, this.serverAddress, serverPort,
+                "direct-" + gameMatchId.Value, string.Empty, 0L);
+        }
+
+        public MatchReservation(LobbyMatchId lobbyMatchId, MatchId gameMatchId,
+            ServerConnectivityDescriptor server, long expiresAtUnixMilliseconds,
+            MatchConnectivityDescriptor connectivity, MatchAdmissionGrant[] grants)
+        {
+            this.lobbyMatchId = lobbyMatchId;
+            this.gameMatchId = gameMatchId;
+            serverAddress = server.BindAddress;
+            serverPort = server.BindPort;
+            this.expiresAtUnixMilliseconds = expiresAtUnixMilliseconds;
+            this.connectivity = connectivity;
+            this.grants = grants ?? Array.Empty<MatchAdmissionGrant>();
         }
 
         public LobbyMatchId LobbyMatchId => lobbyMatchId;
@@ -370,6 +407,7 @@ namespace SwingPop.Online
         public ushort ServerPort => (ushort)Mathf.Clamp(serverPort, 1, 65535);
         public long ExpiresAtUnixMilliseconds => expiresAtUnixMilliseconds;
         public MatchAdmissionGrant[] Grants => grants ?? Array.Empty<MatchAdmissionGrant>();
+        public MatchConnectivityDescriptor Connectivity => connectivity;
 
         public bool TryGetGrant(PlayerAccountId accountId, out MatchAdmissionGrant grant)
         {

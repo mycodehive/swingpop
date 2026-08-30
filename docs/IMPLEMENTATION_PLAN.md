@@ -546,4 +546,17 @@ M15 Match Lifecycle / Reconnect Foundation is implemented on top of M14 dedicate
 - [x] Transition both clients from Lobby to Hole01 and retain M12~M16 authoritative gameplay.
 - [x] Add minimal Lobby UI, F2 telemetry, validators, builds, 24 EditMode tests, 7 PlayMode tests, real 4-process evidence, captures, and documentation.
 - [x] Keep OfflineSingle default and Foundation.unity unchanged.
-- [ ] Do not start M18, production Lobby, matchmaking, Relay/NAT, or production authentication in this milestone.
+- [x] M17 closed without starting production Lobby, matchmaking, Relay/NAT, or production authentication.
+
+## M18 Relay / NAT Traversal Prototype (2026-08-30)
+
+- [x] Preserve M12–M17 authority, identity, Lobby, ticket, and reconnect boundaries.
+- [x] Add `IMatchConnectivityProvider`, Direct mode, and a replaceable Relay descriptor.
+- [x] Add a standalone local TCP relay-proxy and verify real forwarded traffic.
+- [x] Keep private server bind data server-side in Relay mode.
+- [x] Validate Relay credential before Authentication and MatchJoinTicket/ReconnectTicket admission.
+- [x] Add bounded allocation, failure release, expiry, and parent-linked child cleanup.
+- [x] Verify A/B natural shots, matching hashes, and Relay reconnect in separate processes.
+- [x] Add settings, F2 telemetry, build/launch tools, 21 EditMode tests, 5 PlayMode tests, captures, and docs.
+- [ ] Cross-NAT/WAN, production Relay, TLS, soak/network-quality gates, and production online remain future work.
+- [ ] Do not start M19 in this milestone.

@@ -26,6 +26,9 @@ namespace SwingPop.Online
         private LobbyDevelopmentController lobby;
         private MatchSnapshot latestSnapshot;
         private readonly HashSet<string> captured = new(StringComparer.OrdinalIgnoreCase);
+        private bool m18RelayReconnect;
+        private bool reconnectRequested;
+        private bool reconnectAccepted;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Bootstrap()
@@ -43,6 +46,7 @@ namespace SwingPop.Online
             role = ReadArg(args, "-swingpopM17Role=");
             logPath = ReadArg(args, "-swingpopProbeLog=");
             captureDirectory = ReadArg(args, "-swingpopCaptureDirectory=");
+            m18RelayReconnect = HasArg(args, "-swingpopM18RelayReconnect");
             deadline = Time.realtimeSinceStartup + Mathf.Clamp(
                 ReadFloatArg(args, "-swingpopProbeDuration=", 150f), 20f, 300f);
             SceneManager.sceneLoaded += OnSceneLoaded;
@@ -53,7 +57,12 @@ namespace SwingPop.Online
         private void OnDestroy()
         {
             SceneManager.sceneLoaded -= OnSceneLoaded;
-            if (matchSession != null && snapshotSubscribed) matchSession.SnapshotChanged -= OnSnapshot;
+            if (matchSession != null && snapshotSubscribed)
+            {
+                matchSession.SnapshotChanged -= OnSnapshot;
+                if (matchSession.NetworkTransport != null)
+                    matchSession.NetworkTransport.ReconnectAccepted -= OnReconnectAccepted;
+            }
         }
 
         private void Update()
@@ -168,9 +177,23 @@ namespace SwingPop.Online
                 {
                     matchSession.SnapshotChanged += OnSnapshot;
                     snapshotSubscribed = true;
+                    if (matchSession.NetworkTransport != null)
+                        matchSession.NetworkTransport.ReconnectAccepted += OnReconnectAccepted;
                     FindAnyObjectByType<MultiplayerDebugOverlay>()?.SetVisible(true);
-                    Write("MATCH SCENE LOADED");
+                    Write("MATCH SCENE LOADED connectivity=" +
+                          matchSession.NetworkTransport?.ConnectivityLabel + " state=" +
+                          matchSession.NetworkTransport?.ConnectivityState);
                 }
+            }
+            if (m18RelayReconnect && role.Equals("A", StringComparison.OrdinalIgnoreCase)
+                && latestSnapshot != null && latestSnapshot.TurnIndex >= 1 && !reconnectRequested)
+            {
+                reconnectRequested = true;
+                bool requested = matchSession.NetworkTransport != null
+                                 && matchSession.NetworkTransport.SimulateUnexpectedDisconnectForTesting();
+                Write("RELAY RECONNECT REQUESTED accepted=" + requested);
+                Capture("G-Reconnect.png");
+                return;
             }
             if (matchSession == null || shotFlow == null || latestSnapshot == null || shotSubmitted
                 || !matchSession.CanSubmitShot) return;
@@ -194,7 +217,17 @@ namespace SwingPop.Online
                 Capture("G-Connected-to-Hole01.png");
             if (role.Equals("A", StringComparison.OrdinalIgnoreCase) && snapshot.TurnIndex >= 1)
                 Capture("H-Match-Gameplay.png");
-            if (snapshot.TurnIndex >= 2 && completionAt <= 0f) completionAt = Time.realtimeSinceStartup + 3f;
+            if (snapshot.TurnIndex >= 2 && completionAt <= 0f
+                && (!m18RelayReconnect || !role.Equals("A", StringComparison.OrdinalIgnoreCase) || reconnectAccepted))
+                completionAt = Time.realtimeSinceStartup + 3f;
+        }
+
+        private void OnReconnectAccepted(ReconnectAcceptedMessage message)
+        {
+            reconnectAccepted = true;
+            Write($"RELAY RECONNECT ACCEPTED player={message.PlayerId} generation={message.RotatedTicket.SessionGeneration} " +
+                  $"connectivity={matchSession?.NetworkTransport?.ConnectivityState}");
+            Capture("G-Reconnect.png");
         }
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)

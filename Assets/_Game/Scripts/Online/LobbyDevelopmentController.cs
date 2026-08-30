@@ -14,9 +14,12 @@ namespace SwingPop.Online
         public const string LobbyClientArgument = "-swingpopLobbyClient";
         public const string MatchServerExecutableArgument = "-swingpopMatchServerExecutable=";
         public const string EvidenceDirectoryArgument = "-swingpopM17EvidenceDirectory=";
+        public const string ConnectivityModeArgument = "-swingpopConnectivityMode=";
+        public const string RelayExecutableArgument = "-swingpopRelayExecutable=";
 
         [SerializeField] private LobbyDevelopmentSettings settings;
         [SerializeField] private MultiplayerDevelopmentSettings authenticationSettings;
+        [SerializeField] private ConnectivityDevelopmentSettings connectivitySettings;
         [SerializeField] private LobbyNetworkTransport transport;
         [SerializeField] private LobbyDevelopmentView view;
 
@@ -142,10 +145,31 @@ namespace SwingPop.Online
             string authKeyPath = MatchReservationFile.ReadArgument(args, AuthenticationController.ServerKeyFileArgument);
             string evidence = MatchReservationFile.ReadArgument(args, EvidenceDirectoryArgument);
             if (string.IsNullOrWhiteSpace(evidence)) evidence = Path.Combine(Path.GetTempPath(), "SwingPop", "M17");
+            MatchConnectivityMode connectivityMode = ReadConnectivityMode(args,
+                connectivitySettings != null ? connectivitySettings.DefaultMode : MatchConnectivityMode.Direct);
+            IMatchConnectivityProvider connectivityProvider;
+            if (connectivityMode == MatchConnectivityMode.Relay)
+            {
+                if (connectivitySettings == null)
+                {
+                    status = "RELAY SETTINGS MISSING";
+                    Debug.LogError("[M18][Lobby] Relay mode requires M18 connectivity settings.", this);
+                    return;
+                }
+                string relayExecutable = MatchReservationFile.ReadArgument(args, RelayExecutableArgument);
+                if (string.IsNullOrWhiteSpace(relayExecutable))
+                    relayExecutable = ResolveProjectRelative("Builds/M18Relay/SwingPopRelay.exe");
+                connectivityProvider = new LocalRelayConnectivityProvider(relayExecutable,
+                    connectivitySettings.RelayAddress, connectivitySettings.FirstRelayPort,
+                    connectivitySettings.MaximumAllocations, connectivitySettings.AllocationTimeoutSeconds,
+                    Mathf.RoundToInt(connectivitySettings.CredentialLifetimeSeconds * 1000f), evidence);
+            }
+            else connectivityProvider = new DirectMatchConnectivityProvider();
             DevelopmentGameServerAllocator allocator = new(executable, settings.MatchServerAddress,
                 settings.FirstMatchServerPort, settings.MaximumActiveMatches,
                 Mathf.RoundToInt(settings.JoinTicketLifetimeSeconds * 1000f),
-                settings.ServerReadyTimeoutSeconds, authKeyPath, evidence);
+                settings.ServerReadyTimeoutSeconds, authKeyPath, evidence,
+                connectivityProvider: connectivityProvider);
             InMemoryLobbyService lobbyService = new(allocator, settings.MaximumRooms);
             DevelopmentAuthenticationProvider auth = new(key, authenticationSettings.DevelopmentAuthenticationIssuer);
             bool started = transport.StartService(settings.LobbyAddress, settings.LobbyPort,
@@ -153,6 +177,7 @@ namespace SwingPop.Online
                 Mathf.RoundToInt(authenticationSettings.AuthenticationSessionLifetimeSeconds * 1000f),
                 lobbyService, settings.VerboseLogging);
             status = started ? $"LOBBY SERVICE {settings.LobbyAddress}:{settings.LobbyPort}" : "LOBBY SERVICE FAILED";
+            if (started) Debug.Log($"[M18][Lobby] Connectivity mode={connectivityMode}", this);
         }
 
         private void StartClient(string[] args)
@@ -262,6 +287,12 @@ namespace SwingPop.Online
         {
             if (string.IsNullOrWhiteSpace(value) || Path.IsPathRooted(value)) return value ?? string.Empty;
             return Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), value));
+        }
+
+        public static MatchConnectivityMode ReadConnectivityMode(string[] args, MatchConnectivityMode fallback)
+        {
+            string value = MatchReservationFile.ReadArgument(args, ConnectivityModeArgument);
+            return Enum.TryParse(value, true, out MatchConnectivityMode parsed) ? parsed : fallback;
         }
     }
 }

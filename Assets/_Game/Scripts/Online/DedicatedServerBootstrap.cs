@@ -140,7 +140,10 @@ namespace SwingPop.Online
     [DisallowMultipleComponent]
     public sealed class DedicatedServerBootstrap : MonoBehaviour
     {
+        public const string ParentProcessArgument = "-swingpopParentProcess=";
         [SerializeField] private MultiplayerDevelopmentSettings settings;
+        private int parentProcessId;
+        private float parentCheckElapsed;
 
         public bool IsDedicatedServer { get; private set; }
         public bool IsNoGraphics => SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null;
@@ -156,6 +159,10 @@ namespace SwingPop.Online
                                 || settings != null && settings.Mode == MultiplayerDevelopmentMode.DedicatedServer;
             if (!IsDedicatedServer) return;
 
+            string parentValue = MatchReservationFile.ReadArgument(Environment.GetCommandLineArgs(),
+                ParentProcessArgument);
+            int.TryParse(parentValue, out parentProcessId);
+
             Application.runInBackground = true;
             if (settings == null || settings.DisableServerPresentation)
                 PresentationStats = DedicatedServerPresentationPolicy.Apply();
@@ -164,6 +171,23 @@ namespace SwingPop.Online
                       $"disabledRenderers={PresentationStats.DisabledRenderers} " +
                       $"disabledParticles={PresentationStats.DisabledParticles} " +
                       $"gameplayColliders={PresentationStats.GameplayColliders}", this);
+        }
+
+        private void Update()
+        {
+            if (!IsDedicatedServer || parentProcessId <= 0) return;
+            parentCheckElapsed += Time.unscaledDeltaTime;
+            if (parentCheckElapsed < 1f) return;
+            parentCheckElapsed = 0f;
+            try
+            {
+                using System.Diagnostics.Process parent =
+                    System.Diagnostics.Process.GetProcessById(parentProcessId);
+                if (!parent.HasExited) return;
+            }
+            catch (Exception) { }
+            Debug.Log("[M18][Server] Parent allocator exited; releasing local server process.", this);
+            Application.Quit(0);
         }
     }
 }

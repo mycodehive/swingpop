@@ -70,3 +70,10 @@ Vertical Slice와 local turns가 안정된 후 별도 PRD 작성.
 - progression
 - ranking
 - seasons
+
+## M18 Relay / NAT Traversal Prototype (2026-08-30)
+
+- Status: GO for the replaceable connectivity foundation and localhost relay-proxy prototype.
+- Verified: Direct regression, real proxy bytes, A/B dedicated gameplay, snapshot convergence, and Relay reconnect.
+- Not verified: Cross-NAT, CGNAT, WAN, production Relay, encryption, soak, and production operations.
+- M19 was not started. Recommended next candidate is WAN Reliability / Soak / Network Quality Gate after a production Relay provider decision.

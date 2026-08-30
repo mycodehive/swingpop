@@ -64,12 +64,24 @@
 - [x] Account/match-bound, expiring, one-time MatchJoinTicket and reserved player assignment
 - [x] Minimal Lobby UI, F2-safe telemetry, build/launch tools, tests, real-process flow, and captures
 
+### M18 Relay / NAT Traversal Prototype
+
+- [x] Replaceable `IMatchConnectivityProvider` with Direct and Relay modes
+- [x] Separate client/proxy and server/private connectivity descriptors
+- [x] Standalone localhost TCP relay-proxy with real byte forwarding telemetry
+- [x] Relay credential before Authentication and MatchJoinTicket admission
+- [x] Relay reconnect using the existing rotating account-bound ReconnectTicket
+- [x] Bounded allocation, timeout, failure release, parent-linked cleanup, and secret-safe reservation
+- [x] Direct regression, tests, builds, real A/B shots, reconnect, hashes, and captures
+
 ## Future Production Work
 
 ### Relay / NAT
 
-- [ ] Choose Relay/provider topology and NAT traversal policy
-- [ ] Region selection, allocation lifecycle, failure/expiry handling
+- [x] Choose the M18 provider seam and validate a local standalone proxy topology
+- [x] Prototype bounded allocation, credential expiry, failure release, and parent cleanup
+- [ ] Integrate a production Relay provider and encrypted transport
+- [ ] Verify two-router Cross-NAT, CGNAT/symmetric NAT, WAN regions, and provider outage/failover
 
 ### Lobby
 

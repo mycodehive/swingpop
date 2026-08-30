@@ -542,3 +542,10 @@ Vertical Slice 승인 이후에만 다음 단계 논의:
 - 자동 검증은 EditMode 117개와 PlayMode 3개를 통과했고, 1920×1080/1600×900/1280×720 Address render에서 HUD clipping을 발견하지 않았다.
 - 1080p 60 FPS Profiler, full-hole 수동 visual/audio/comfort review와 final commercial art는 미승인이다.
 - 판정은 다음 개발 단계 논의용 **Conditional Go**, Commercial Release **No-Go**다. 상세 근거는 `docs/M11_QUALITY_GATE_REVIEW.md`에 기록한다.
+
+## 26. M18 Relay / NAT Traversal Prototype Status (2026-08-30)
+
+- Direct mode remains the default and M17 Lobby/admission/gameplay behavior is preserved.
+- A replaceable connectivity provider and standalone local relay-proxy were added without provider code in gameplay.
+- Separate-process proxy traffic, two-player natural shots, matching snapshots, and Relay reconnect were verified on localhost.
+- Cross-NAT/WAN, production Unity Relay, encrypted transport, and production online multiplayer remain No-Go.

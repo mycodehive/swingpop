@@ -474,6 +474,6 @@ namespace SwingPop.Online
     {
         public static bool IsAllowedBeforeAuthentication(NetworkMessageType messageType) =>
             messageType is NetworkMessageType.AuthRequest or NetworkMessageType.Ping
-                or NetworkMessageType.DisconnectNotice;
+                or NetworkMessageType.DisconnectNotice or NetworkMessageType.ConnectivityRequest;
     }
 }

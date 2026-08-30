@@ -72,6 +72,10 @@ namespace SwingPop.Online
         [SerializeField] private int serverPort;
         [SerializeField] private long expiresAtUnixMilliseconds;
         [SerializeField] private MatchAdmissionFileEntry[] entries;
+        [SerializeField] private MatchConnectivityMode connectivityMode;
+        [SerializeField] private string connectivityAllocationId;
+        [SerializeField] private string connectivityCredentialHashBase64;
+        [SerializeField] private long connectivityExpiresAtUnixMilliseconds;
 
         public MatchReservationFileDocument(int documentVersion, LobbyMatchId lobbyMatchId,
             MatchId gameMatchId, string serverAddress, ushort serverPort, long expiresAtUnixMilliseconds,
@@ -84,6 +88,29 @@ namespace SwingPop.Online
             this.serverPort = serverPort;
             this.expiresAtUnixMilliseconds = expiresAtUnixMilliseconds;
             this.entries = entries ?? Array.Empty<MatchAdmissionFileEntry>();
+            connectivityMode = MatchConnectivityMode.Direct;
+            connectivityAllocationId = string.Empty;
+            connectivityCredentialHashBase64 = string.Empty;
+            connectivityExpiresAtUnixMilliseconds = 0L;
+        }
+
+        public MatchReservationFileDocument(int documentVersion, LobbyMatchId lobbyMatchId,
+            MatchId gameMatchId, string serverAddress, ushort serverPort, long expiresAtUnixMilliseconds,
+            MatchAdmissionFileEntry[] entries, MatchConnectivityMode connectivityMode,
+            string connectivityAllocationId, string connectivityCredentialHashBase64,
+            long connectivityExpiresAtUnixMilliseconds)
+        {
+            this.documentVersion = documentVersion;
+            this.lobbyMatchId = lobbyMatchId;
+            this.gameMatchId = gameMatchId;
+            this.serverAddress = serverAddress ?? string.Empty;
+            this.serverPort = serverPort;
+            this.expiresAtUnixMilliseconds = expiresAtUnixMilliseconds;
+            this.entries = entries ?? Array.Empty<MatchAdmissionFileEntry>();
+            this.connectivityMode = connectivityMode;
+            this.connectivityAllocationId = connectivityAllocationId ?? string.Empty;
+            this.connectivityCredentialHashBase64 = connectivityCredentialHashBase64 ?? string.Empty;
+            this.connectivityExpiresAtUnixMilliseconds = connectivityExpiresAtUnixMilliseconds;
         }
 
         public int DocumentVersion => documentVersion;
@@ -93,11 +120,15 @@ namespace SwingPop.Online
         public ushort ServerPort => (ushort)Mathf.Clamp(serverPort, 1, 65535);
         public long ExpiresAtUnixMilliseconds => expiresAtUnixMilliseconds;
         public MatchAdmissionFileEntry[] Entries => entries ?? Array.Empty<MatchAdmissionFileEntry>();
+        public MatchConnectivityMode ConnectivityMode => connectivityMode;
+        public string ConnectivityAllocationId => connectivityAllocationId ?? string.Empty;
+        public string ConnectivityCredentialHashBase64 => connectivityCredentialHashBase64 ?? string.Empty;
+        public long ConnectivityExpiresAtUnixMilliseconds => connectivityExpiresAtUnixMilliseconds;
     }
 
     public static class MatchReservationFile
     {
-        public const int DocumentVersion = 1;
+        public const int DocumentVersion = 2;
         public const string ReservationFileArgument = "-swingpopMatchReservationFile=";
         public const string ReadyFileArgument = "-swingpopServerReadyFile=";
 
@@ -112,9 +143,14 @@ namespace SwingPop.Online
                 entries[index] = new MatchAdmissionFileEntry(grant.PlayerAccountId, grant.MatchPlayerId,
                     registry.ExportHash(grant.PlayerAccountId), reservation.ExpiresAtUnixMilliseconds);
             }
+            MatchConnectivityDescriptor connectivity = reservation.Connectivity;
+            string credentialHash = connectivity.RequiresCredential
+                ? Convert.ToBase64String(ConnectivitySecurity.Hash(connectivity.Credential))
+                : string.Empty;
             return new MatchReservationFileDocument(DocumentVersion, reservation.LobbyMatchId,
                 reservation.GameMatchId, reservation.ServerAddress, reservation.ServerPort,
-                reservation.ExpiresAtUnixMilliseconds, entries);
+                reservation.ExpiresAtUnixMilliseconds, entries, connectivity.Mode,
+                connectivity.AllocationId, credentialHash, connectivity.ExpiresAtUnixMilliseconds);
         }
 
         public static void Write(string path, MatchReservationFileDocument document)
@@ -128,8 +164,16 @@ namespace SwingPop.Online
         public static bool TryLoad(string path, out MatchReservationFileDocument document,
             out DevelopmentMatchAdmissionRegistry registry)
         {
+            return TryLoad(path, out document, out registry, out _);
+        }
+
+        public static bool TryLoad(string path, out MatchReservationFileDocument document,
+            out DevelopmentMatchAdmissionRegistry registry,
+            out ConnectivityCredentialRegistry connectivityRegistry)
+        {
             document = null;
             registry = null;
+            connectivityRegistry = null;
             try
             {
                 if (string.IsNullOrWhiteSpace(path) || !File.Exists(path)) return false;
@@ -145,12 +189,23 @@ namespace SwingPop.Online
                     registry.Import(entry.AccountId, entry.PlayerId, entry.TicketHashBase64,
                         entry.ExpiresAtUnixMilliseconds);
                 }
+                if (document.ConnectivityMode == MatchConnectivityMode.Relay)
+                {
+                    if (string.IsNullOrWhiteSpace(document.ConnectivityAllocationId)
+                        || string.IsNullOrWhiteSpace(document.ConnectivityCredentialHashBase64)
+                        || document.ConnectivityExpiresAtUnixMilliseconds <= 0L) return false;
+                    connectivityRegistry = new ConnectivityCredentialRegistry(
+                        document.ConnectivityAllocationId,
+                        Convert.FromBase64String(document.ConnectivityCredentialHashBase64),
+                        document.ConnectivityExpiresAtUnixMilliseconds);
+                }
                 return true;
             }
             catch (Exception)
             {
                 document = null;
                 registry = null;
+                connectivityRegistry = null;
                 return false;
             }
         }

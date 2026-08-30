@@ -119,7 +119,7 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!1 &918143563
+--- !u!1 &802086857
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -127,8 +127,8 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 918143565}
-  - component: {fileID: 918143564}
+  - component: {fileID: 802086859}
+  - component: {fileID: 802086858}
   m_Layer: 0
   m_Name: Lobby Camera
   m_TagString: Untagged
@@ -136,13 +136,13 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!20 &918143564
+--- !u!20 &802086858
 Camera:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 918143563}
+  m_GameObject: {fileID: 802086857}
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 2
@@ -187,13 +187,13 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
---- !u!4 &918143565
+--- !u!4 &802086859
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 918143563}
+  m_GameObject: {fileID: 802086857}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: -10}
@@ -202,7 +202,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1920072457
+--- !u!1 &1286927896
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -210,10 +210,10 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 1920072461}
-  - component: {fileID: 1920072460}
-  - component: {fileID: 1920072459}
-  - component: {fileID: 1920072458}
+  - component: {fileID: 1286927900}
+  - component: {fileID: 1286927899}
+  - component: {fileID: 1286927898}
+  - component: {fileID: 1286927897}
   m_Layer: 0
   m_Name: M17 Lobby Runtime
   m_TagString: Untagged
@@ -221,28 +221,28 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1920072458
+--- !u!114 &1286927897
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1920072457}
+  m_GameObject: {fileID: 1286927896}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 14676f3fbcf4ce841b0257b1cca4245d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: SwingPop.Runtime::SwingPop.Online.LobbyDevelopmentView
-  controller: {fileID: 1920072459}
+  controller: {fileID: 1286927898}
   roomName: SwingPop Room 01
   showDebug: 0
---- !u!114 &1920072459
+--- !u!114 &1286927898
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1920072457}
+  m_GameObject: {fileID: 1286927896}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 741fe0037e952944f905008db7b768f0, type: 3}
@@ -250,27 +250,28 @@ MonoBehaviour:
   m_EditorClassIdentifier: SwingPop.Runtime::SwingPop.Online.LobbyDevelopmentController
   settings: {fileID: 11400000, guid: 9085ae0746f57254caf6d3656021b466, type: 2}
   authenticationSettings: {fileID: 11400000, guid: 88b05d8c7176d724a9008de3321fb7a4, type: 2}
-  transport: {fileID: 1920072460}
-  view: {fileID: 1920072458}
---- !u!114 &1920072460
+  connectivitySettings: {fileID: 11400000, guid: 09c86d149e6bb754eacbf4e543ac52bf, type: 2}
+  transport: {fileID: 1286927899}
+  view: {fileID: 1286927897}
+--- !u!114 &1286927899
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1920072457}
+  m_GameObject: {fileID: 1286927896}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2b11ee2b647a403439305e46da397baf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: SwingPop.Runtime::SwingPop.Online.LobbyNetworkTransport
---- !u!4 &1920072461
+--- !u!4 &1286927900
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1920072457}
+  m_GameObject: {fileID: 1286927896}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -283,5 +284,5 @@ Transform:
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
-  - {fileID: 918143565}
-  - {fileID: 1920072461}
+  - {fileID: 802086859}
+  - {fileID: 1286927900}

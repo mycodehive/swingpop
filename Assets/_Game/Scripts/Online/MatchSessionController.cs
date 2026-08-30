@@ -282,6 +282,7 @@ namespace SwingPop.Online
                 settings != null ? settings.AuthenticationSessionLifetimeSeconds : 1800f,
                 settings != null ? settings.AuthenticationTimeoutSeconds : 8f);
             IMatchAdmissionRegistry admissionRegistry = null;
+            ConnectivityCredentialRegistry connectivityRegistry = null;
             MatchReservationFileDocument reservationDocument = null;
             if (mode == MultiplayerDevelopmentMode.DedicatedServer)
             {
@@ -290,7 +291,8 @@ namespace SwingPop.Online
                 if (!string.IsNullOrWhiteSpace(reservationPath))
                 {
                     if (!MatchReservationFile.TryLoad(reservationPath, out reservationDocument,
-                            out DevelopmentMatchAdmissionRegistry loadedRegistry))
+                            out DevelopmentMatchAdmissionRegistry loadedRegistry,
+                            out connectivityRegistry))
                     {
                         Debug.LogError("[M17][Admission] Match reservation file is invalid.", this);
                         return;
@@ -299,12 +301,22 @@ namespace SwingPop.Online
                 }
             }
             dedicatedServerTransport.ConfigureMatchAdmission(admissionRegistry);
+            dedicatedServerTransport.ConfigureConnectivity(connectivityRegistry);
             float liveness = settings != null ? settings.ConnectionLivenessTimeoutSeconds : 30f;
             networkTransport.ConfigureConnectionLiveness(liveness);
             dedicatedServerTransport.ConfigureConnectionLiveness(liveness);
             shotFlow.ConfigureCommitGate(this);
             holeFlow.SetAutomaticFlowSuspended(true);
             float timeout = settings != null ? settings.ConnectionTimeoutSeconds : 8f;
+            MatchAdmissionGrant pendingGrant = default;
+            bool hasPendingAdmission = mode == MultiplayerDevelopmentMode.NetworkClient
+                                       && MatchAdmissionHandoff.TryPeek(out pendingGrant);
+            if (hasPendingAdmission && (!networkTransport.SetConnectivityDescriptor(pendingGrant.Connectivity)
+                                        || !networkTransport.SetMatchJoinTicket(pendingGrant.JoinTicket)))
+            {
+                Debug.LogError("[M18][Connectivity] Lobby admission descriptor is invalid or expired.", this);
+                return;
+            }
             bool started = mode switch
             {
                 MultiplayerDevelopmentMode.NetworkHost => networkTransport.StartHost(address, port, timeout),
@@ -312,12 +324,7 @@ namespace SwingPop.Online
                 MultiplayerDevelopmentMode.DedicatedServer => dedicatedServerTransport.StartDedicatedServer(address, port, timeout),
                 _ => false
             };
-            if (started && mode == MultiplayerDevelopmentMode.NetworkClient
-                && MatchAdmissionHandoff.TryPeek(out MatchAdmissionGrant grant))
-            {
-                if (networkTransport.SetMatchJoinTicket(grant.JoinTicket))
-                    MatchAdmissionHandoff.TryConsume(out _);
-            }
+            if (started && hasPendingAdmission) MatchAdmissionHandoff.TryConsume(out _);
             if (started && mode == MultiplayerDevelopmentMode.DedicatedServer && reservationDocument != null)
                 MatchReservationFile.TryWriteReadyMarker(Environment.GetCommandLineArgs(),
                     reservationDocument.GameMatchId, $"{address}:{port}");

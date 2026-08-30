@@ -52,6 +52,9 @@ namespace SwingPop.Online
         private long authenticationSessionExpiryUnixMilliseconds;
         private MatchJoinTicket matchJoinTicket;
         private bool hasMatchJoinTicket;
+        private MatchConnectivityDescriptor connectivityDescriptor;
+        private bool hasConnectivityDescriptor;
+        private ConnectivityClientState connectivityState;
 
         public event Action<ApprovedShot> ShotApprovedReceived;
         public event Action<ShotRejection> ShotRejectedReceived;
@@ -67,6 +70,8 @@ namespace SwingPop.Online
         public event Action<AuthAcceptedMessage> AuthenticationAccepted;
         public event Action<AuthRejectedMessage> AuthenticationRejected;
         public event Action<MatchAdmissionRejectedMessage> MatchAdmissionRejected;
+        public event Action<ConnectivityAcceptedMessage> ConnectivityAccepted;
+        public event Action<ConnectivityRejectedMessage> ConnectivityRejected;
 
         public int PendingMessageCount => 0;
         public int MessageCount { get; private set; }
@@ -101,6 +106,12 @@ namespace SwingPop.Online
         public long AuthenticationSessionExpiryUnixMilliseconds => authenticationSessionExpiryUnixMilliseconds;
         public bool HasAuthenticationCredential => !string.IsNullOrWhiteSpace(authenticationCredential);
         public bool HasMatchJoinTicket => hasMatchJoinTicket && matchJoinTicket.IsValid;
+        public MatchConnectivityDescriptor ConnectivityDescriptor => connectivityDescriptor;
+        public ConnectivityClientState ConnectivityState => connectivityState;
+        public MatchConnectivityMode ConnectivityMode => hasConnectivityDescriptor
+            ? connectivityDescriptor.Mode : MatchConnectivityMode.Direct;
+        public string ConnectivityLabel => hasConnectivityDescriptor
+            ? connectivityDescriptor.SafeLabel : "DIRECT legacy";
 
         private void Update()
         {
@@ -141,6 +152,15 @@ namespace SwingPop.Online
             if (!ticket.IsValid) return false;
             matchJoinTicket = ticket;
             hasMatchJoinTicket = true;
+            return true;
+        }
+
+        public bool SetConnectivityDescriptor(MatchConnectivityDescriptor descriptor)
+        {
+            if (!descriptor.IsValidAt(NowMilliseconds())) return false;
+            connectivityDescriptor = descriptor;
+            hasConnectivityDescriptor = true;
+            connectivityState = ConnectivityClientState.DescriptorReady;
             return true;
         }
 
@@ -280,6 +300,19 @@ namespace SwingPop.Online
             ShutdownInternal(true);
         }
 
+        public bool SimulateUnexpectedDisconnectForTesting()
+        {
+            if (role != NetworkRole.Client || !driver.IsCreated || !connection.IsCreated) return false;
+            ShutdownInternal(false);
+            reconnectState = HasReconnectTicket ? ReconnectClientState.ConnectionLost : ReconnectClientState.None;
+            authenticationState = HasAuthenticationCredential
+                ? AuthenticationClientState.Disconnected : AuthenticationClientState.None;
+            if (hasConnectivityDescriptor && connectivityDescriptor.Mode == MatchConnectivityMode.Relay)
+                connectivityState = ConnectivityClientState.Disconnected;
+            Disconnected?.Invoke("M18 simulated unexpected connection loss");
+            return true;
+        }
+
         public void RecordRemoteSnapshotHash(long snapshotVersion, string hash)
         {
             remoteSnapshotHash = hash ?? string.Empty;
@@ -343,14 +376,14 @@ namespace SwingPop.Online
                         connectionState.TryTransition(NetworkConnectionState.Handshaking);
                         if (role == NetworkRole.Client)
                         {
-                            if (HasAuthenticationCredential)
+                            if (hasConnectivityDescriptor
+                                && connectivityDescriptor.Mode == MatchConnectivityMode.Relay)
                             {
-                                authenticationState = AuthenticationClientState.Authenticating;
-                                Send(NetworkMessageType.AuthRequest, default,
-                                    serializer.Serialize(new AuthRequestMessage(authenticationCredential,
-                                        Guid.NewGuid().ToString("N"))));
+                                connectivityState = ConnectivityClientState.Connecting;
+                                Send(NetworkMessageType.ConnectivityRequest, default,
+                                    serializer.Serialize(new ConnectivityRequestMessage(connectivityDescriptor)));
                             }
-                            else SendAdmissionRequest();
+                            else SendAuthenticationOrAdmission();
                         }
                         break;
                     case NetworkEvent.Type.Data:
@@ -557,7 +590,37 @@ namespace SwingPop.Online
                     Fail($"Match admission rejected: {rejected.Reason}", false);
                     break;
                 }
+                case NetworkMessageType.ConnectivityAccepted when role == NetworkRole.Client:
+                {
+                    ConnectivityAcceptedMessage accepted =
+                        serializer.Deserialize<ConnectivityAcceptedMessage>(envelope.Payload);
+                    connectivityState = ConnectivityClientState.Accepted;
+                    ConnectivityAccepted?.Invoke(accepted);
+                    SendAuthenticationOrAdmission();
+                    break;
+                }
+                case NetworkMessageType.ConnectivityRejected when role == NetworkRole.Client:
+                {
+                    ConnectivityRejectedMessage rejected =
+                        serializer.Deserialize<ConnectivityRejectedMessage>(envelope.Payload);
+                    connectivityState = ConnectivityClientState.Rejected;
+                    ConnectivityRejected?.Invoke(rejected);
+                    Fail($"Connectivity rejected: {rejected.Reason}", false);
+                    break;
+                }
             }
+        }
+
+        private void SendAuthenticationOrAdmission()
+        {
+            if (HasAuthenticationCredential)
+            {
+                authenticationState = AuthenticationClientState.Authenticating;
+                Send(NetworkMessageType.AuthRequest, default,
+                    serializer.Serialize(new AuthRequestMessage(authenticationCredential,
+                        Guid.NewGuid().ToString("N"))));
+            }
+            else SendAdmissionRequest();
         }
 
         private void SendAdmissionRequest()
@@ -715,6 +778,8 @@ namespace SwingPop.Online
                 if (HasAuthenticationCredential && authenticationState != AuthenticationClientState.Rejected)
                     authenticationState = AuthenticationClientState.Disconnected;
                 if (HasReconnectTicket) reconnectState = ReconnectClientState.ConnectionLost;
+                if (hasConnectivityDescriptor && connectivityDescriptor.Mode == MatchConnectivityMode.Relay)
+                    connectivityState = ConnectivityClientState.Disconnected;
                 Disconnected?.Invoke(reason ?? "Disconnected");
             }
             Log($"DISCONNECTED: {reason}");
@@ -753,8 +818,16 @@ namespace SwingPop.Online
             authenticationSessionExpiryUnixMilliseconds = 0L;
             authenticationState = HasAuthenticationCredential
                 ? AuthenticationClientState.CredentialReady : AuthenticationClientState.None;
-            matchJoinTicket = default;
-            hasMatchJoinTicket = false;
+            if (notifyRemote)
+            {
+                matchJoinTicket = default;
+                hasMatchJoinTicket = false;
+                connectivityDescriptor = default;
+                hasConnectivityDescriptor = false;
+                connectivityState = ConnectivityClientState.None;
+            }
+            else if (hasConnectivityDescriptor)
+                connectivityState = ConnectivityClientState.DescriptorReady;
             outboundSequence = 0;
             stateElapsed = 0f;
             pingElapsed = 0f;

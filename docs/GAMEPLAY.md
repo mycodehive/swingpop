@@ -437,3 +437,12 @@ Dedicated clients authenticate before they can receive `player-a` or `player-b`.
 - Once Hole01 loads, the existing M12~M16 approval, Rigidbody simulation, turn, score, snapshot, and reconnect rules are unchanged.
 - Initial admission uses `MatchJoinTicket`; a later reconnect uses the same authenticated account plus `ReconnectTicket`.
 - OfflineSingle remains the default mode. Lobby is entered only through the dedicated M17 development build/arguments.
+
+## 28. M18 Connectivity Gameplay Contract
+
+- Direct and Relay selection changes only the transport route; shot, ball, terrain, score, turn, and snapshot rules are identical.
+- Relay connection order never assigns `player-a` or `player-b`; M17 reservation ownership remains authoritative.
+- Relay permission alone cannot enter gameplay. Relay credential, Authentication, and MatchJoinTicket/ReconnectTicket are distinct gates.
+- A Relay failure before admission does not consume the one-time MatchJoinTicket.
+- Reconnect repeats Relay credential validation, authenticates the same account, then uses the rotating ReconnectTicket.
+- F2 shows mode, connectivity state/provider fingerprint, endpoint, RTT, bytes, and existing auth/reconnect telemetry.
