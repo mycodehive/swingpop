@@ -560,3 +560,15 @@ M15 Match Lifecycle / Reconnect Foundation is implemented on top of M14 dedicate
 - [x] Add settings, F2 telemetry, build/launch tools, 21 EditMode tests, 5 PlayMode tests, captures, and docs.
 - [ ] Cross-NAT/WAN, production Relay, TLS, soak/network-quality gates, and production online remain future work.
 - [ ] Do not start M19 in this milestone.
+
+## M19 Production Relay Provider Integration / WAN Quality Gate (2026-08-30)
+
+- [x] Preserve M12-M18 authority, identity, Lobby, ticket, reconnect, Direct default, and LocalRelay mode.
+- [x] Pin unified Multiplayer Services 2.3.1 and isolate provider SDK references from gameplay runtime.
+- [x] Add opt-in `ProductionRelay` allocate/join through Unity Relay with DTLS and no Direct fallback.
+- [x] Bind the dedicated authority through Relay and gate the ready marker on provider establishment.
+- [x] Keep provider credential, Authentication, MatchJoinTicket, and ReconnectTicket as separate ordered gates.
+- [x] Verify real cloud allocation in `asia-northeast1`, two clients, A/B shots, final matching hash, and reconnect generation 2.
+- [x] Add generic failure mapping/redaction, timeout/retry policy, temporary payload consumption, validator, tests, builds, logs, captures, and quality-gate docs.
+- [ ] Cross-NAT, public Lobby, WAN Profiles B/C, 5-cycle lifecycle, 30-minute soak, Profiler, bandwidth/cost, and production operations are not complete.
+- [x] Stop at M19; no M20 implementation was started.

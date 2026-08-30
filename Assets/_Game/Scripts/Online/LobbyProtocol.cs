@@ -373,6 +373,7 @@ namespace SwingPop.Online
         [SerializeField] private long expiresAtUnixMilliseconds;
         [SerializeField] private MatchAdmissionGrant[] grants;
         [SerializeField] private MatchConnectivityDescriptor connectivity;
+        [SerializeField] private ServerConnectivityDescriptor serverConnectivity;
 
         public MatchReservation(LobbyMatchId lobbyMatchId, MatchId gameMatchId, string serverAddress,
             ushort serverPort, long expiresAtUnixMilliseconds, MatchAdmissionGrant[] grants)
@@ -386,6 +387,7 @@ namespace SwingPop.Online
             connectivity = new MatchConnectivityDescriptor(MatchConnectivityMode.Direct,
                 ConnectivityProtocol.DirectProvider, this.serverAddress, serverPort,
                 "direct-" + gameMatchId.Value, string.Empty, 0L);
+            serverConnectivity = new ServerConnectivityDescriptor(this.serverAddress, serverPort);
         }
 
         public MatchReservation(LobbyMatchId lobbyMatchId, MatchId gameMatchId,
@@ -398,6 +400,7 @@ namespace SwingPop.Online
             serverPort = server.BindPort;
             this.expiresAtUnixMilliseconds = expiresAtUnixMilliseconds;
             this.connectivity = connectivity;
+            serverConnectivity = server;
             this.grants = grants ?? Array.Empty<MatchAdmissionGrant>();
         }
 
@@ -408,6 +411,7 @@ namespace SwingPop.Online
         public long ExpiresAtUnixMilliseconds => expiresAtUnixMilliseconds;
         public MatchAdmissionGrant[] Grants => grants ?? Array.Empty<MatchAdmissionGrant>();
         public MatchConnectivityDescriptor Connectivity => connectivity;
+        public ServerConnectivityDescriptor ServerConnectivity => serverConnectivity;
 
         public bool TryGetGrant(PlayerAccountId accountId, out MatchAdmissionGrant grant)
         {

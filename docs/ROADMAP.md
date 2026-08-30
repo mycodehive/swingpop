@@ -77,3 +77,10 @@ Vertical Slice와 local turns가 안정된 후 별도 PRD 작성.
 - Verified: Direct regression, real proxy bytes, A/B dedicated gameplay, snapshot convergence, and Relay reconnect.
 - Not verified: Cross-NAT, CGNAT, WAN, production Relay, encryption, soak, and production operations.
 - M19 was not started. Recommended next candidate is WAN Reliability / Soak / Network Quality Gate after a production Relay provider decision.
+
+## M19 Production Relay / WAN Quality Gate (2026-08-30)
+
+- Status: Conditional Go for the opt-in Unity Relay provider integration; WAN quality gate No-Go.
+- Verified: MPS 2.3.1/DTLS integration, real `asia-northeast1` allocation, dedicated host, two client joins, A/B authoritative shots, matching snapshots, and provider reconnect.
+- Not verified: Cross-NAT, public Lobby, controlled latency/jitter/loss, five-cycle lifecycle, 30-minute soak, Profiler, bandwidth/cost, production identity, and operations.
+- Production online multiplayer remains No-Go. M20 was not started.

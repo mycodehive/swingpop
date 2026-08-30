@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Threading.Tasks;
 using SwingPop.Data;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -16,6 +17,10 @@ namespace SwingPop.Online
         public const string EvidenceDirectoryArgument = "-swingpopM17EvidenceDirectory=";
         public const string ConnectivityModeArgument = "-swingpopConnectivityMode=";
         public const string RelayExecutableArgument = "-swingpopRelayExecutable=";
+        public const string EnableRealRelayTestsArgument = "-swingpopEnableRealRelayTests";
+        public const string UnityEnvironmentArgument = "-swingpopUnityEnvironment=";
+        public const string RelayRegionArgument = "-swingpopRelayRegion=";
+        public const string RelayConnectionTypeArgument = "-swingpopRelayConnectionType=";
 
         [SerializeField] private LobbyDevelopmentSettings settings;
         [SerializeField] private MultiplayerDevelopmentSettings authenticationSettings;
@@ -66,10 +71,10 @@ namespace SwingPop.Online
             transport.Disconnected -= OnDisconnected;
         }
 
-        private void Start()
+        private async void Start()
         {
             string[] args = Environment.GetCommandLineArgs();
-            if (HasArgument(args, LobbyServiceArgument)) StartService(args);
+            if (HasArgument(args, LobbyServiceArgument)) await StartServiceAsync(args);
             else if (HasArgument(args, LobbyClientArgument)) StartClient(args);
             else
             {
@@ -129,7 +134,7 @@ namespace SwingPop.Online
 
         private bool CanRequest() => transport != null && IsAuthenticated && !requestPending;
 
-        private void StartService(string[] args)
+        private async Task StartServiceAsync(string[] args)
         {
             if (view != null) view.enabled = false;
             foreach (Camera camera in FindObjectsByType<Camera>(FindObjectsInactive.Include)) camera.enabled = false;
@@ -148,7 +153,7 @@ namespace SwingPop.Online
             MatchConnectivityMode connectivityMode = ReadConnectivityMode(args,
                 connectivitySettings != null ? connectivitySettings.DefaultMode : MatchConnectivityMode.Direct);
             IMatchConnectivityProvider connectivityProvider;
-            if (connectivityMode == MatchConnectivityMode.Relay)
+            if (connectivityMode == MatchConnectivityMode.LocalRelay)
             {
                 if (connectivitySettings == null)
                 {
@@ -164,6 +169,39 @@ namespace SwingPop.Online
                     connectivitySettings.MaximumAllocations, connectivitySettings.AllocationTimeoutSeconds,
                     Mathf.RoundToInt(connectivitySettings.CredentialLifetimeSeconds * 1000f), evidence);
             }
+            else if (connectivityMode == MatchConnectivityMode.ProductionRelay)
+            {
+                bool optIn = HasArgument(args, EnableRealRelayTestsArgument)
+                             || connectivitySettings != null && connectivitySettings.EnableRealRelayTests;
+                if (connectivitySettings == null || !optIn)
+                {
+                    status = "PRODUCTION RELAY BLOCKED: EXPLICIT OPT-IN REQUIRED";
+                    Debug.LogError("[M19][Relay] Production Relay requires linked UGS configuration and " +
+                                   "-swingpopEnableRealRelayTests. No Direct fallback was attempted.", this);
+                    return;
+                }
+                string environment = MatchReservationFile.ReadArgument(args, UnityEnvironmentArgument);
+                if (string.IsNullOrWhiteSpace(environment))
+                    environment = connectivitySettings.UnityServicesEnvironment;
+                string region = MatchReservationFile.ReadArgument(args, RelayRegionArgument);
+                if (string.IsNullOrWhiteSpace(region)) region = connectivitySettings.ProductionRelayRegion;
+                string connectionType = MatchReservationFile.ReadArgument(args, RelayConnectionTypeArgument);
+                if (string.IsNullOrWhiteSpace(connectionType))
+                    connectionType = connectivitySettings.ProductionRelayConnectionType;
+                UnityRelayConnectivityProvider production = new(environment, region, connectionType,
+                    connectivitySettings.RetryCount, connectivitySettings.RetryDelaySeconds,
+                    connectivitySettings.AllocationTimeoutSeconds,
+                    Mathf.RoundToInt(connectivitySettings.CredentialLifetimeSeconds * 1000f));
+                status = "INITIALIZING PRODUCTION RELAY";
+                if (!await production.PrepareAsync())
+                {
+                    status = "PRODUCTION RELAY BLOCKED: " + production.LastFailure.Error;
+                    Debug.LogError($"[M19][Relay] Production Relay preparation failed safely: " +
+                                   $"{production.LastFailure}. No Direct fallback was attempted.", this);
+                    return;
+                }
+                connectivityProvider = production;
+            }
             else connectivityProvider = new DirectMatchConnectivityProvider();
             DevelopmentGameServerAllocator allocator = new(executable, settings.MatchServerAddress,
                 settings.FirstMatchServerPort, settings.MaximumActiveMatches,
@@ -177,7 +215,7 @@ namespace SwingPop.Online
                 Mathf.RoundToInt(authenticationSettings.AuthenticationSessionLifetimeSeconds * 1000f),
                 lobbyService, settings.VerboseLogging);
             status = started ? $"LOBBY SERVICE {settings.LobbyAddress}:{settings.LobbyPort}" : "LOBBY SERVICE FAILED";
-            if (started) Debug.Log($"[M18][Lobby] Connectivity mode={connectivityMode}", this);
+            if (started) Debug.Log($"[M19][Lobby] Connectivity mode={connectivityMode}", this);
         }
 
         private void StartClient(string[] args)

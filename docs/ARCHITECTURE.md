@@ -554,3 +554,11 @@ M17 adds a separate Lobby protocol/version and `ILobbyService` control plane in 
 M18 inserts `IMatchConnectivityProvider` between M17 reservation and dedicated admission. Direct remains the default. Relay mode returns only a client-visible proxy endpoint while the dedicated bind endpoint remains in the server reservation. Relay permission is checked before Authentication and remains separate from one-time `MatchJoinTicket` and rotating `ReconnectTicket` responsibilities.
 
 The verified provider is a separate localhost TCP relay-proxy carrying real UTP WebSocket traffic. It is not verified Cross-NAT or production Relay. Gameplay authority and presentation systems do not reference Relay code. See `M18_RELAY_NAT_TRAVERSAL_ARCHITECTURE.md`.
+
+## M19 Production Relay / WAN Quality Boundary
+
+M19 adds a third explicit connectivity route, `ProductionRelay`, behind the existing `IMatchConnectivityProvider`; `Direct` remains the serialized default and M18 `LocalRelay` remains available. The production adapter is isolated in `SwingPop.Online.UnityRelayProvider` and uses unified Multiplayer Services 2.3.1 plus Unity Transport 6.5.0 DTLS. The gameplay runtime assembly has no `Unity.Services.*` reference.
+
+The dedicated process is the Unity Relay host and remains the only authority. The Lobby prepares an allocation, passes opaque host material through a one-use temporary reservation, waits for Relay establishment, and then grants clients a provider join code. Connectivity permission, M16 Authentication, one-time M17 `MatchJoinTicket`, and rotating M15 `ReconnectTicket` remain separate gates. A failed ProductionRelay path never falls back to Direct.
+
+A one-PC real cloud run through `asia-northeast1` verified allocation, both joins, two authoritative shots, matching hashes, and reconnect generation 2. Cross-NAT, a public Lobby control plane, shaped WAN profiles, 30-minute soak, repeated allocation lifecycle, Profiler, and bandwidth/cost remain No-Go. See `M19_PRODUCTION_RELAY_WAN_QUALITY_ARCHITECTURE.md` and `M19_NETWORK_QUALITY_GATE.md`.

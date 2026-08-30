@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using SwingPop.Data;
 using SwingPop.Gameplay.Ball;
 using SwingPop.Gameplay.Course;
@@ -235,7 +236,7 @@ namespace SwingPop.Online
             transport.PublishSnapshot(initial);
         }
 
-        public void StartNetworkMatch(MultiplayerDevelopmentMode mode, string address, ushort port)
+        public async void StartNetworkMatch(MultiplayerDevelopmentMode mode, string address, ushort port)
         {
             if (mode is not MultiplayerDevelopmentMode.NetworkHost and not MultiplayerDevelopmentMode.NetworkClient
                 and not MultiplayerDevelopmentMode.DedicatedServer)
@@ -284,6 +285,7 @@ namespace SwingPop.Online
             IMatchAdmissionRegistry admissionRegistry = null;
             ConnectivityCredentialRegistry connectivityRegistry = null;
             MatchReservationFileDocument reservationDocument = null;
+            string loadedReservationPath = string.Empty;
             if (mode == MultiplayerDevelopmentMode.DedicatedServer)
             {
                 string reservationPath = MatchReservationFile.ReadArgument(Environment.GetCommandLineArgs(),
@@ -298,10 +300,24 @@ namespace SwingPop.Online
                         return;
                     }
                     admissionRegistry = loadedRegistry;
+                    loadedReservationPath = reservationPath;
                 }
             }
             dedicatedServerTransport.ConfigureMatchAdmission(admissionRegistry);
             dedicatedServerTransport.ConfigureConnectivity(connectivityRegistry);
+            if (reservationDocument != null
+                && reservationDocument.ConnectivityMode == MatchConnectivityMode.ProductionRelay)
+            {
+                if (!ProductionRelayServerPayload.TryDeserialize(reservationDocument.ServerProviderPayload,
+                        out ProductionRelayServerPayload serverPayload)
+                    || !dedicatedServerTransport.SetProductionRelayServerPayload(serverPayload))
+                {
+                    Debug.LogError("[M19][Relay] Dedicated server Relay payload is invalid.", this);
+                    return;
+                }
+                if (!MatchReservationFile.TryDeleteSensitiveReservation(loadedReservationPath, reservationDocument))
+                    Debug.LogWarning("[M19][Relay] Sensitive temporary reservation could not be deleted.", this);
+            }
             float liveness = settings != null ? settings.ConnectionLivenessTimeoutSeconds : 30f;
             networkTransport.ConfigureConnectionLiveness(liveness);
             dedicatedServerTransport.ConfigureConnectionLiveness(liveness);
@@ -317,6 +333,29 @@ namespace SwingPop.Online
                 Debug.LogError("[M18][Connectivity] Lobby admission descriptor is invalid or expired.", this);
                 return;
             }
+            if (hasPendingAdmission
+                && pendingGrant.Connectivity.Mode == MatchConnectivityMode.ProductionRelay)
+            {
+                string[] commandLine = Environment.GetCommandLineArgs();
+                string environment = MatchReservationFile.ReadArgument(commandLine,
+                    LobbyDevelopmentController.UnityEnvironmentArgument);
+                if (string.IsNullOrWhiteSpace(environment)) environment = "production";
+                string connectionType = MatchReservationFile.ReadArgument(commandLine,
+                    LobbyDevelopmentController.RelayConnectionTypeArgument);
+                if (string.IsNullOrWhiteSpace(connectionType)) connectionType = "dtls";
+                (ProductionRelayServerPayload Payload, ConnectivityProviderFailure Failure) joined =
+                    await UnityRelayClientConnector.JoinAsync(pendingGrant.Connectivity, environment,
+                        connectionType, 30f);
+                if (joined.Failure.IsFailure
+                    || !networkTransport.SetProductionRelayServerPayload(joined.Payload))
+                {
+                    Debug.LogError($"[M19][Relay] Production Relay join failed safely: {joined.Failure}. " +
+                                   "No Direct fallback was attempted.", this);
+                    return;
+                }
+                address = joined.Payload.Host;
+                port = joined.Payload.Port;
+            }
             bool started = mode switch
             {
                 MultiplayerDevelopmentMode.NetworkHost => networkTransport.StartHost(address, port, timeout),
@@ -326,10 +365,34 @@ namespace SwingPop.Online
             };
             if (started && hasPendingAdmission) MatchAdmissionHandoff.TryConsume(out _);
             if (started && mode == MultiplayerDevelopmentMode.DedicatedServer && reservationDocument != null)
-                MatchReservationFile.TryWriteReadyMarker(Environment.GetCommandLineArgs(),
+            {
+                if (reservationDocument.ConnectivityMode == MatchConnectivityMode.ProductionRelay)
+                    _ = WriteProductionRelayReadyMarkerAsync(reservationDocument.GameMatchId);
+                else MatchReservationFile.TryWriteReadyMarker(Environment.GetCommandLineArgs(),
                     reservationDocument.GameMatchId, $"{address}:{port}");
+            }
             if (!started)
                 Debug.LogError($"[M13][Match] Could not start {mode} at {address}:{port}.", this);
+        }
+
+        private async Task WriteProductionRelayReadyMarkerAsync(MatchId gameMatchId)
+        {
+            float timeout = 30f;
+            float elapsed = 0f;
+            while (elapsed < timeout && dedicatedServerTransport != null
+                   && dedicatedServerTransport.IsCreated
+                   && !dedicatedServerTransport.IsProductionRelayEstablished)
+            {
+                await Task.Delay(50);
+                elapsed += 0.05f;
+            }
+            if (dedicatedServerTransport == null || !dedicatedServerTransport.IsProductionRelayEstablished)
+            {
+                Debug.LogError("[M19][Relay] Dedicated server did not bind to Unity Relay before timeout.", this);
+                return;
+            }
+            MatchReservationFile.TryWriteReadyMarker(Environment.GetCommandLineArgs(), gameMatchId,
+                $"relay:{ConnectivityProtocol.UnityRelayProvider}");
         }
 
         public bool TrySubmitShot(ShotCommand command)

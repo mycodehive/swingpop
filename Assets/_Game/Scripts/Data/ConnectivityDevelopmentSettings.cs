@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace SwingPop.Data
 {
-    [CreateAssetMenu(menuName = "SwingPop/Online/M18 Connectivity Development Settings",
+    [CreateAssetMenu(menuName = "SwingPop/Online/M19 Connectivity Development Settings",
         fileName = "M18ConnectivityDevelopmentSettings")]
     public sealed class ConnectivityDevelopmentSettings : ScriptableObject
     {
@@ -24,6 +24,12 @@ namespace SwingPop.Data
         [SerializeField, Range(0.1f, 10f)] private float retryDelaySeconds = 1f;
         [SerializeField] private bool verboseConnectivityLogging;
 
+        [Header("Production Relay (opt-in; no secrets stored here)")]
+        [SerializeField] private bool enableRealRelayTests;
+        [SerializeField] private string unityServicesEnvironment = "production";
+        [SerializeField] private string productionRelayRegion = "";
+        [SerializeField] private string productionRelayConnectionType = "dtls";
+
         public MatchConnectivityMode DefaultMode => defaultMode;
         public string RelayProvider => relayProvider;
         public string RelayRegion => relayRegion;
@@ -35,6 +41,12 @@ namespace SwingPop.Data
         public int RetryCount => Mathf.Clamp(retryCount, 1, 5);
         public float RetryDelaySeconds => Mathf.Clamp(retryDelaySeconds, 0.1f, 10f);
         public bool VerboseConnectivityLogging => verboseConnectivityLogging;
+        public bool EnableRealRelayTests => enableRealRelayTests;
+        public string UnityServicesEnvironment => unityServicesEnvironment ?? string.Empty;
+        public string ProductionRelayRegion => productionRelayRegion ?? string.Empty;
+        public string ProductionRelayConnectionType =>
+            string.Equals(productionRelayConnectionType, "wss", System.StringComparison.OrdinalIgnoreCase)
+                ? "wss" : "dtls";
 
 #if UNITY_EDITOR
         public void Configure(MatchConnectivityMode mode, string address, ushort port, string provider,

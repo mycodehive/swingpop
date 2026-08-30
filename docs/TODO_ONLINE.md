@@ -74,14 +74,27 @@
 - [x] Bounded allocation, timeout, failure release, parent-linked cleanup, and secret-safe reservation
 - [x] Direct regression, tests, builds, real A/B shots, reconnect, hashes, and captures
 
+### M19 Production Relay Provider Integration
+
+- [x] Add explicit `ProductionRelay` mode while preserving Direct default and LocalRelay regression mode
+- [x] Pin unified Multiplayer Services 2.3.1 and isolate `Unity.Services.*` in a provider assembly
+- [x] Integrate real Unity Relay allocate/join with DTLS and dedicated server host authority
+- [x] Preserve Relay credential -> Authentication -> MatchJoinTicket/ReconnectTicket admission order
+- [x] Verify one real cloud allocation in `asia-northeast1`, two A/B shots, matching hashes, and reconnect generation 2
+- [x] Delete the temporary server provider payload after dedicated-process consumption
+- [x] Add M19 validator, 21 EditMode tests, 10 PlayMode tests, builds, logs, captures, and quality-gate docs
+- [ ] Verify two-router Cross-NAT, controlled WAN profiles, five lifecycle cycles, 30-minute soak, Profiler, and bandwidth/cost
+
 ## Future Production Work
 
 ### Relay / NAT
 
 - [x] Choose the M18 provider seam and validate a local standalone proxy topology
 - [x] Prototype bounded allocation, credential expiry, failure release, and parent cleanup
-- [ ] Integrate a production Relay provider and encrypted transport
+- [x] Integrate a production-capable Unity Relay provider and encrypted DTLS transport
+- [x] Verify real cloud allocation/join/gameplay/reconnect on one physical PC
 - [ ] Verify two-router Cross-NAT, CGNAT/symmetric NAT, WAN regions, and provider outage/failover
+- [ ] Add allocation replenishment/completion release for repeated production matches
 
 ### Lobby
 
@@ -111,6 +124,7 @@
 - [ ] Install and validate Unity's native Dedicated Server build target
 - [ ] Container/image packaging, regions, scaling, health checks, monitoring, and alerting
 - [ ] Load, soak, packet-loss/jitter, chaos, and cost/bandwidth gates
+- [ ] Public TLS Lobby/control plane so remote clients can obtain admission grants without localhost access
 
 ### Multi-Hole
 

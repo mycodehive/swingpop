@@ -549,3 +549,10 @@ Vertical Slice 승인 이후에만 다음 단계 논의:
 - A replaceable connectivity provider and standalone local relay-proxy were added without provider code in gameplay.
 - Separate-process proxy traffic, two-player natural shots, matching snapshots, and Relay reconnect were verified on localhost.
 - Cross-NAT/WAN, production Unity Relay, encrypted transport, and production online multiplayer remain No-Go.
+
+## 27. M19 Production Relay / WAN Quality Status (2026-08-30)
+
+- Unity Relay was integrated as an opt-in `ProductionRelay` provider through unified Multiplayer Services 2.3.1; Direct remains default and LocalRelay remains available.
+- A real `asia-northeast1` DTLS allocation verified dedicated host bind, two client joins, account/ticket admission, one shot per player, matching authoritative hashes, and reconnect generation 2.
+- The provider integration is Conditional Go. Cross-NAT, remotely hosted Lobby, latency/jitter/loss profiles, repeated lifecycle, 30-minute soak, Profiler, bandwidth/cost, production identity, and operations are not verified.
+- WAN network quality and production online multiplayer remain No-Go. See `M19_NETWORK_QUALITY_GATE.md`.

@@ -446,3 +446,12 @@ Dedicated clients authenticate before they can receive `player-a` or `player-b`.
 - A Relay failure before admission does not consume the one-time MatchJoinTicket.
 - Reconnect repeats Relay credential validation, authenticates the same account, then uses the rotating ReconnectTicket.
 - F2 shows mode, connectivity state/provider fingerprint, endpoint, RTT, bytes, and existing auth/reconnect telemetry.
+
+## 29. M19 Production Relay Gameplay Contract
+
+- `ProductionRelay` changes only the route; dedicated authority, shot approval, Rigidbody simulation, terrain, score, turn, and snapshot rules are unchanged.
+- Client A/B still receive server-reserved `player-a`/`player-b`; Unity Relay allocation identity cannot assign gameplay ownership.
+- A client must pass provider connectivity, M16 Authentication, and its M17 `MatchJoinTicket` before its first shot.
+- Reconnect rejoins the provider allocation, authenticates the same account, then consumes the rotating M15 `ReconnectTicket` and restores the newest authoritative snapshot.
+- Provider failure or timeout never launches a Direct connection and never consumes a one-time match admission ticket before connectivity succeeds.
+- The verified cloud run completed one natural shot per player and converged both clients at turn 2/hash `7DA20979070610D1`; this is not Cross-NAT or adverse-WAN evidence.

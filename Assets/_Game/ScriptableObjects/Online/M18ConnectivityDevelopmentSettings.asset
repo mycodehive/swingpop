@@ -23,3 +23,7 @@ MonoBehaviour:
   retryCount: 3
   retryDelaySeconds: 1
   verboseConnectivityLogging: 0
+  enableRealRelayTests: 0
+  unityServicesEnvironment: production
+  productionRelayRegion:
+  productionRelayConnectionType: dtls

@@ -42,7 +42,9 @@ namespace SwingPop.Debugging
                 GUILayout.Label($"Endpoint: {network.Address}:{network.Port} | Remote: {(network.IsReady ? remoteId : "WAITING")}");
                 GUILayout.Label($"Connectivity: {network.ConnectivityMode} / {network.ConnectivityState}");
                 GUILayout.Label($"Provider: {network.ConnectivityLabel}");
-                GUILayout.Label($"RTT: {network.RoundTripTimeMilliseconds:F0} ms | Msg: {network.MessageCount}");
+                GUILayout.Label($"Region: {(string.IsNullOrWhiteSpace(network.ConnectivityRegion) ? "auto/local" : network.ConnectivityRegion)}");
+                GUILayout.Label($"RTT: {network.RoundTripTimeMilliseconds:F0} ms | Approval: {network.ApprovalRoundTripTimeMilliseconds:F0} ms");
+                GUILayout.Label($"Snapshot age: {network.SnapshotAgeMilliseconds} ms | Msg: {network.MessageCount}");
                 GUILayout.Label($"Envelope Seq: TX {network.OutboundSequence} / RX {network.InboundSequence}");
                 GUILayout.Label($"Bytes: TX {network.SentBytes} / RX {network.ReceivedBytes}");
                 GUILayout.Label($"Reject: {network.RejectedMessageCount} ({network.LastRejectionReason})");
@@ -66,6 +68,7 @@ namespace SwingPop.Debugging
             {
                 GUILayout.Label($"Server: {server.ConnectionState} / {server.LifecycleState}");
                 GUILayout.Label($"Connectivity credential required: {server.ConnectivityRequired}");
+                GUILayout.Label($"Production Relay: {server.UsesProductionRelay} / bound={server.IsProductionRelayEstablished}");
                 GUILayout.Label($"Auth: required={server.AuthenticationRequired} connections={server.AuthenticatedConnectionCount} sessions={server.AuthenticationSessionCount}");
                 GUILayout.Label($"Players: {server.ConnectedPlayerCount}/{server.MaxPlayers} | Endpoint: {server.Address}:{server.Port}");
                 GUILayout.Label($"Bytes: TX {server.SentBytes} / RX {server.ReceivedBytes} | Msg: {server.MessageCount}");

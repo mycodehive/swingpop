@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using Unity.Collections;
 using Unity.Networking.Transport;
+using Unity.Networking.Transport.Relay;
 using Unity.Networking.Transport.Utilities;
 using UnityEngine;
 
@@ -79,6 +80,8 @@ namespace SwingPop.Online
         private bool matchAdmissionRequired;
         private ConnectivityCredentialRegistry connectivityRegistry;
         private bool connectivityRequired;
+        private ProductionRelayServerPayload productionRelayPayload;
+        private bool hasProductionRelayPayload;
 
         public event Action<ApprovedShot> ShotApprovedReceived;
         public event Action<ShotRejection> ShotRejectedReceived;
@@ -126,6 +129,9 @@ namespace SwingPop.Online
         public bool MatchAdmissionRequired => matchAdmissionRequired;
         public MatchId ReservedGameMatchId => matchAdmissionRegistry?.GameMatchId ?? default;
         public bool ConnectivityRequired => connectivityRequired;
+        public bool UsesProductionRelay => hasProductionRelayPayload;
+        public bool IsProductionRelayEstablished => !hasProductionRelayPayload || driver.IsCreated
+            && driver.GetRelayConnectionStatus() == RelayConnectionStatus.Established;
 
         private void Update() => Tick(Time.unscaledDeltaTime);
         private void OnDisable() => CancelPending();
@@ -174,6 +180,14 @@ namespace SwingPop.Online
             connectivityRequired = registry != null;
         }
 
+        public bool SetProductionRelayServerPayload(ProductionRelayServerPayload payload)
+        {
+            if (payload == null || !payload.IsValid) return false;
+            productionRelayPayload = payload;
+            hasProductionRelayPayload = true;
+            return true;
+        }
+
         public void ConfigureConnectionLiveness(float seconds)
         {
             livenessTimeoutSeconds = Mathf.Clamp(seconds, 15f, 120f);
@@ -198,9 +212,11 @@ namespace SwingPop.Online
             connectionState.TryTransition(NetworkConnectionState.Starting);
             CreateDriver();
 
-            NetworkEndpoint endpoint = address == "127.0.0.1" || address.Equals("localhost", StringComparison.OrdinalIgnoreCase)
-                ? NetworkEndpoint.LoopbackIpv4.WithPort(port)
-                : NetworkEndpoint.AnyIpv4.WithPort(port);
+            NetworkEndpoint endpoint = hasProductionRelayPayload
+                ? NetworkEndpoint.AnyIpv4
+                : address == "127.0.0.1" || address.Equals("localhost", StringComparison.OrdinalIgnoreCase)
+                    ? NetworkEndpoint.LoopbackIpv4.WithPort(port)
+                    : NetworkEndpoint.AnyIpv4.WithPort(port);
             int bindResult = driver.Bind(endpoint);
             if (bindResult != 0 || driver.Listen() != 0)
             {
@@ -209,7 +225,9 @@ namespace SwingPop.Online
             }
 
             connectionState.TryTransition(NetworkConnectionState.Listening);
-            Log("Connection", $"Listening {address}:{port}; waiting for {MaxPlayers} players");
+            Log("Connection", hasProductionRelayPayload
+                ? $"Listening through Unity Relay region={productionRelayPayload.Region}; waiting for {MaxPlayers} players"
+                : $"Listening {address}:{port}; waiting for {MaxPlayers} players");
             return true;
         }
 
@@ -363,10 +381,19 @@ namespace SwingPop.Online
                 receiveQueueCapacity: 256,
                 sendQueueCapacity: 256);
             networkSettings.WithFragmentationStageParameters(OnlineProtocol.MaximumPayloadBytes);
-            // M15 uses UTP's WebSocket interface (TCP-backed on standalone players). A hard-killed
-            // localhost UDP peer can poison the shared Windows loopback socket and starve the
-            // remaining peer; the stream interface gives each peer an independent OS connection.
-            driver = NetworkDriver.Create(new WebSocketNetworkInterface(), networkSettings);
+            if (hasProductionRelayPayload)
+            {
+                RelayServerData relayData = productionRelayPayload.ToRelayServerData();
+                networkSettings.WithRelayParameters(ref relayData);
+                driver = productionRelayPayload.WebSocket
+                    ? NetworkDriver.Create(new WebSocketNetworkInterface(), networkSettings)
+                    : NetworkDriver.Create(new UDPNetworkInterface(), networkSettings);
+            }
+            else
+            {
+                // Local M15-M18 regression uses one TCP-backed OS connection per peer.
+                driver = NetworkDriver.Create(new WebSocketNetworkInterface(), networkSettings);
+            }
             reliablePipeline = driver.CreatePipeline(typeof(FragmentationPipelineStage), typeof(ReliableSequencedPipelineStage));
         }
 
@@ -1023,6 +1050,11 @@ namespace SwingPop.Online
             endedCleanupElapsed = 0f;
             authenticationRateWindowElapsed = 0f;
             authenticationRequestsInWindow = 0;
+            if (notifyRemote)
+            {
+                productionRelayPayload = null;
+                hasProductionRelayPayload = false;
+            }
         }
 
         private static long NowMilliseconds() => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();

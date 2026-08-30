@@ -8,16 +8,21 @@ namespace SwingPop.Online
 {
     public static class ConnectivityProtocol
     {
-        public const int CurrentVersion = 1;
+        public const int CurrentVersion = 2;
+        public const int ProductionDescriptorVersion = 1;
         public const int MaximumCredentialLength = 512;
+        public const int MaximumProviderPayloadLength = 8192;
         public const string DirectProvider = "direct";
         public const string LocalRelayProvider = "local-relay-proxy";
+        public const string UnityRelayProvider = "unity-relay";
     }
 
     public enum MatchConnectivityMode
     {
-        Direct,
-        Relay
+        Direct = 0,
+        LocalRelay = 1,
+        Relay = LocalRelay,
+        ProductionRelay = 2
     }
 
     public enum ConnectivityAllocationState
@@ -65,9 +70,19 @@ namespace SwingPop.Online
         [SerializeField] private string allocationId;
         [SerializeField] private string credential;
         [SerializeField] private long expiresAtUnixMilliseconds;
+        [SerializeField] private int providerPayloadVersion;
+        [SerializeField] private string region;
 
         public MatchConnectivityDescriptor(MatchConnectivityMode mode, string provider, string address,
             ushort port, string allocationId, string credential, long expiresAtUnixMilliseconds)
+            : this(mode, provider, address, port, allocationId, credential,
+                expiresAtUnixMilliseconds, ConnectivityProtocol.ProductionDescriptorVersion, string.Empty)
+        {
+        }
+
+        public MatchConnectivityDescriptor(MatchConnectivityMode mode, string provider, string address,
+            ushort port, string allocationId, string credential, long expiresAtUnixMilliseconds,
+            int providerPayloadVersion, string region)
         {
             protocolVersion = ConnectivityProtocol.CurrentVersion;
             this.mode = mode;
@@ -77,6 +92,8 @@ namespace SwingPop.Online
             this.allocationId = allocationId ?? string.Empty;
             this.credential = credential ?? string.Empty;
             this.expiresAtUnixMilliseconds = expiresAtUnixMilliseconds;
+            this.providerPayloadVersion = providerPayloadVersion;
+            this.region = region ?? string.Empty;
         }
 
         public int ProtocolVersion => protocolVersion;
@@ -87,13 +104,17 @@ namespace SwingPop.Online
         public string AllocationId => allocationId ?? string.Empty;
         public string Credential => credential ?? string.Empty;
         public long ExpiresAtUnixMilliseconds => expiresAtUnixMilliseconds;
-        public bool RequiresCredential => mode == MatchConnectivityMode.Relay;
+        public int ProviderPayloadVersion => providerPayloadVersion;
+        public string Region => region ?? string.Empty;
+        public bool RequiresCredential => mode != MatchConnectivityMode.Direct;
 
         public bool IsValidAt(long nowMilliseconds)
         {
             if (protocolVersion != ConnectivityProtocol.CurrentVersion || string.IsNullOrWhiteSpace(Address)
                 || port is < 1 or > ushort.MaxValue || string.IsNullOrWhiteSpace(Provider)) return false;
+            if (!Enum.IsDefined(typeof(MatchConnectivityMode), mode)) return false;
             if (mode == MatchConnectivityMode.Direct) return true;
+            if (providerPayloadVersion != ConnectivityProtocol.ProductionDescriptorVersion) return false;
             return !string.IsNullOrWhiteSpace(AllocationId)
                    && !string.IsNullOrWhiteSpace(Credential)
                    && Credential.Length <= ConnectivityProtocol.MaximumCredentialLength
@@ -102,7 +123,10 @@ namespace SwingPop.Online
 
         public string SafeLabel => mode == MatchConnectivityMode.Direct
             ? $"DIRECT {Address}:{Port}"
-            : $"RELAY {Provider} allocation={ConnectivitySecurity.Fingerprint(AllocationId)}";
+            : $"{mode.ToString().ToUpperInvariant()} {Provider} region={SafeRegion} " +
+              $"allocation={ConnectivitySecurity.Fingerprint(AllocationId)}";
+
+        private string SafeRegion => string.IsNullOrWhiteSpace(Region) ? "auto" : Region;
     }
 
     [Serializable]
@@ -110,16 +134,44 @@ namespace SwingPop.Online
     {
         [SerializeField] private string bindAddress;
         [SerializeField] private int bindPort;
+        [SerializeField] private MatchConnectivityMode mode;
+        [SerializeField] private string provider;
+        [SerializeField] private int providerPayloadVersion;
+        [SerializeField] private string providerPayload;
+        [SerializeField] private string region;
 
         public ServerConnectivityDescriptor(string bindAddress, ushort bindPort)
+            : this(bindAddress, bindPort, MatchConnectivityMode.Direct,
+                ConnectivityProtocol.DirectProvider, 0, string.Empty, string.Empty)
+        {
+        }
+
+        public ServerConnectivityDescriptor(string bindAddress, ushort bindPort,
+            MatchConnectivityMode mode, string provider, int providerPayloadVersion,
+            string providerPayload, string region)
         {
             this.bindAddress = bindAddress ?? string.Empty;
             this.bindPort = bindPort;
+            this.mode = mode;
+            this.provider = provider ?? string.Empty;
+            this.providerPayloadVersion = providerPayloadVersion;
+            this.providerPayload = providerPayload ?? string.Empty;
+            this.region = region ?? string.Empty;
         }
 
         public string BindAddress => bindAddress ?? string.Empty;
         public ushort BindPort => (ushort)Mathf.Clamp(bindPort, 1, ushort.MaxValue);
-        public bool IsValid => !string.IsNullOrWhiteSpace(BindAddress) && bindPort is > 0 and <= ushort.MaxValue;
+        public MatchConnectivityMode Mode => mode;
+        public string Provider => provider ?? string.Empty;
+        public int ProviderPayloadVersion => providerPayloadVersion;
+        public string ProviderPayload => providerPayload ?? string.Empty;
+        public string Region => region ?? string.Empty;
+        public bool IsValid => !string.IsNullOrWhiteSpace(BindAddress) && bindPort is > 0 and <= ushort.MaxValue
+            && (mode != MatchConnectivityMode.ProductionRelay
+                || string.Equals(Provider, ConnectivityProtocol.UnityRelayProvider, StringComparison.Ordinal)
+                && providerPayloadVersion == ConnectivityProtocol.ProductionDescriptorVersion
+                && !string.IsNullOrWhiteSpace(ProviderPayload)
+                && ProviderPayload.Length <= ConnectivityProtocol.MaximumProviderPayloadLength);
     }
 
     public sealed class MatchConnectivityAllocation
@@ -316,5 +368,7 @@ namespace SwingPop.Online
         public int MaximumAttempts { get; }
         public float DelaySeconds { get; }
         public bool CanRetry(int completedAttempts) => completedAttempts < MaximumAttempts;
+        public float DelayForAttempt(int completedAttempts) =>
+            Mathf.Min(DelaySeconds * Mathf.Pow(2f, Mathf.Max(0, completedAttempts - 1)), 10f);
     }
 }

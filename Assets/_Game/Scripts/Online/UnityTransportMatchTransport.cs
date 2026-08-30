@@ -2,6 +2,7 @@ using System;
 using System.Text;
 using Unity.Collections;
 using Unity.Networking.Transport;
+using Unity.Networking.Transport.Relay;
 using Unity.Networking.Transport.Utilities;
 using UnityEngine;
 
@@ -55,6 +56,10 @@ namespace SwingPop.Online
         private MatchConnectivityDescriptor connectivityDescriptor;
         private bool hasConnectivityDescriptor;
         private ConnectivityClientState connectivityState;
+        private ProductionRelayServerPayload productionRelayPayload;
+        private bool hasProductionRelayPayload;
+        private long lastShotSubmissionAtMilliseconds;
+        private long lastSnapshotReceivedAtMilliseconds;
 
         public event Action<ApprovedShot> ShotApprovedReceived;
         public event Action<ShotRejection> ShotRejectedReceived;
@@ -112,6 +117,13 @@ namespace SwingPop.Online
             ? connectivityDescriptor.Mode : MatchConnectivityMode.Direct;
         public string ConnectivityLabel => hasConnectivityDescriptor
             ? connectivityDescriptor.SafeLabel : "DIRECT legacy";
+        public string ConnectivityProvider => hasConnectivityDescriptor
+            ? connectivityDescriptor.Provider : ConnectivityProtocol.DirectProvider;
+        public string ConnectivityRegion => hasConnectivityDescriptor
+            ? connectivityDescriptor.Region : string.Empty;
+        public float ApprovalRoundTripTimeMilliseconds { get; private set; }
+        public long SnapshotAgeMilliseconds => lastSnapshotReceivedAtMilliseconds <= 0L
+            ? -1L : Math.Max(0L, NowMilliseconds() - lastSnapshotReceivedAtMilliseconds);
 
         private void Update()
         {
@@ -164,6 +176,14 @@ namespace SwingPop.Online
             return true;
         }
 
+        public bool SetProductionRelayServerPayload(ProductionRelayServerPayload payload)
+        {
+            if (payload == null || !payload.IsValid) return false;
+            productionRelayPayload = payload;
+            hasProductionRelayPayload = true;
+            return true;
+        }
+
         public void ConfigureConnectionLiveness(float seconds)
         {
             livenessTimeoutSeconds = Mathf.Clamp(seconds, 15f, 120f);
@@ -203,13 +223,14 @@ namespace SwingPop.Online
             timeoutSeconds = Mathf.Clamp(connectionTimeoutSeconds, 5f, 10f);
             connectionState.TryTransition(NetworkConnectionState.Starting);
             CreateDriver();
-            if (!NetworkEndpoint.TryParse(address, port, out NetworkEndpoint endpoint))
+            NetworkEndpoint endpoint = default;
+            if (!hasProductionRelayPayload && !NetworkEndpoint.TryParse(address, port, out endpoint))
             {
                 Fail($"Invalid client endpoint {address}:{port}.");
                 return false;
             }
 
-            connection = driver.Connect(endpoint);
+            connection = hasProductionRelayPayload ? driver.Connect() : driver.Connect(endpoint);
             connectionState.TryTransition(NetworkConnectionState.Connecting);
             Log($"CLIENT CONNECTING {address}:{port}");
             return connection.IsCreated;
@@ -234,7 +255,11 @@ namespace SwingPop.Online
             string payload = serializer.Serialize(submission);
             LastShotSubmissionBytes = Encoding.UTF8.GetByteCount(payload);
             if (role == NetworkRole.Client)
-                return IsReady && Send(NetworkMessageType.ShotSubmission, submission.MatchId, payload);
+            {
+                bool sent = IsReady && Send(NetworkMessageType.ShotSubmission, submission.MatchId, payload);
+                if (sent) lastShotSubmissionAtMilliseconds = NowMilliseconds();
+                return sent;
+            }
             if (role != NetworkRole.Host || !IsReady || authority == null) return false;
             ProcessAuthoritativeSubmission(submission, true);
             return true;
@@ -307,7 +332,7 @@ namespace SwingPop.Online
             reconnectState = HasReconnectTicket ? ReconnectClientState.ConnectionLost : ReconnectClientState.None;
             authenticationState = HasAuthenticationCredential
                 ? AuthenticationClientState.Disconnected : AuthenticationClientState.None;
-            if (hasConnectivityDescriptor && connectivityDescriptor.Mode == MatchConnectivityMode.Relay)
+            if (hasConnectivityDescriptor && connectivityDescriptor.Mode != MatchConnectivityMode.Direct)
                 connectivityState = ConnectivityClientState.Disconnected;
             Disconnected?.Invoke("M18 simulated unexpected connection loss");
             return true;
@@ -335,7 +360,15 @@ namespace SwingPop.Online
                 receiveQueueCapacity: 128,
                 sendQueueCapacity: 128);
             networkSettings.WithFragmentationStageParameters(OnlineProtocol.MaximumPayloadBytes);
-            driver = NetworkDriver.Create(new WebSocketNetworkInterface(), networkSettings);
+            if (hasProductionRelayPayload)
+            {
+                RelayServerData relayData = productionRelayPayload.ToRelayServerData();
+                networkSettings.WithRelayParameters(ref relayData);
+                driver = productionRelayPayload.WebSocket
+                    ? NetworkDriver.Create(new WebSocketNetworkInterface(), networkSettings)
+                    : NetworkDriver.Create(new UDPNetworkInterface(), networkSettings);
+            }
+            else driver = NetworkDriver.Create(new WebSocketNetworkInterface(), networkSettings);
             reliablePipeline = driver.CreatePipeline(typeof(FragmentationPipelineStage), typeof(ReliableSequencedPipelineStage));
         }
 
@@ -377,7 +410,7 @@ namespace SwingPop.Online
                         if (role == NetworkRole.Client)
                         {
                             if (hasConnectivityDescriptor
-                                && connectivityDescriptor.Mode == MatchConnectivityMode.Relay)
+                                && connectivityDescriptor.Mode != MatchConnectivityMode.Direct)
                             {
                                 connectivityState = ConnectivityClientState.Connecting;
                                 Send(NetworkMessageType.ConnectivityRequest, default,
@@ -453,6 +486,7 @@ namespace SwingPop.Online
                     connectionState.TryTransition(NetworkConnectionState.InMatch);
                     MatchSnapshot initial = serializer.Deserialize<MatchSnapshot>(envelope.Payload);
                     LocalSnapshotHash = MatchSnapshotHash.Compute(initial);
+                    lastSnapshotReceivedAtMilliseconds = NowMilliseconds();
                     SnapshotReceived?.Invoke(initial);
                     SendSnapshotHash(initial);
                     break;
@@ -461,6 +495,12 @@ namespace SwingPop.Online
                     HandleRemoteSubmission(serializer.Deserialize<ShotSubmission>(envelope.Payload));
                     break;
                 case NetworkMessageType.ShotApproved:
+                    if (lastShotSubmissionAtMilliseconds > 0L)
+                    {
+                        ApprovalRoundTripTimeMilliseconds = Mathf.Max(0f,
+                            NowMilliseconds() - lastShotSubmissionAtMilliseconds);
+                        lastShotSubmissionAtMilliseconds = 0L;
+                    }
                     ShotApprovedReceived?.Invoke(serializer.Deserialize<ApprovedShot>(envelope.Payload));
                     break;
                 case NetworkMessageType.ShotRejected:
@@ -474,6 +514,7 @@ namespace SwingPop.Online
                 {
                     MatchSnapshot snapshot = serializer.Deserialize<MatchSnapshot>(envelope.Payload);
                     LocalSnapshotHash = MatchSnapshotHash.Compute(snapshot);
+                    lastSnapshotReceivedAtMilliseconds = NowMilliseconds();
                     SnapshotReceived?.Invoke(snapshot);
                     SendSnapshotHash(snapshot);
                     break;
@@ -778,7 +819,7 @@ namespace SwingPop.Online
                 if (HasAuthenticationCredential && authenticationState != AuthenticationClientState.Rejected)
                     authenticationState = AuthenticationClientState.Disconnected;
                 if (HasReconnectTicket) reconnectState = ReconnectClientState.ConnectionLost;
-                if (hasConnectivityDescriptor && connectivityDescriptor.Mode == MatchConnectivityMode.Relay)
+                if (hasConnectivityDescriptor && connectivityDescriptor.Mode != MatchConnectivityMode.Direct)
                     connectivityState = ConnectivityClientState.Disconnected;
                 Disconnected?.Invoke(reason ?? "Disconnected");
             }
@@ -825,6 +866,8 @@ namespace SwingPop.Online
                 connectivityDescriptor = default;
                 hasConnectivityDescriptor = false;
                 connectivityState = ConnectivityClientState.None;
+                productionRelayPayload = null;
+                hasProductionRelayPayload = false;
             }
             else if (hasConnectivityDescriptor)
                 connectivityState = ConnectivityClientState.DescriptorReady;
@@ -833,6 +876,9 @@ namespace SwingPop.Online
             pingElapsed = 0f;
             rateWindowElapsed = 0f;
             submissionsInWindow = 0;
+            lastShotSubmissionAtMilliseconds = 0L;
+            lastSnapshotReceivedAtMilliseconds = 0L;
+            ApprovalRoundTripTimeMilliseconds = 0f;
             role = NetworkRole.None;
             connectionState.Reset();
         }

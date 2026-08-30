@@ -76,6 +76,10 @@ namespace SwingPop.Online
         [SerializeField] private string connectivityAllocationId;
         [SerializeField] private string connectivityCredentialHashBase64;
         [SerializeField] private long connectivityExpiresAtUnixMilliseconds;
+        [SerializeField] private string serverConnectivityProvider;
+        [SerializeField] private int serverProviderPayloadVersion;
+        [SerializeField] private string serverProviderPayload;
+        [SerializeField] private string connectivityRegion;
 
         public MatchReservationFileDocument(int documentVersion, LobbyMatchId lobbyMatchId,
             MatchId gameMatchId, string serverAddress, ushort serverPort, long expiresAtUnixMilliseconds,
@@ -92,13 +96,19 @@ namespace SwingPop.Online
             connectivityAllocationId = string.Empty;
             connectivityCredentialHashBase64 = string.Empty;
             connectivityExpiresAtUnixMilliseconds = 0L;
+            serverConnectivityProvider = ConnectivityProtocol.DirectProvider;
+            serverProviderPayloadVersion = 0;
+            serverProviderPayload = string.Empty;
+            connectivityRegion = string.Empty;
         }
 
         public MatchReservationFileDocument(int documentVersion, LobbyMatchId lobbyMatchId,
             MatchId gameMatchId, string serverAddress, ushort serverPort, long expiresAtUnixMilliseconds,
             MatchAdmissionFileEntry[] entries, MatchConnectivityMode connectivityMode,
             string connectivityAllocationId, string connectivityCredentialHashBase64,
-            long connectivityExpiresAtUnixMilliseconds)
+            long connectivityExpiresAtUnixMilliseconds, string serverConnectivityProvider = "",
+            int serverProviderPayloadVersion = 0, string serverProviderPayload = "",
+            string connectivityRegion = "")
         {
             this.documentVersion = documentVersion;
             this.lobbyMatchId = lobbyMatchId;
@@ -111,6 +121,10 @@ namespace SwingPop.Online
             this.connectivityAllocationId = connectivityAllocationId ?? string.Empty;
             this.connectivityCredentialHashBase64 = connectivityCredentialHashBase64 ?? string.Empty;
             this.connectivityExpiresAtUnixMilliseconds = connectivityExpiresAtUnixMilliseconds;
+            this.serverConnectivityProvider = serverConnectivityProvider ?? string.Empty;
+            this.serverProviderPayloadVersion = serverProviderPayloadVersion;
+            this.serverProviderPayload = serverProviderPayload ?? string.Empty;
+            this.connectivityRegion = connectivityRegion ?? string.Empty;
         }
 
         public int DocumentVersion => documentVersion;
@@ -124,11 +138,15 @@ namespace SwingPop.Online
         public string ConnectivityAllocationId => connectivityAllocationId ?? string.Empty;
         public string ConnectivityCredentialHashBase64 => connectivityCredentialHashBase64 ?? string.Empty;
         public long ConnectivityExpiresAtUnixMilliseconds => connectivityExpiresAtUnixMilliseconds;
+        public string ServerConnectivityProvider => serverConnectivityProvider ?? string.Empty;
+        public int ServerProviderPayloadVersion => serverProviderPayloadVersion;
+        public string ServerProviderPayload => serverProviderPayload ?? string.Empty;
+        public string ConnectivityRegion => connectivityRegion ?? string.Empty;
     }
 
     public static class MatchReservationFile
     {
-        public const int DocumentVersion = 2;
+        public const int DocumentVersion = 3;
         public const string ReservationFileArgument = "-swingpopMatchReservationFile=";
         public const string ReadyFileArgument = "-swingpopServerReadyFile=";
 
@@ -150,7 +168,11 @@ namespace SwingPop.Online
             return new MatchReservationFileDocument(DocumentVersion, reservation.LobbyMatchId,
                 reservation.GameMatchId, reservation.ServerAddress, reservation.ServerPort,
                 reservation.ExpiresAtUnixMilliseconds, entries, connectivity.Mode,
-                connectivity.AllocationId, credentialHash, connectivity.ExpiresAtUnixMilliseconds);
+                connectivity.AllocationId, credentialHash, connectivity.ExpiresAtUnixMilliseconds,
+                reservation.ServerConnectivity.Provider,
+                reservation.ServerConnectivity.ProviderPayloadVersion,
+                reservation.ServerConnectivity.ProviderPayload,
+                reservation.ServerConnectivity.Region);
         }
 
         public static void Write(string path, MatchReservationFileDocument document)
@@ -189,7 +211,7 @@ namespace SwingPop.Online
                     registry.Import(entry.AccountId, entry.PlayerId, entry.TicketHashBase64,
                         entry.ExpiresAtUnixMilliseconds);
                 }
-                if (document.ConnectivityMode == MatchConnectivityMode.Relay)
+                if (document.ConnectivityMode != MatchConnectivityMode.Direct)
                 {
                     if (string.IsNullOrWhiteSpace(document.ConnectivityAllocationId)
                         || string.IsNullOrWhiteSpace(document.ConnectivityCredentialHashBase64)
@@ -199,6 +221,14 @@ namespace SwingPop.Online
                         Convert.FromBase64String(document.ConnectivityCredentialHashBase64),
                         document.ConnectivityExpiresAtUnixMilliseconds);
                 }
+                if (document.ConnectivityMode == MatchConnectivityMode.ProductionRelay)
+                {
+                    if (!string.Equals(document.ServerConnectivityProvider,
+                            ConnectivityProtocol.UnityRelayProvider, StringComparison.Ordinal)
+                        || document.ServerProviderPayloadVersion != ConnectivityProtocol.ProductionDescriptorVersion
+                        || !ProductionRelayServerPayload.TryDeserialize(document.ServerProviderPayload, out _))
+                        return false;
+                }
                 return true;
             }
             catch (Exception)
@@ -206,6 +236,21 @@ namespace SwingPop.Online
                 document = null;
                 registry = null;
                 connectivityRegistry = null;
+                return false;
+            }
+        }
+
+        public static bool TryDeleteSensitiveReservation(string path, MatchReservationFileDocument document)
+        {
+            if (document == null || document.ConnectivityMode != MatchConnectivityMode.ProductionRelay
+                || string.IsNullOrWhiteSpace(path)) return false;
+            try
+            {
+                if (File.Exists(path)) File.Delete(path);
+                return !File.Exists(path);
+            }
+            catch (Exception)
+            {
                 return false;
             }
         }
