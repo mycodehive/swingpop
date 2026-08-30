@@ -74,6 +74,8 @@ namespace SwingPop.Online
         private float authenticationTimeoutSeconds = 8f;
         private float authenticationRateWindowElapsed;
         private int authenticationRequestsInWindow;
+        private IMatchAdmissionRegistry matchAdmissionRegistry;
+        private bool matchAdmissionRequired;
 
         public event Action<ApprovedShot> ShotApprovedReceived;
         public event Action<ShotRejection> ShotRejectedReceived;
@@ -118,6 +120,8 @@ namespace SwingPop.Online
         public bool AuthenticationRequired => authenticationRequired;
         public int AuthenticatedConnectionCount => authenticationRegistry?.ActiveConnectionCount ?? 0;
         public int AuthenticationSessionCount => authenticationRegistry?.SessionCount ?? 0;
+        public bool MatchAdmissionRequired => matchAdmissionRequired;
+        public MatchId ReservedGameMatchId => matchAdmissionRegistry?.GameMatchId ?? default;
 
         private void Update() => Tick(Time.unscaledDeltaTime);
         private void OnDisable() => CancelPending();
@@ -154,6 +158,12 @@ namespace SwingPop.Online
                 Mathf.RoundToInt(Mathf.Clamp(sessionLifetimeSeconds, 60f, 7200f) * 1000f));
         }
 
+        public void ConfigureMatchAdmission(IMatchAdmissionRegistry registry)
+        {
+            matchAdmissionRegistry = registry;
+            matchAdmissionRequired = registry != null;
+        }
+
         public void ConfigureConnectionLiveness(float seconds)
         {
             livenessTimeoutSeconds = Mathf.Clamp(seconds, 15f, 120f);
@@ -165,6 +175,11 @@ namespace SwingPop.Online
             if (authenticationRequired && authenticationRegistry == null)
             {
                 Fail("Development authentication is enabled but no runtime signing key was supplied.");
+                return false;
+            }
+            if (matchAdmissionRequired && !authenticationRequired)
+            {
+                Fail("Match admission requires the M16 authentication boundary.");
                 return false;
             }
             address = string.IsNullOrWhiteSpace(bindAddress) ? "127.0.0.1" : bindAddress.Trim();
@@ -481,6 +496,16 @@ namespace SwingPop.Online
                 case NetworkMessageType.ClientHello:
                     HandleClientHello(peer, serializer.Deserialize<ClientHelloMessage>(envelope.Payload));
                     break;
+                case NetworkMessageType.MatchAdmissionRequest:
+                {
+                    MatchAdmissionRequestMessage request =
+                        serializer.Deserialize<MatchAdmissionRequestMessage>(envelope.Payload);
+                    if (envelope.MatchId != request.GameMatchId)
+                        RejectMatchAdmissionAndClose(peer, MatchAdmissionRejectReason.WrongMatch);
+                    else
+                        HandleMatchAdmissionRequest(peer, request);
+                    break;
+                }
                 case NetworkMessageType.ReconnectRequest:
                 {
                     ReconnectRequestMessage request = serializer.Deserialize<ReconnectRequestMessage>(envelope.Payload);
@@ -520,6 +545,11 @@ namespace SwingPop.Online
 
         private void HandleClientHello(ClientPeer peer, ClientHelloMessage hello)
         {
+            if (matchAdmissionRequired)
+            {
+                RejectMatchAdmissionAndClose(peer, MatchAdmissionRejectReason.MissingTicket);
+                return;
+            }
             if (peer.HandshakeComplete || hello.RequestedRole != ClientRequestedRole.Player
                 || authenticationRequired && !peer.Authenticated)
             {
@@ -558,6 +588,47 @@ namespace SwingPop.Online
             connectionState.TryTransition(NetworkConnectionState.Connected);
             PlayerConnected?.Invoke(playerId);
             Log("Connection", $"{playerId} connected account={AccountFingerprint(peer.AccountId)} build={hello.ClientBuild}");
+            if (ConnectedPlayerCount == MaxPlayers) AllPlayersReady?.Invoke();
+        }
+
+        private void HandleMatchAdmissionRequest(ClientPeer peer, MatchAdmissionRequestMessage request)
+        {
+            if (!matchAdmissionRequired || matchAdmissionRegistry == null || peer.HandshakeComplete
+                || !peer.Authenticated || request.ProtocolVersion != OnlineProtocol.CurrentVersion)
+            {
+                RejectMatchAdmissionAndClose(peer, MatchAdmissionRejectReason.InvalidTicket);
+                return;
+            }
+            if (matchStarted)
+            {
+                RejectMatchAdmissionAndClose(peer, MatchAdmissionRejectReason.Consumed);
+                return;
+            }
+
+            MatchAdmissionValidationResult validation = matchAdmissionRegistry.ValidateAndConsume(
+                request.GameMatchId, peer.AccountId, request.JoinTicketSecret,
+                serverClock.UtcNowMilliseconds, false);
+            if (!validation.Accepted)
+            {
+                RejectMatchAdmissionAndClose(peer, validation.Reason);
+                return;
+            }
+            MatchPlayerId playerId = validation.PlayerId;
+            if (!slotAllocator.TryAssign(playerId)
+                || !playerRegistry.TryBind(peer.Connection.GetHashCode(), playerId)
+                || !matchOwnership.TryBind(playerId, peer.AccountId))
+            {
+                RejectMatchAdmissionAndClose(peer, MatchAdmissionRejectReason.PlayerAlreadyConnected);
+                return;
+            }
+
+            peer.PlayerId = playerId;
+            peer.HandshakeComplete = true;
+            SendTo(peer, NetworkMessageType.PlayerAssigned, request.GameMatchId,
+                serializer.Serialize(new PlayerAssignedMessage(playerId)));
+            connectionState.TryTransition(NetworkConnectionState.Connected);
+            PlayerConnected?.Invoke(playerId);
+            Log("Admission", $"Accepted game={request.GameMatchId} player={playerId} account={AccountFingerprint(peer.AccountId)}");
             if (ConnectedPlayerCount == MaxPlayers) AllPlayersReady?.Invoke();
         }
 
@@ -759,6 +830,14 @@ namespace SwingPop.Online
             RejectAndClose(peer, NetworkMessageType.ReconnectRejected,
                 serializer.Serialize(new ReconnectRejectedMessage(reason, reason.ToString())));
             Log("Reconnect", $"Rejected reason={reason}");
+        }
+
+        private void RejectMatchAdmissionAndClose(ClientPeer peer, MatchAdmissionRejectReason reason)
+        {
+            RejectedMessageCount++;
+            RejectAndClose(peer, NetworkMessageType.MatchAdmissionRejected,
+                serializer.Serialize(new MatchAdmissionRejectedMessage(reason, reason.ToString())));
+            Log("Admission", $"Rejected reason={reason}");
         }
 
         private void RejectAndClose(ClientPeer peer, NetworkMessageType type, string payload)

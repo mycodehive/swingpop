@@ -116,7 +116,9 @@ namespace SwingPop.Online
         MatchLifecycleChanged,
         AuthRequest,
         AuthAccepted,
-        AuthRejected
+        AuthRejected,
+        MatchAdmissionRequest,
+        MatchAdmissionRejected
     }
 
     public enum ClientRequestedRole

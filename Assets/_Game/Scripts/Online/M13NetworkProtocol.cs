@@ -269,7 +269,8 @@ namespace SwingPop.Online
                 or NetworkMessageType.Pong
                 or NetworkMessageType.DisconnectNotice
                 or NetworkMessageType.ReconnectRequest
-                or NetworkMessageType.AuthRequest;
+                or NetworkMessageType.AuthRequest
+                or NetworkMessageType.MatchAdmissionRequest;
         }
 
         public static bool IsAllowedFromServer(NetworkMessageType messageType)
@@ -289,7 +290,8 @@ namespace SwingPop.Online
                 or NetworkMessageType.ReconnectRejected
                 or NetworkMessageType.MatchLifecycleChanged
                 or NetworkMessageType.AuthAccepted
-                or NetworkMessageType.AuthRejected;
+                or NetworkMessageType.AuthRejected
+                or NetworkMessageType.MatchAdmissionRejected;
         }
     }
 
@@ -311,6 +313,14 @@ namespace SwingPop.Online
                 return false;
             }
             occupied.Add(playerId);
+            return true;
+        }
+
+        public bool TryAssign(MatchPlayerId requestedPlayer)
+        {
+            if (!requestedPlayer.IsValid || requestedPlayer.Value is not ("player-a" or "player-b")
+                || occupied.Contains(requestedPlayer)) return false;
+            occupied.Add(requestedPlayer);
             return true;
         }
 

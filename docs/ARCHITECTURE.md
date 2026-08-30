@@ -542,3 +542,9 @@ M15 adds an orthogonal server-owned dedicated lifecycle (`Playing`, `ReconnectGr
 ## M16 Authentication / Player Session Boundary
 
 M16 places a server-owned `PlayerAccountId -> AuthSessionId -> ConnectionId -> MatchPlayerId` binding in front of dedicated admission. `DevelopmentAuthenticationProvider` validates runtime-key HMAC credentials through `IAuthenticationService`; gameplay and snapshots remain account-agnostic. Reconnect now requires both a valid authenticated account and the M15 ticket, and the account must own the reserved match slot. Protocol version is 3. See `M16_AUTHENTICATION_PLAYER_SESSION_ARCHITECTURE.md`.
+
+## M17 Lobby / Match Creation Boundary
+
+M17 adds a separate Lobby protocol/version and `ILobbyService` control plane in front of the M16 dedicated gameplay plane. Lobby owns authenticated room create/list/join/leave, membership, Ready, capacity, start coordination, allocation, and initial admission grants only. It never calculates shots, physics, turns, score, or gameplay snapshots.
+
+`LobbyMatchId` maps to a separately generated gameplay `MatchId` through `MatchReservation`. Initial entry requires the authenticated account plus a short-lived, match-bound, account-bound, one-time `MatchJoinTicket`; reconnect continues to use the distinct M15 `ReconnectTicket`. The development implementation is an in-memory localhost Lobby and bounded local process allocator, not a production backend. See `M17_LOBBY_MATCH_CREATION_ARCHITECTURE.md`.

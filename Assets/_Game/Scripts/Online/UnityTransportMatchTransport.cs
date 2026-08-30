@@ -50,6 +50,8 @@ namespace SwingPop.Online
         private PlayerAccountId authenticatedAccountId;
         private AuthSessionId authenticatedSessionId;
         private long authenticationSessionExpiryUnixMilliseconds;
+        private MatchJoinTicket matchJoinTicket;
+        private bool hasMatchJoinTicket;
 
         public event Action<ApprovedShot> ShotApprovedReceived;
         public event Action<ShotRejection> ShotRejectedReceived;
@@ -64,6 +66,7 @@ namespace SwingPop.Online
         public event Action<MatchLifecycleChangedMessage> LifecycleChanged;
         public event Action<AuthAcceptedMessage> AuthenticationAccepted;
         public event Action<AuthRejectedMessage> AuthenticationRejected;
+        public event Action<MatchAdmissionRejectedMessage> MatchAdmissionRejected;
 
         public int PendingMessageCount => 0;
         public int MessageCount { get; private set; }
@@ -97,6 +100,7 @@ namespace SwingPop.Online
         public AuthSessionId AuthenticatedSessionId => authenticatedSessionId;
         public long AuthenticationSessionExpiryUnixMilliseconds => authenticationSessionExpiryUnixMilliseconds;
         public bool HasAuthenticationCredential => !string.IsNullOrWhiteSpace(authenticationCredential);
+        public bool HasMatchJoinTicket => hasMatchJoinTicket && matchJoinTicket.IsValid;
 
         private void Update()
         {
@@ -129,6 +133,14 @@ namespace SwingPop.Online
             if (string.IsNullOrWhiteSpace(credential) || credential.Length > 4096) return false;
             authenticationCredential = credential.Trim();
             authenticationState = AuthenticationClientState.CredentialReady;
+            return true;
+        }
+
+        public bool SetMatchJoinTicket(MatchJoinTicket ticket)
+        {
+            if (!ticket.IsValid) return false;
+            matchJoinTicket = ticket;
+            hasMatchJoinTicket = true;
             return true;
         }
 
@@ -537,6 +549,14 @@ namespace SwingPop.Online
                     Fail($"Authentication rejected: {rejected.Reason}", false);
                     break;
                 }
+                case NetworkMessageType.MatchAdmissionRejected when role == NetworkRole.Client:
+                {
+                    MatchAdmissionRejectedMessage rejected =
+                        serializer.Deserialize<MatchAdmissionRejectedMessage>(envelope.Payload);
+                    MatchAdmissionRejected?.Invoke(rejected);
+                    Fail($"Match admission rejected: {rejected.Reason}", false);
+                    break;
+                }
             }
         }
 
@@ -547,6 +567,11 @@ namespace SwingPop.Online
                 reconnectState = ReconnectClientState.Reconnecting;
                 Send(NetworkMessageType.ReconnectRequest, reconnectTicket.MatchId,
                     serializer.Serialize(new ReconnectRequestMessage(reconnectTicket, RemoteSnapshotVersion)));
+            }
+            else if (HasMatchJoinTicket)
+            {
+                Send(NetworkMessageType.MatchAdmissionRequest, matchJoinTicket.GameMatchId,
+                    serializer.Serialize(new MatchAdmissionRequestMessage(matchJoinTicket)));
             }
             else
             {
@@ -728,6 +753,8 @@ namespace SwingPop.Online
             authenticationSessionExpiryUnixMilliseconds = 0L;
             authenticationState = HasAuthenticationCredential
                 ? AuthenticationClientState.CredentialReady : AuthenticationClientState.None;
+            matchJoinTicket = default;
+            hasMatchJoinTicket = false;
             outboundSequence = 0;
             stateElapsed = 0f;
             pingElapsed = 0f;

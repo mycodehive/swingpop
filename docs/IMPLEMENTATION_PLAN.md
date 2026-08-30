@@ -534,3 +534,16 @@ M15 Match Lifecycle / Reconnect Foundation is implemented on top of M14 dedicate
 - [x] Add F2-safe telemetry, validator, automated coverage, builds, real-process evidence, captures, and documentation.
 - [x] Keep OfflineSingle default and preserve M12-M15 regression baselines.
 - [ ] Do not start M17 or production authentication in this milestone.
+
+## M17 Lobby / Match Creation Foundation (2026-08-30)
+
+- [x] Preserve M16 account/session/connection/player/reconnect ownership and gameplay protocol 3.
+- [x] Add an independent Lobby protocol 1 and backend-replaceable `ILobbyService` boundary.
+- [x] Implement authenticated Create/List/Join/Leave/Ready/Owner Start with 2-player atomic capacity.
+- [x] Keep LobbyMatchId and gameplay MatchId separate through a MatchReservation.
+- [x] Add bounded localhost Dedicated Server allocation and ready handshake.
+- [x] Add account/match-bound, expiring, one-time MatchJoinTicket admission without plaintext reservation storage.
+- [x] Transition both clients from Lobby to Hole01 and retain M12~M16 authoritative gameplay.
+- [x] Add minimal Lobby UI, F2 telemetry, validators, builds, 24 EditMode tests, 7 PlayMode tests, real 4-process evidence, captures, and documentation.
+- [x] Keep OfflineSingle default and Foundation.unity unchanged.
+- [ ] Do not start M18, production Lobby, matchmaking, Relay/NAT, or production authentication in this milestone.

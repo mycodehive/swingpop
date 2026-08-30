@@ -427,3 +427,13 @@ In a dedicated two-player match, one disconnected player suspends new shots for 
 ## M16 Authenticated Match Policy
 
 Dedicated clients authenticate before they can receive `player-a` or `player-b`. Authentication success does not guarantee a free match slot. Shot gameplay starts only after the server binds the verified account, connection, and match player. Reconnect requires the same verified account that originally owned the slot plus the rotating M15 ticket. OfflineSingle, LocalTwoPlayer, ball physics, shot tuning, terrain, scoring, clubs, camera, character, HUD, VFX, and audio are unchanged.
+
+## 27. M17 Lobby-to-Gameplay Contract
+
+- Lobby browsing and room ownership do not grant gameplay authority.
+- Both authenticated room members must be Ready and only the room Owner may request Start.
+- The Lobby reservation order maps slot 0/1 to server-owned `player-a`/`player-b`; the Client cannot self-assign either value.
+- Initial Hole01 entry requires the Client's own account-bound `MatchJoinTicket`. Stolen, wrong-match, expired, or replayed tickets are rejected before player assignment.
+- Once Hole01 loads, the existing M12~M16 approval, Rigidbody simulation, turn, score, snapshot, and reconnect rules are unchanged.
+- Initial admission uses `MatchJoinTicket`; a later reconnect uses the same authenticated account plus `ReconnectTicket`.
+- OfflineSingle remains the default mode. Lobby is entered only through the dedicated M17 development build/arguments.

@@ -120,6 +120,9 @@ namespace SwingPop.Online
                 Environment.GetCommandLineArgs(),
                 settings != null ? settings.HostAddress : "127.0.0.1",
                 settings != null ? settings.Port : (ushort)7777);
+            if (MatchAdmissionHandoff.TryPeek(out MatchAdmissionGrant pendingAdmission))
+                launch = new NetworkLaunchOptions(MultiplayerDevelopmentMode.NetworkClient,
+                    pendingAdmission.ServerAddress, pendingAdmission.ServerPort);
             if (launch.HasNetworkOverride)
             {
                 StartNetworkMatch(launch.Mode, launch.Address, launch.Port);
@@ -278,6 +281,24 @@ namespace SwingPop.Online
                 settings != null ? settings.DevelopmentAuthenticationIssuer : "swingpop-development",
                 settings != null ? settings.AuthenticationSessionLifetimeSeconds : 1800f,
                 settings != null ? settings.AuthenticationTimeoutSeconds : 8f);
+            IMatchAdmissionRegistry admissionRegistry = null;
+            MatchReservationFileDocument reservationDocument = null;
+            if (mode == MultiplayerDevelopmentMode.DedicatedServer)
+            {
+                string reservationPath = MatchReservationFile.ReadArgument(Environment.GetCommandLineArgs(),
+                    MatchReservationFile.ReservationFileArgument);
+                if (!string.IsNullOrWhiteSpace(reservationPath))
+                {
+                    if (!MatchReservationFile.TryLoad(reservationPath, out reservationDocument,
+                            out DevelopmentMatchAdmissionRegistry loadedRegistry))
+                    {
+                        Debug.LogError("[M17][Admission] Match reservation file is invalid.", this);
+                        return;
+                    }
+                    admissionRegistry = loadedRegistry;
+                }
+            }
+            dedicatedServerTransport.ConfigureMatchAdmission(admissionRegistry);
             float liveness = settings != null ? settings.ConnectionLivenessTimeoutSeconds : 30f;
             networkTransport.ConfigureConnectionLiveness(liveness);
             dedicatedServerTransport.ConfigureConnectionLiveness(liveness);
@@ -291,6 +312,15 @@ namespace SwingPop.Online
                 MultiplayerDevelopmentMode.DedicatedServer => dedicatedServerTransport.StartDedicatedServer(address, port, timeout),
                 _ => false
             };
+            if (started && mode == MultiplayerDevelopmentMode.NetworkClient
+                && MatchAdmissionHandoff.TryPeek(out MatchAdmissionGrant grant))
+            {
+                if (networkTransport.SetMatchJoinTicket(grant.JoinTicket))
+                    MatchAdmissionHandoff.TryConsume(out _);
+            }
+            if (started && mode == MultiplayerDevelopmentMode.DedicatedServer && reservationDocument != null)
+                MatchReservationFile.TryWriteReadyMarker(Environment.GetCommandLineArgs(),
+                    reservationDocument.GameMatchId, $"{address}:{port}");
             if (!started)
                 Debug.LogError($"[M13][Match] Could not start {mode} at {address}:{port}.", this);
         }
@@ -465,7 +495,9 @@ namespace SwingPop.Online
                 CreateInitialPlayer(PlayerA, "PLAYER A", 0, false, tee),
                 CreateInitialPlayer(PlayerB, "PLAYER B", 1, false, tee)
             };
-            MatchId matchId = new($"server-hole01-{DateTime.UtcNow:yyyyMMddHHmmssfff}");
+            MatchId matchId = dedicatedServerTransport.ReservedGameMatchId.IsValid
+                ? dedicatedServerTransport.ReservedGameMatchId
+                : new MatchId($"server-hole01-{DateTime.UtcNow:yyyyMMddHHmmssfff}");
             MatchSnapshot initial = authority.StartMatch(matchId, "hole-01", players);
             dedicatedServerTransport.BeginDedicatedMatch(initial);
         }

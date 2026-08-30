@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c76adad76ae9e974a91e2e688b075184, type: 3}
+  m_Name: M17LobbyDevelopmentSettings
+  m_EditorClassIdentifier: SwingPop.Runtime::SwingPop.Data.LobbyDevelopmentSettings
+  lobbyAddress: 127.0.0.1
+  lobbyPort: 18817
+  maximumConnections: 16
+  maximumRooms: 32
+  lobbyHandshakeTimeoutSeconds: 8
+  verboseLogging: 0
+  matchServerExecutable: Builds/M17MatchServer/SwingPopServer.exe
+  matchServerAddress: 127.0.0.1
+  firstMatchServerPort: 19817
+  maximumActiveMatches: 4
+  serverReadyTimeoutSeconds: 15
+  joinTicketLifetimeSeconds: 90

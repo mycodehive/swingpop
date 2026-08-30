@@ -55,6 +55,15 @@
 - [x] Same-account reconnect requirement and stolen-ticket wrong-account rejection
 - [x] Token tamper, expiry, revocation, rate-limit seam, safe F2 telemetry, tests, builds, and real-process evidence
 
+### M17 Lobby / Match Creation Foundation
+
+- [x] Backend-replaceable `ILobbyService` with authenticated create/list/get/join/leave/ready/start/close
+- [x] Two-player atomic membership, one active room per account, owner authorization, revision ordering, and Ready reset
+- [x] Separate LobbyMatchId -> gameplay MatchId reservation mapping
+- [x] Bounded localhost Dedicated Match Server allocation with reservation and ready handshake
+- [x] Account/match-bound, expiring, one-time MatchJoinTicket and reserved player assignment
+- [x] Minimal Lobby UI, F2-safe telemetry, build/launch tools, tests, real-process flow, and captures
+
 ## Future Production Work
 
 ### Relay / NAT
@@ -64,8 +73,9 @@
 
 ### Lobby
 
-- [ ] Create/join/leave, readiness, invite, and room ownership model
-- [ ] Late-join and spectator policy
+- [x] Development create/list/join/leave, readiness, capacity, and room-owner start model
+- [ ] Production distributed service, persistence, pagination, owner migration, invites/private rooms
+- [ ] Late-join, backfill, and spectator policy
 
 ### Matchmaking
 

@@ -519,6 +519,14 @@ Vertical Slice 승인 이후에만 다음 단계 논의:
 - Character customization
 - Additional courses
 
+## 25. M17 Lobby / Match Creation Foundation Status (2026-08-30)
+
+- 인증된 두 사용자의 Create/List/Join/Leave/Ready/Owner Start 흐름과 2인 capacity를 별도 Lobby control plane으로 구현했다.
+- Owner Start는 bounded localhost allocator를 통해 Dedicated Match Server 한 개를 실행하고, account/match-bound one-time `MatchJoinTicket`을 각 사용자에게만 전달한다.
+- Dedicated Server가 ticket과 인증 계정을 검증한 뒤 `player-a`/`player-b`를 배정하며, 기존 M12~M16 Hole01 gameplay authority와 reconnect 경계는 유지된다.
+- 실제 Lobby + Dedicated Server + Client A + Client B process 흐름에서 양쪽 natural shot과 동일 snapshot hash를 확인했다.
+- 이는 in-memory localhost development foundation이다. Production Lobby, matchmaking, Relay/NAT, production auth와 cloud allocator는 아직 No-Go다.
+
 ## 23. M10 Vertical Slice Status (2026-08-23)
 
 - 기본 플레이 씬은 `Hole01_SkyIsland.unity`이며 Foundation은 회귀/개발 검증 씬으로 보존한다.

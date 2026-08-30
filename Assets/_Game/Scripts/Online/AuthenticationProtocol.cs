@@ -411,6 +411,14 @@ namespace SwingPop.Online
             return false;
         }
 
+        public bool TryGetConnection(int connectionId, long nowMilliseconds, out AuthenticatedPlayerSession session)
+        {
+            if (TryGetConnection(connectionId, out session) && session.ExpiresAtMilliseconds > nowMilliseconds)
+                return true;
+            session = default;
+            return false;
+        }
+
         public bool RemoveConnection(int connectionId)
         {
             if (!connections.TryGetValue(connectionId, out SessionRecord record)) return false;
